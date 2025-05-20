@@ -157,11 +157,11 @@ const BankEntry = () => {
                           <FormControl>
                             <InputOTP 
                               maxLength={6} 
-                              value={field.value}
+                              value={field.value || ""}
                               onChange={handleOTPChange}
                               render={({ slots }) => (
                                 <InputOTPGroup>
-                                  {slots.map((slot, index) => (
+                                  {slots && Array.from({ length: 6 }).map((_, index) => (
                                     <InputOTPSlot key={index} index={index} />
                                   ))}
                                 </InputOTPGroup>
