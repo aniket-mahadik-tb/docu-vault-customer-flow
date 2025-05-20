@@ -10,7 +10,7 @@ interface MainLayoutProps {
   showSidebar?: boolean;
 }
 
-const MainLayout = ({ children, showSidebar = false }: MainLayoutProps) => {
+const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) => {
   const { role } = useUser();
 
   return (
@@ -18,7 +18,7 @@ const MainLayout = ({ children, showSidebar = false }: MainLayoutProps) => {
       <div className="min-h-screen flex flex-col w-full">
         <Header />
         <div className="flex flex-1">
-          {(showSidebar && role) && (
+          {role && (
             <AppSidebar />
           )}
           <SidebarInset className="p-4 md:p-6">

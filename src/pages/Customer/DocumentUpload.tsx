@@ -1,14 +1,13 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { useDocuments, DocumentFile } from "@/contexts/DocumentContext";
 import MainLayout from "@/layouts/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { FileText, X, ChevronDown, ChevronUp, Upload, CheckCircle, Save } from "lucide-react";
+import { FileText, X, ChevronDown, ChevronUp, Upload, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const documentSections = [
@@ -210,7 +209,6 @@ interface SubDocumentState {
   [key: string]: {
     open: boolean;
     submitting: boolean;
-    saving: boolean;
   }
 }
 
@@ -220,8 +218,6 @@ const DocumentUpload = () => {
   const { addDocument, removeDocument, submitFolder, getFolderDocuments, isFolderSubmitted } = useDocuments();
   
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
-  const [submitting, setSubmitting] = useState<Record<string, boolean>>({});
-  const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [subDocumentStates, setSubDocumentStates] = useState<SubDocumentState>({});
   
   useEffect(() => {
@@ -235,8 +231,7 @@ const DocumentUpload = () => {
       section.documentTypes.forEach(docType => {
         initialSubDocumentStates[docType.id] = {
           open: false,
-          submitting: false,
-          saving: false
+          submitting: false
         };
       });
     });
@@ -250,30 +245,40 @@ const DocumentUpload = () => {
     }));
   };
 
-  const toggleSubDocument = (docId: string) => {
-    setSubDocumentStates(prev => ({
-      ...prev,
-      [docId]: {
-        ...prev[docId],
-        open: !prev[docId].open
-      }
-    }));
-  };
-
   const handleFileUpload = async (sectionId: string, docId: string, files: FileList) => {
     if (!userId) return;
     
     try {
+      setSubDocumentStates(prev => ({
+        ...prev,
+        [docId]: {
+          ...prev[docId],
+          submitting: true
+        }
+      }));
+      
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const fullFolderId = `${sectionId}_${docId}`;
         await addDocument(userId, fullFolderId, file);
       }
       
+      // Auto-submit the document when files are uploaded
+      const fullFolderId = `${sectionId}_${docId}`;
+      submitFolder(userId, fullFolderId);
+      
       toast({
         title: "Files uploaded",
-        description: `${files.length} file(s) added successfully`,
+        description: `${files.length} file(s) added and submitted successfully`,
       });
+      
+      setSubDocumentStates(prev => ({
+        ...prev,
+        [docId]: {
+          ...prev[docId],
+          submitting: false
+        }
+      }));
     } catch (error) {
       console.error("Error uploading files:", error);
       toast({
@@ -281,6 +286,14 @@ const DocumentUpload = () => {
         description: "There was an error uploading your files",
         variant: "destructive",
       });
+      
+      setSubDocumentStates(prev => ({
+        ...prev,
+        [docId]: {
+          ...prev[docId],
+          submitting: false
+        }
+      }));
     }
   };
 
@@ -294,91 +307,6 @@ const DocumentUpload = () => {
       title: "File removed",
       description: "Document has been removed",
     });
-  };
-
-  const handleSaveProgress = (sectionId: string, docId: string) => {
-    if (!userId) return;
-    
-    const fullFolderId = `${sectionId}_${docId}`;
-    setSubDocumentStates(prev => ({
-      ...prev,
-      [docId]: {
-        ...prev[docId],
-        saving: true
-      }
-    }));
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Progress saved",
-        description: "Your upload progress has been saved",
-      });
-      setSubDocumentStates(prev => ({
-        ...prev,
-        [docId]: {
-          ...prev[docId],
-          saving: false
-        }
-      }));
-    }, 500);
-  };
-
-  const handleSubmitSubDocument = (sectionId: string, docId: string) => {
-    if (!userId) return;
-    
-    const fullFolderId = `${sectionId}_${docId}`;
-    setSubDocumentStates(prev => ({
-      ...prev,
-      [docId]: {
-        ...prev[docId],
-        submitting: true
-      }
-    }));
-    
-    // Simulate API call
-    setTimeout(() => {
-      submitFolder(userId, fullFolderId);
-      
-      toast({
-        title: "Documents submitted",
-        description: "Your documents have been successfully submitted",
-      });
-      
-      setSubDocumentStates(prev => ({
-        ...prev,
-        [docId]: {
-          ...prev[docId],
-          submitting: false
-        }
-      }));
-    }, 1000);
-  };
-
-  const handleSubmitSection = (sectionId: string) => {
-    if (!userId) return;
-    
-    setSubmitting(prev => ({ ...prev, [sectionId]: true }));
-    
-    // Find all document types in this section
-    const section = documentSections.find(s => s.id === sectionId);
-    if (!section) return;
-    
-    // Submit all doc types in the section
-    section.documentTypes.forEach(docType => {
-      const fullFolderId = `${sectionId}_${docType.id}`;
-      submitFolder(userId, fullFolderId);
-    });
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Section submitted",
-        description: `All documents in ${section.title} have been submitted`,
-      });
-      
-      setSubmitting(prev => ({ ...prev, [sectionId]: false }));
-    }, 1000);
   };
 
   const isSectionSubmitted = (sectionId: string): boolean => {
@@ -406,7 +334,7 @@ const DocumentUpload = () => {
   }
 
   return (
-    <MainLayout showSidebar={true}>
+    <MainLayout>
       <div className="py-6">
         <h1 className="text-2xl font-bold mb-6">Document Upload</h1>
         
@@ -437,142 +365,99 @@ const DocumentUpload = () => {
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <CardContent>
-                          <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {section.documentTypes.map(docType => {
                               const fullFolderId = `${section.id}_${docType.id}`;
                               const docFiles = userId ? getFolderDocuments(userId, fullFolderId) : [];
                               const isDocSubmitted = userId ? isFolderSubmitted(userId, fullFolderId) : false;
-                              const docState = subDocumentStates[docType.id] || { open: false, submitting: false, saving: false };
+                              const docState = subDocumentStates[docType.id] || { open: false, submitting: false };
                               
                               return (
                                 <Card key={docType.id} className={`border ${isDocSubmitted ? "border-green-200 bg-green-50" : ""}`}>
                                   <CardHeader className="p-4">
-                                    <div className="flex justify-between items-center">
-                                      <div>
-                                        <div className="flex items-center gap-2">
-                                          <CardTitle className="text-base">{docType.name}</CardTitle>
-                                          {docType.required && (
-                                            <Badge variant="destructive" className="text-xs">Required</Badge>
-                                          )}
-                                          {isDocSubmitted && (
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                          )}
-                                        </div>
-                                        <CardDescription className="text-xs mt-1">{docType.description}</CardDescription>
+                                    <div className="flex flex-col gap-1">
+                                      <div className="flex items-center gap-2">
+                                        <CardTitle className="text-base">{docType.name}</CardTitle>
+                                        {docType.required && (
+                                          <Badge variant="destructive" className="text-xs">Required</Badge>
+                                        )}
+                                        {isDocSubmitted && (
+                                          <CheckCircle className="h-4 w-4 text-green-500" />
+                                        )}
                                       </div>
-                                      <Collapsible open={docState.open} onOpenChange={() => toggleSubDocument(docType.id)}>
-                                        <CollapsibleTrigger className="rounded-full p-1 hover:bg-accent">
-                                          {docState.open ? (
-                                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                                          ) : (
-                                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                          )}
-                                        </CollapsibleTrigger>
-                                        <CollapsibleContent>
-                                          <div className="pt-4">
-                                            {!isDocSubmitted && (
-                                              <div className="mb-4">
-                                                <label
-                                                  htmlFor={`file-upload-${fullFolderId}`}
-                                                  className="flex justify-center items-center border-2 border-dashed rounded-lg py-4 px-4 cursor-pointer hover:bg-accent/10"
-                                                >
-                                                  <div className="text-center">
-                                                    <Upload className="mx-auto h-6 w-6 text-muted-foreground mb-1" />
-                                                    <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                      Allowed types: .pdf, .jpg, .jpeg, .png
-                                                    </p>
-                                                  </div>
-                                                  <input
-                                                    id={`file-upload-${fullFolderId}`}
-                                                    type="file"
-                                                    multiple
-                                                    accept=".pdf,.jpg,.jpeg,.png"
-                                                    className="hidden"
-                                                    onChange={(e) => e.target.files && handleFileUpload(section.id, docType.id, e.target.files)}
-                                                  />
-                                                </label>
-                                              </div>
-                                            )}
-                                            
-                                            {docFiles.length > 0 && (
-                                              <div>
-                                                <h4 className="text-sm font-medium mb-3">Uploaded Files</h4>
-                                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                                  {docFiles.map((file) => (
-                                                    <div
-                                                      key={file.id}
-                                                      className="relative border rounded-md p-2 group"
-                                                    >
-                                                      <div className="aspect-square w-full flex items-center justify-center bg-gray-100 rounded mb-1">
-                                                        {file.type.includes('image') ? (
-                                                          <img
-                                                            src={file.url}
-                                                            alt={file.name}
-                                                            className="h-full w-full object-cover rounded"
-                                                          />
-                                                        ) : (
-                                                          <FileText className="h-8 w-8 text-muted-foreground" />
-                                                        )}
-                                                      </div>
-                                                      <p className="text-xs truncate" title={file.name}>
-                                                        {file.name}
-                                                      </p>
-                                                      {!isDocSubmitted && (
-                                                        <button
-                                                          onClick={() => handleRemoveFile(section.id, docType.id, file.id)}
-                                                          className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        >
-                                                          <X className="h-3 w-3 text-muted-foreground" />
-                                                        </button>
-                                                      )}
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              </div>
-                                            )}
-                                            
-                                            {!isDocSubmitted && docFiles.length > 0 && (
-                                              <div className="mt-4 flex gap-2 flex-wrap">
-                                                <Button
-                                                  variant="outline"
-                                                  size="sm"
-                                                  onClick={() => handleSaveProgress(section.id, docType.id)}
-                                                  disabled={docState.saving}
-                                                >
-                                                  <Save className="h-3 w-3 mr-1" />
-                                                  {docState.saving ? 'Saving...' : 'Save Progress'}
-                                                </Button>
-                                                <Button
-                                                  size="sm"
-                                                  onClick={() => handleSubmitSubDocument(section.id, docType.id)}
-                                                  disabled={docState.submitting}
-                                                >
-                                                  {docState.submitting ? 'Submitting...' : 'Submit'}
-                                                </Button>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </CollapsibleContent>
-                                      </Collapsible>
+                                      <CardDescription className="text-xs mt-1">{docType.description}</CardDescription>
+                                      <div className="text-xs text-muted-foreground mt-2">
+                                        <span>Max size: 2MB • Accepted: Images, PDF</span>
+                                      </div>
                                     </div>
                                   </CardHeader>
+                                  <CardContent className="p-4 pt-0">
+                                    {!isDocSubmitted && (
+                                      <label
+                                        htmlFor={`file-upload-${fullFolderId}`}
+                                        className="flex justify-center items-center border-2 border-dashed rounded-lg py-4 px-4 cursor-pointer hover:bg-accent/10"
+                                      >
+                                        <div className="text-center">
+                                          <Upload className="mx-auto h-6 w-6 text-muted-foreground mb-1" />
+                                          <p className="text-sm font-medium">Upload Document</p>
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            Click to upload or drag and drop
+                                          </p>
+                                        </div>
+                                        <input
+                                          id={`file-upload-${fullFolderId}`}
+                                          type="file"
+                                          multiple
+                                          accept=".pdf,.jpg,.jpeg,.png"
+                                          className="hidden"
+                                          disabled={docState.submitting}
+                                          onChange={(e) => e.target.files && handleFileUpload(section.id, docType.id, e.target.files)}
+                                        />
+                                      </label>
+                                    )}
+                                    
+                                    {docFiles.length > 0 && (
+                                      <div className="mt-4">
+                                        <h4 className="text-sm font-medium mb-3">Uploaded Files</h4>
+                                        <div className="grid grid-cols-2 gap-2">
+                                          {docFiles.map((file) => (
+                                            <div
+                                              key={file.id}
+                                              className="relative border rounded-md p-2 group"
+                                            >
+                                              <div className="aspect-square w-full flex items-center justify-center bg-gray-100 rounded mb-1">
+                                                {file.type.includes('image') ? (
+                                                  <img
+                                                    src={file.url}
+                                                    alt={file.name}
+                                                    className="h-full w-full object-cover rounded"
+                                                  />
+                                                ) : (
+                                                  <FileText className="h-8 w-8 text-muted-foreground" />
+                                                )}
+                                              </div>
+                                              <p className="text-xs truncate" title={file.name}>
+                                                {file.name}
+                                              </p>
+                                              {!isDocSubmitted && (
+                                                <button
+                                                  onClick={() => handleRemoveFile(section.id, docType.id, file.id)}
+                                                  className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                  <X className="h-3 w-3 text-muted-foreground" />
+                                                </button>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </CardContent>
                                 </Card>
                               );
                             })}
                           </div>
                         </CardContent>
-                        
-                        {!isSubmitted && (
-                          <CardFooter className="gap-2 flex-wrap">
-                            <Button
-                              onClick={() => handleSubmitSection(section.id)}
-                              disabled={submitting[section.id]}
-                            >
-                              {submitting[section.id] ? 'Submitting Section...' : 'Submit All Required Documents'}
-                            </Button>
-                          </CardFooter>
-                        )}
                       </CollapsibleContent>
                     </Collapsible>
                   </div>
