@@ -1,12 +1,13 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { useCustomers } from "@/contexts/CustomerContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, X, Clock } from "lucide-react";
+import { ArrowLeft, Check, X, Clock, ZoomIn, ZoomOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,
   CardContent,
@@ -15,6 +16,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import * as pdfjs from "pdfjs-dist";
+
+// Set up the PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 const ReviewDocument = () => {
   const { customerId, documentId } = useParams<{ customerId: string; documentId: string }>();
@@ -22,9 +27,91 @@ const ReviewDocument = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [remarks, setRemarks] = useState("");
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const [pageNum, setPageNum] = useState(1);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const customer = getCustomer(customerId || "");
   const document = customer?.documents.find((doc) => doc.id === documentId);
+
+  useEffect(() => {
+    if (document && document.fileUrl && document.fileUrl.toLowerCase().endsWith('.pdf')) {
+      loadPdf(document.fileUrl);
+    }
+  }, [document]);
+
+  useEffect(() => {
+    if (pdfDoc && canvasRef.current) {
+      renderPage();
+    }
+  }, [pdfDoc, pageNum, zoomLevel]);
+
+  const loadPdf = async (url: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Handle placeholder URLs
+      if (url === "/placeholder.svg" || !url) {
+        // Use a sample PDF for demo purposes
+        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
+      }
+
+      const loadingTask = pdfjs.getDocument(url);
+      const pdf = await loadingTask.promise;
+      setPdfDoc(pdf);
+      setPageNum(1);
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error loading PDF:", err);
+      setError("Failed to load PDF. Using image fallback.");
+      setIsLoading(false);
+    }
+  };
+
+  const renderPage = async () => {
+    if (!pdfDoc || !canvasRef.current) return;
+    
+    try {
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = page.getViewport({ scale: zoomLevel });
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport
+      };
+      
+      await page.render(renderContext).promise;
+    } catch (err) {
+      console.error("Error rendering PDF page:", err);
+      setError("Failed to render PDF page. Using image fallback.");
+    }
+  };
+
+  const isPdf = document?.name.toLowerCase().endsWith('.pdf');
+  const isImage = document?.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/);
+  
+  // Get a usable document URL or fallback
+  const getDocumentUrl = () => {
+    if (!document?.fileUrl || document.fileUrl === "/placeholder.svg") {
+      // Return appropriate fallback based on document type
+      if (isPdf) {
+        return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
+      } else if (isImage) {
+        return "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80";
+      }
+      return "/placeholder.svg";
+    }
+    return document.fileUrl;
+  };
 
   if (!customer || !document) {
     return (
@@ -148,17 +235,72 @@ const ReviewDocument = () => {
             <CardHeader>
               <CardTitle>Document Preview</CardTitle>
             </CardHeader>
-            <CardContent className="flex justify-center items-center min-h-[400px] bg-muted/40">
-              <div className="text-center">
-                <img
-                  src={document.fileUrl || "/placeholder.svg"}
-                  alt={document.name}
-                  className="max-w-full max-h-[350px] object-contain mx-auto"
-                />
-                <p className="mt-4 text-sm text-muted-foreground">
-                  {document.name}
-                </p>
-              </div>
+            <CardContent className="flex flex-col justify-center items-center min-h-[400px] bg-muted/40 relative">
+              {isLoading ? (
+                <div className="space-y-4 w-full">
+                  <Skeleton className="h-[350px] w-full rounded-md" />
+                  <Skeleton className="h-4 w-3/4 mx-auto" />
+                </div>
+              ) : isPdf && !error ? (
+                <div className="flex flex-col items-center w-full">
+                  <canvas
+                    ref={canvasRef}
+                    className="max-w-full max-h-[350px] border border-muted rounded shadow-sm"
+                  />
+                  <div className="flex items-center gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setZoomLevel(prev => Math.max(prev - 0.1, 0.5))}
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <span className="text-xs w-16 text-center">
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setZoomLevel(prev => Math.min(prev + 0.1, 2))}
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <img
+                    src={getDocumentUrl()}
+                    alt={document.name}
+                    className="max-w-full max-h-[350px] object-contain mx-auto"
+                    style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center' }}
+                    onError={(e) => {
+                      // Fallback to placeholder if image fails to load
+                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80";
+                    }}
+                  />
+                  <div className="mt-4 flex items-center gap-2 justify-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setZoomLevel(prev => Math.max(prev - 0.1, 0.5))}
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <span className="text-xs w-16 text-center">
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setZoomLevel(prev => Math.min(prev + 0.1, 2))}
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
             </CardContent>
           </Card>
         </div>
