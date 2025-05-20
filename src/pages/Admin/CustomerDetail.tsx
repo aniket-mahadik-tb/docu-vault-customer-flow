@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
@@ -6,7 +5,7 @@ import { useCustomers, CustomerDocument } from "@/contexts/CustomerContext";
 import { useDocuments } from "@/contexts/DocumentContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, File, RefreshCw } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import {
   Card,
   CardContent,
@@ -43,7 +42,6 @@ const CustomerDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { getCustomer, generateUploadLink, syncCustomerDocuments } = useCustomers();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const customer = getCustomer(id || "");
 

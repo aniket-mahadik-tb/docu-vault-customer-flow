@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { useCustomers, CustomerDocument, Customer } from "@/contexts/CustomerContext";
 import { Button } from "@/components/ui/button";
 import { Check, X, Clock, User, FileText, Eye, RefreshCw } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import {
   Table,
   TableBody,
@@ -42,7 +41,6 @@ const ReviewDocuments = () => {
   const { customers, syncCustomerDocuments } = useCustomers();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const { toast } = useToast();
 
   // On load, sync all customers' documents
   useEffect(() => {
