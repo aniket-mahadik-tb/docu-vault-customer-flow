@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Eye, FileImage, FilePdf, File } from "lucide-react";
+import { Eye, FileImage, FileText, File } from "lucide-react";
 
 interface DocumentGroup {
   name: string;
@@ -113,7 +113,7 @@ const BankDocuments = () => {
     if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
       return <FileImage className="h-12 w-12 text-blue-500" />;
     } else if (fileExtension === 'pdf') {
-      return <FilePdf className="h-12 w-12 text-red-500" />;
+      return <FileText className="h-12 w-12 text-red-500" />;
     } else {
       return <File className="h-12 w-12 text-gray-500" />;
     }
