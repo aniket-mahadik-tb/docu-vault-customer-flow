@@ -1,4 +1,3 @@
-
 import React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
@@ -83,7 +82,7 @@ const AppSidebar = () => {
               ))}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a href="/" onClick={handleBackToHome} className={getNavClass}>
+                  <a href="/" onClick={handleBackToHome} className="hover:bg-sidebar-accent/50">
                     <ArrowLeft className="h-4 w-4" />
                     {!isCollapsed && <span>Back to Home</span>}
                   </a>
