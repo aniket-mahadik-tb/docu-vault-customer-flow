@@ -11,14 +11,17 @@ interface MainLayoutProps {
 }
 
 const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) => {
-  const { role } = useUser();
+  const { role, userId } = useUser();
+
+  // Only show sidebar if user is authenticated (has userId) AND showSidebar is true
+  const displaySidebar = showSidebar && userId;
 
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex flex-col w-full">
         <Header />
         <div className="flex flex-1">
-          {role && (
+          {displaySidebar && role && (
             <AppSidebar />
           )}
           <SidebarInset className="p-4 md:p-6">

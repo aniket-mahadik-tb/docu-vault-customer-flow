@@ -16,7 +16,7 @@ const validatePAN = (pan: string): boolean => {
 
 const CustomerEntry = () => {
   const navigate = useNavigate();
-  const { setUserId } = useUser();
+  const { setUserId, setRole } = useUser();
   const [panNumber, setPanNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,13 +37,14 @@ const CustomerEntry = () => {
     // Simulate API call delay
     setTimeout(() => {
       setUserId(panNumber);
+      setRole("Customer");
       navigate("/customer/dashboard");
       setIsSubmitting(false);
     }, 500);
   };
 
   return (
-    <MainLayout>
+    <MainLayout showSidebar={false}>
       <div className="flex items-center justify-center min-h-[80vh]">
         <Card className="w-full max-w-md">
           <CardHeader>
