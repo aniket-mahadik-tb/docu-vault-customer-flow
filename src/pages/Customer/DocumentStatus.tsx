@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
@@ -28,6 +27,11 @@ const documentSections = [
     id: "property",
     title: "Property Documents",
     folderId: "section5_prop1"
+  },
+  {
+    id: "business",
+    title: "Business Documents",
+    folderId: "section6_biz1"
   }
 ];
 
@@ -55,6 +59,7 @@ const DocumentStatus = () => {
     else if (sectionId === "bank_statements") sectionPrefix = "section2";
     else if (sectionId === "financials") sectionPrefix = "section4";
     else if (sectionId === "property") sectionPrefix = "section5";
+    else if (sectionId === "business") sectionPrefix = "section6";
     
     // Check if user has any documents in this section
     const userDocuments = documents[userId];
@@ -105,6 +110,7 @@ const DocumentStatus = () => {
     else if (sectionId === "bank_statements") sectionPrefix = "section2";
     else if (sectionId === "financials") sectionPrefix = "section4";
     else if (sectionId === "property") sectionPrefix = "section5";
+    else if (sectionId === "business") sectionPrefix = "section6";
     
     const userDocuments = documents[userId];
     if (!userDocuments || !userDocuments.folders) return null;
@@ -137,6 +143,7 @@ const DocumentStatus = () => {
     else if (sectionId === "bank_statements") sectionPrefix = "section2";
     else if (sectionId === "financials") sectionPrefix = "section4";
     else if (sectionId === "property") sectionPrefix = "section5";
+    else if (sectionId === "business") sectionPrefix = "section6";
     
     const userDocuments = documents[userId];
     if (!userDocuments || !userDocuments.folders) return 0;
