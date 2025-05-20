@@ -97,10 +97,24 @@ const BankDocuments = () => {
       ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension) ? 'image' : 
       'other';
     
+    // Check if fileUrl is a placeholder or actual file content
+    let docUrl = doc.fileUrl;
+    
+    // If it's a placeholder, use a demo image instead
+    if (docUrl === "/placeholder.svg" || !docUrl) {
+      // Use placeholder based on file type
+      if (fileType === 'image') {
+        docUrl = "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80";
+      } else if (fileType === 'application/pdf') {
+        // For PDFs, use a sample PDF that's publicly accessible
+        docUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
+      }
+    }
+    
     setPreviewDoc({
       id: doc.id,
       name: doc.name,
-      url: doc.fileUrl,
+      url: docUrl,
       type: fileType
     });
     setOpenDialog(true);
@@ -149,9 +163,16 @@ const BankDocuments = () => {
                       <div className="aspect-video relative bg-muted flex items-center justify-center">
                         {doc.type === 'image' ? (
                           <img 
-                            src={doc.fileUrl} 
+                            src={doc.fileUrl === "/placeholder.svg" ? 
+                              "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80" : 
+                              doc.fileUrl
+                            } 
                             alt={doc.name}
                             className="w-full h-full object-contain opacity-80" 
+                            onError={(e) => {
+                              // Fallback to placeholder if image fails to load
+                              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80";
+                            }}
                           />
                         ) : (
                           renderDocumentIcon(doc.name)
@@ -196,15 +217,22 @@ const BankDocuments = () => {
                 <div className="flex items-center justify-center min-h-[50vh]">
                   {previewDoc.type === 'image' ? (
                     <img 
-                      src={previewDoc.url} 
+                      src={previewDoc.url}
                       alt={previewDoc.name}
                       className="max-w-full max-h-[70vh] object-contain" 
+                      onError={(e) => {
+                        // Fallback to placeholder if image fails to load
+                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80";
+                      }}
                     />
                   ) : previewDoc.type === 'application/pdf' ? (
                     <iframe 
                       src={previewDoc.url} 
                       title={previewDoc.name}
                       className="w-full h-[70vh] border-0" 
+                      onError={() => {
+                        console.error("Failed to load PDF preview");
+                      }}
                     />
                   ) : (
                     <div className="text-center p-8 bg-muted rounded-lg">
