@@ -348,12 +348,14 @@ const DocumentUpload = () => {
               <Card key={section.id} className={isSubmitted ? "border-green-200 bg-green-50" : ""}>
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <CardTitle>{section.title}</CardTitle>
-                      {isSubmitted && (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                      )}
-                    </div>
+                    {!isOpen && (
+                      <div className="flex items-center gap-2">
+                        <CardTitle>{section.title}</CardTitle>
+                        {isSubmitted && (
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        )}
+                      </div>
+                    )}
                     <Collapsible open={isOpen} onOpenChange={(value) => setOpenSections(prev => ({ ...prev, [section.id]: value }))}>
                       <CollapsibleTrigger 
                         className="rounded-full p-1 hover:bg-accent"
@@ -463,7 +465,7 @@ const DocumentUpload = () => {
                       </CollapsibleContent>
                     </Collapsible>
                   </div>
-                  <CardDescription>{section.description}</CardDescription>
+                  {!isOpen && <CardDescription>{section.description}</CardDescription>}
                 </CardHeader>
               </Card>
             );
@@ -475,4 +477,3 @@ const DocumentUpload = () => {
 };
 
 export default DocumentUpload;
-
