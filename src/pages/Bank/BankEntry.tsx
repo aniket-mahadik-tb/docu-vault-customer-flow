@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
+import { useCustomers } from "@/contexts/CustomerContext";
 import { 
   InputOTP,
   InputOTPGroup,
@@ -32,8 +33,10 @@ const BankEntry = () => {
   const navigate = useNavigate();
   const { setUserId, setRole } = useUser();
   const { toast } = useToast();
+  const { customers } = useCustomers();
   const [showOTP, setShowOTP] = useState(false);
   const [panValue, setPanValue] = useState("");
+  const [sharedCustomerPANs, setSharedCustomerPANs] = useState<string[]>([]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,8 +52,22 @@ const BankEntry = () => {
     },
   });
 
+  // Extract PANs of customers who have at least one approved document
+  useEffect(() => {
+    const pansWithApprovedDocs = customers
+      .filter(customer => 
+        customer.documents.some(doc => doc.status === "approved")
+      )
+      .map(customer => customer.panCard);
+    
+    setSharedCustomerPANs(pansWithApprovedDocs);
+  }, [customers]);
+
   const handlePANSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!ALLOWED_PANS.includes(values.pan)) {
+    // Check if PAN is in either the hardcoded list or the shared customers list
+    const isAllowed = ALLOWED_PANS.includes(values.pan) || sharedCustomerPANs.includes(values.pan);
+    
+    if (!isAllowed) {
       toast({
         title: "Access Denied",
         description: "This PAN is not authorized to access the system.",
