@@ -45,10 +45,13 @@ const BankEntry = () => {
     },
   });
 
+  // Default OTP value for easier demo access
+  const defaultOTP = "123456";
+  
   const otpForm = useForm<z.infer<typeof otpSchema>>({
     resolver: zodResolver(otpSchema),
     defaultValues: {
-      otp: "",
+      otp: defaultOTP,
     },
   });
 
@@ -172,25 +175,21 @@ const BankEntry = () => {
                         <FormItem>
                           <FormLabel>Verification Code</FormLabel>
                           <FormControl>
-                            <InputOTP 
-                              maxLength={6}
-                              value={field.value} 
-                              onChange={handleOTPChange}
-                              render={({ slots }) => (
-                                <InputOTPGroup>
-                                  {Array.from({ length: 6 }).map((_, i) => (
-                                    <InputOTPSlot key={i} index={i} />
-                                  ))}
-                                </InputOTPGroup>
-                              )}
-                            />
+                            <div className="mb-4">
+                              <div className="flex justify-between items-center mb-2">
+                                <div className="bg-muted rounded p-2 text-center w-full font-mono text-lg">
+                                  {defaultOTP}
+                                </div>
+                              </div>
+                              <p className="text-xs text-muted-foreground text-center">Pre-filled OTP for demo purposes</p>
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <div className="text-sm text-muted-foreground">
-                      For this demo, enter any 6 digits to verify
+                      For this demo, click "Verify OTP" to access the bank portal
                     </div>
                   </div>
                 </CardContent>
