@@ -20,20 +20,29 @@ const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) => {
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex flex-col w-full">
         {/* Header at the top with z-index to stay above other elements */}
-        <header className="sticky top-0 z-50 w-full h-16">
+        <header className="sticky top-0 z-50 w-full h-16 bg-white border-b border-gray-200">
           <Header />
         </header>
         
-        <div className="flex flex-1 pt-0">
+        <div className="flex flex-1">
           {displaySidebar && role && (
-            <div className="fixed left-0 top-16 bottom-0 z-30">
+            <div 
+              className="fixed z-40"
+              style={{
+                top: "64px", // Exactly 64px from top (header height)
+                left: 0,
+                bottom: 0,
+                width: "240px"
+              }}
+            >
               <AppSidebar />
             </div>
           )}
           <main 
             className="flex-1 overflow-y-auto p-4 md:p-6" 
             style={{ 
-              marginLeft: displaySidebar && role ? "240px" : "0"
+              marginLeft: displaySidebar && role ? "240px" : "0",
+              marginTop: "0px" // Ensure content starts right after header
             }}
           >
             <div className="max-w-7xl mx-auto w-full">

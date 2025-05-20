@@ -68,7 +68,7 @@ const AppSidebar = () => {
     <Sidebar 
       variant="inset" 
       side="left" 
-      className="border-r border-gray-200 w-60 h-[calc(100vh-64px)]"
+      className="border-r border-gray-200 w-60 h-full"
     >
       <SidebarContent>
         <SidebarGroup>
