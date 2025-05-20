@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
+import { useCustomers } from "@/contexts/CustomerContext";
 import { useDocuments, DocumentFile } from "@/contexts/DocumentContext";
 import MainLayout from "@/layouts/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -218,6 +219,7 @@ const DocumentUpload = () => {
   const navigate = useNavigate();
   const { userId } = useUser();
   const { addDocument, removeDocument, submitFolder, getFolderDocuments, isFolderSubmitted } = useDocuments();
+  const { syncCustomerDocuments } = useCustomers();
   
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [subDocumentStates, setSubDocumentStates] = useState<SubDocumentState>({});
@@ -424,6 +426,9 @@ const DocumentUpload = () => {
   // Handle submit all documents
   const handleSubmitAllDocuments = () => {
     if (!userId) return;
+    
+    // Sync documents with customer context
+    syncCustomerDocuments(userId);
     
     toast({
       title: "Documents Submitted",

@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useDocuments } from "./DocumentContext";
 
 export interface CustomerDocument {
   id: string;
@@ -37,6 +38,8 @@ interface CustomerContextType {
   ) => void;
   getCustomerDocuments: (customerId: string) => CustomerDocument[];
   generateUploadLink: (customerId: string) => string;
+  syncCustomerDocuments: (panCard: string) => void;
+  findCustomerByPanCard: (panCard: string) => Customer | undefined;
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined);
@@ -111,6 +114,7 @@ const initialCustomers: Customer[] = [
 
 export const CustomerProvider = ({ children }: { children: ReactNode }) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const { documents } = useDocuments();
 
   // Load customers from localStorage on mount
   useEffect(() => {
@@ -155,6 +159,10 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     return customers.find(customer => customer.id === id);
   };
 
+  const findCustomerByPanCard = (panCard: string) => {
+    return customers.find(customer => customer.panCard.toLowerCase() === panCard.toLowerCase());
+  };
+
   const updateDocumentStatus = (
     customerId: string,
     documentId: string,
@@ -191,6 +199,61 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     return `https://example.com/upload/${customerId}/${Date.now()}`;
   };
 
+  // New function to sync documents from DocumentContext to CustomerContext
+  const syncCustomerDocuments = (panCard: string) => {
+    const customer = findCustomerByPanCard(panCard);
+    if (!customer) return;
+    
+    // Find all documents uploaded by this user in the DocumentContext
+    const userId = panCard; // In this app, we're using PAN card as user ID
+    const userDocuments = documents[userId];
+    
+    if (!userDocuments || !userDocuments.folders) return;
+    
+    // Convert documents from DocumentContext format to CustomerDocument format
+    const newDocuments: CustomerDocument[] = [];
+    
+    Object.entries(userDocuments.folders).forEach(([folderId, folder]) => {
+      // Only process submitted folders
+      if (folder.submitted && folder.files.length > 0) {
+        // Extract section info from folderId (e.g., "section1_kyc1")
+        const [sectionId, documentTypeId] = folderId.split('_');
+        
+        folder.files.forEach(file => {
+          newDocuments.push({
+            id: file.id,
+            name: file.name,
+            sectionId,
+            documentTypeId,
+            status: "pending",
+            uploadedAt: new Date(file.uploaded).toISOString(),
+            fileUrl: file.url
+          });
+        });
+      }
+    });
+    
+    // Update the customer with the new documents
+    if (newDocuments.length > 0) {
+      setCustomers(prev => 
+        prev.map(c => {
+          if (c.id === customer.id) {
+            // Add only new documents that don't already exist
+            const existingIds = new Set(c.documents.map(doc => doc.id));
+            const uniqueNewDocs = newDocuments.filter(doc => !existingIds.has(doc.id));
+            
+            return {
+              ...c,
+              documentsSubmitted: true,
+              documents: [...c.documents, ...uniqueNewDocs]
+            };
+          }
+          return c;
+        })
+      );
+    }
+  };
+
   return (
     <CustomerContext.Provider
       value={{
@@ -199,7 +262,9 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
         getCustomer,
         updateDocumentStatus,
         getCustomerDocuments,
-        generateUploadLink
+        generateUploadLink,
+        syncCustomerDocuments,
+        findCustomerByPanCard
       }}
     >
       {children}

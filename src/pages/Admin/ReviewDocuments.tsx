@@ -1,10 +1,11 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
-import { useCustomers, CustomerDocument } from "@/contexts/CustomerContext";
+import { useCustomers, CustomerDocument, Customer } from "@/contexts/CustomerContext";
 import { Button } from "@/components/ui/button";
-import { Check, X, Clock, User, FileText, Eye } from "lucide-react";
+import { Check, X, Clock, User, FileText, Eye, RefreshCw } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -38,9 +39,17 @@ const getStatusBadge = (status: string) => {
 };
 
 const ReviewDocuments = () => {
-  const { customers } = useCustomers();
+  const { customers, syncCustomerDocuments } = useCustomers();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const { toast } = useToast();
+
+  // On load, sync all customers' documents
+  useEffect(() => {
+    customers.forEach(customer => {
+      syncCustomerDocuments(customer.panCard);
+    });
+  }, []); // Run once on component mount
 
   // Get all documents from all customers
   const allDocuments = customers.flatMap(customer => 
@@ -55,10 +64,25 @@ const ReviewDocuments = () => {
     ? allDocuments 
     : allDocuments.filter(doc => doc.status === statusFilter);
 
+  const handleSyncAllDocuments = () => {
+    customers.forEach(customer => {
+      syncCustomerDocuments(customer.panCard);
+    });
+    toast({
+      title: "All Documents Synchronized",
+      description: "All customers' documents have been updated from uploads",
+    });
+  };
+
   return (
     <MainLayout showSidebar={true}>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Review Documents</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Review Documents</h1>
+          <Button onClick={handleSyncAllDocuments} variant="outline">
+            <RefreshCw className="mr-2 h-4 w-4" /> Sync All Documents
+          </Button>
+        </div>
 
         <Card className="mb-6">
           <CardHeader>

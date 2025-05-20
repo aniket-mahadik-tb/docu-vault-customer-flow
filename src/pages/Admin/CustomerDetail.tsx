@@ -1,11 +1,12 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { useCustomers, CustomerDocument } from "@/contexts/CustomerContext";
+import { useDocuments } from "@/contexts/DocumentContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send, File } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Send, File, RefreshCw } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -40,11 +41,18 @@ const getStatusBadge = (status: string) => {
 
 const CustomerDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { getCustomer, generateUploadLink } = useCustomers();
+  const { getCustomer, generateUploadLink, syncCustomerDocuments } = useCustomers();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const customer = getCustomer(id || "");
+
+  useEffect(() => {
+    // If customer exists, sync their documents to ensure we have the latest
+    if (customer) {
+      syncCustomerDocuments(customer.panCard);
+    }
+  }, [customer]); // Run when customer changes
 
   if (!customer) {
     return (
@@ -78,6 +86,14 @@ const CustomerDetail = () => {
     });
   };
 
+  const handleSyncDocuments = () => {
+    syncCustomerDocuments(customer.panCard);
+    toast({
+      title: "Documents Synchronized",
+      description: "Customer documents have been updated from uploads",
+    });
+  };
+
   return (
     <MainLayout showSidebar={true}>
       <div className="py-6">
@@ -93,9 +109,14 @@ const CustomerDetail = () => {
             </Button>
             <h1 className="text-2xl font-bold">Customer Details</h1>
           </div>
-          <Button onClick={handleSendLink}>
-            <Send className="mr-2 h-4 w-4" /> Send Upload Link
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleSyncDocuments} variant="outline">
+              <RefreshCw className="mr-2 h-4 w-4" /> Sync Documents
+            </Button>
+            <Button onClick={handleSendLink}>
+              <Send className="mr-2 h-4 w-4" /> Send Upload Link
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -190,13 +211,20 @@ const CustomerDetail = () => {
                   <p className="text-muted-foreground">
                     This customer has not uploaded any documents yet.
                   </p>
-                  <Button
-                    variant="outline"
-                    onClick={handleSendLink}
-                    className="mt-4"
-                  >
-                    <Send className="mr-2 h-4 w-4" /> Send Upload Link
-                  </Button>
+                  <div className="flex justify-center mt-4 gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={handleSyncDocuments}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" /> Sync Documents
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleSendLink}
+                    >
+                      <Send className="mr-2 h-4 w-4" /> Send Upload Link
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>
