@@ -91,7 +91,7 @@ const BankEntry = () => {
   };
 
   const handleOTPChange = (value: string) => {
-    otpForm.setValue("otp", value);
+    otpForm.setValue("otp", value, { shouldValidate: true });
     
     // If the OTP is complete (6 digits), automatically submit the form
     if (value.length === 6) {
@@ -156,13 +156,15 @@ const BankEntry = () => {
                           <FormLabel>Verification Code</FormLabel>
                           <FormControl>
                             <InputOTP 
-                              maxLength={6} 
-                              value={field.value || ""}
+                              maxLength={6}
+                              value={field.value} 
                               onChange={handleOTPChange}
+                              pattern="[0-9]*"
+                              inputType="number"
                               render={({ slots }) => (
                                 <InputOTPGroup>
-                                  {slots && Array.from({ length: 6 }).map((_, index) => (
-                                    <InputOTPSlot key={index} index={index} />
+                                  {Array.from({ length: 6 }).map((_, i) => (
+                                    <InputOTPSlot key={i} index={i} />
                                   ))}
                                 </InputOTPGroup>
                               )}
