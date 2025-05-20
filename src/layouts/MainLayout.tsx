@@ -1,6 +1,6 @@
 
 import React, { ReactNode } from "react";
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
 import { useUser } from "@/contexts/UserContext";
@@ -19,16 +19,23 @@ const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) => {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex flex-col w-full">
-        <Header />
-        <div className="flex flex-1">
+        {/* Sticky header */}
+        <div className="sticky top-0 z-50 w-full">
+          <Header />
+        </div>
+        
+        {/* Main content area with sidebar and content */}
+        <div className="flex flex-1 h-[calc(100vh-4rem)]">
           {displaySidebar && role && (
-            <AppSidebar />
+            <div className="sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
+              <AppSidebar />
+            </div>
           )}
-          <SidebarInset className="p-4 md:p-6">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6">
             <div className="max-w-7xl mx-auto w-full">
               {children}
             </div>
-          </SidebarInset>
+          </main>
         </div>
       </div>
     </SidebarProvider>
