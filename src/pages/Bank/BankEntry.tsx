@@ -159,8 +159,6 @@ const BankEntry = () => {
                               maxLength={6}
                               value={field.value} 
                               onChange={handleOTPChange}
-                              pattern="[0-9]*"
-                              inputType="number"
                               render={({ slots }) => (
                                 <InputOTPGroup>
                                   {Array.from({ length: 6 }).map((_, i) => (
