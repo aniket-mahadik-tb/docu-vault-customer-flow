@@ -43,7 +43,7 @@ const Index = () => {
   };
 
   return (
-    <MainLayout>
+    <MainLayout showSidebar={false}>
       <div className="py-8">
         <h1 className="text-3xl font-bold text-center mb-8">Document Management System</h1>
         

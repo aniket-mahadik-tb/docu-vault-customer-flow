@@ -1,6 +1,6 @@
 
 import React from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import {
   Sidebar,
@@ -43,9 +43,10 @@ const BankLinks: SidebarLinkProps[] = [
 ];
 
 const AppSidebar = () => {
-  const { role } = useUser();
+  const { role, clearUser } = useUser();
   const { state: sidebarState } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
   
   const isActive = (path: string) => location.pathname === path;
   const getNavClass = ({ isActive }: { isActive: boolean }) => 
@@ -56,6 +57,12 @@ const AppSidebar = () => {
                role === "Bank" ? BankLinks : [];
   
   const isCollapsed = sidebarState === "collapsed";
+  
+  const handleBackToHome = (e: React.MouseEvent) => {
+    e.preventDefault();
+    clearUser(); // Clear user data when navigating back to home
+    navigate("/");
+  };
   
   return (
     <Sidebar variant="inset" side="left">
@@ -76,10 +83,10 @@ const AppSidebar = () => {
               ))}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/" className={getNavClass}>
+                  <a href="/" onClick={handleBackToHome} className={getNavClass}>
                     <ArrowLeft className="h-4 w-4" />
                     {!isCollapsed && <span>Back to Home</span>}
-                  </NavLink>
+                  </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
