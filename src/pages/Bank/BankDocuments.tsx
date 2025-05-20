@@ -7,7 +7,9 @@ import { useCustomers } from "@/contexts/CustomerContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Eye, FileImage, FilePdf, File } from "lucide-react";
 
 interface DocumentGroup {
   name: string;
@@ -24,9 +26,10 @@ const BankDocuments = () => {
   const navigate = useNavigate();
   const { userId } = useUser();
   const { customers } = useCustomers();
-  const [previewDoc, setPreviewDoc] = useState<{id: string, name: string, url?: string} | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{id: string, name: string, url: string, type: string} | null>(null);
   const [documentGroups, setDocumentGroups] = useState<DocumentGroup[]>([]);
   const [customerName, setCustomerName] = useState<string>("");
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
   
   // Redirect if not authenticated
   useEffect(() => {
@@ -65,11 +68,18 @@ const BankDocuments = () => {
           });
         }
         
+        // Determine file type
+        const fileExtension = doc.name.split('.').pop()?.toLowerCase() || '';
+        const fileType = 
+          fileExtension === 'pdf' ? 'application/pdf' : 
+          ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension) ? 'image' : 
+          'other';
+        
         sectionMap.get(sectionName)?.documents.push({
           id: doc.id,
           name: doc.name,
-          type: doc.name.split('.').pop()?.toLowerCase() === 'pdf' ? 'application/pdf' : 'image/jpeg',
-          thumbnail: "/placeholder.svg",
+          type: fileType,
+          thumbnail: doc.fileUrl,
           fileUrl: doc.fileUrl
         });
       }
@@ -79,6 +89,35 @@ const BankDocuments = () => {
     setDocumentGroups(Array.from(sectionMap.values()));
     
   }, [userId, customers]);
+
+  const handlePreviewClick = (doc: {id: string, name: string, type?: string, fileUrl: string}) => {
+    const fileExtension = doc.name.split('.').pop()?.toLowerCase() || '';
+    const fileType = 
+      fileExtension === 'pdf' ? 'application/pdf' : 
+      ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension) ? 'image' : 
+      'other';
+    
+    setPreviewDoc({
+      id: doc.id,
+      name: doc.name,
+      url: doc.fileUrl,
+      type: fileType
+    });
+    setOpenDialog(true);
+  };
+
+  // Helper to render document icon based on type
+  const renderDocumentIcon = (docName: string) => {
+    const fileExtension = docName.split('.').pop()?.toLowerCase() || '';
+    
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+      return <FileImage className="h-12 w-12 text-blue-500" />;
+    } else if (fileExtension === 'pdf') {
+      return <FilePdf className="h-12 w-12 text-red-500" />;
+    } else {
+      return <File className="h-12 w-12 text-gray-500" />;
+    }
+  };
 
   if (!userId) {
     return null; // Will redirect in useEffect
@@ -107,17 +146,21 @@ const BankDocuments = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {group.documents.map((doc) => (
                     <Card key={doc.id} className="overflow-hidden">
-                      <div className="aspect-square relative bg-muted flex items-center justify-center">
-                        <img 
-                          src={doc.thumbnail} 
-                          alt={doc.name}
-                          className="w-16 h-16 opacity-50" 
-                        />
+                      <div className="aspect-video relative bg-muted flex items-center justify-center">
+                        {doc.type === 'image' ? (
+                          <img 
+                            src={doc.fileUrl} 
+                            alt={doc.name}
+                            className="w-full h-full object-contain opacity-80" 
+                          />
+                        ) : (
+                          renderDocumentIcon(doc.name)
+                        )}
                         <Button 
                           variant="secondary" 
                           size="sm" 
                           className="absolute bottom-2 right-2"
-                          onClick={() => setPreviewDoc({...doc, url: doc.fileUrl})}
+                          onClick={() => handlePreviewClick(doc)}
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           Preview
@@ -142,34 +185,42 @@ const BankDocuments = () => {
           </div>
         )}
 
-        {previewDoc && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-            <div className="bg-background rounded-lg w-full max-w-3xl max-h-[90vh] overflow-auto flex flex-col">
-              <div className="p-4 border-b flex items-center justify-between">
-                <h3 className="font-medium">{previewDoc.name}</h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setPreviewDoc(null)}
-                >
-                  Close
-                </Button>
-              </div>
-              <div className="flex-1 flex items-center justify-center p-8">
-                <div className="bg-muted p-8 rounded flex items-center justify-center">
-                  <img 
-                    src={previewDoc.url || "/placeholder.svg"} 
-                    alt="Preview not available"
-                    className="max-w-full max-h-[60vh]" 
-                  />
+        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle>{previewDoc?.name}</DialogTitle>
+              <DialogClose />
+            </DialogHeader>
+            <ScrollArea className="flex-1 p-6">
+              {previewDoc && (
+                <div className="flex items-center justify-center min-h-[50vh]">
+                  {previewDoc.type === 'image' ? (
+                    <img 
+                      src={previewDoc.url} 
+                      alt={previewDoc.name}
+                      className="max-w-full max-h-[70vh] object-contain" 
+                    />
+                  ) : previewDoc.type === 'application/pdf' ? (
+                    <iframe 
+                      src={previewDoc.url} 
+                      title={previewDoc.name}
+                      className="w-full h-[70vh] border-0" 
+                    />
+                  ) : (
+                    <div className="text-center p-8 bg-muted rounded-lg">
+                      <File className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                      <p>Preview not available for this file type</p>
+                      <p className="text-sm text-muted-foreground mt-2">{previewDoc.name}</p>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div className="p-4 border-t">
-                <p className="text-sm text-muted-foreground">Document preview only. Download is not permitted.</p>
-              </div>
+              )}
+            </ScrollArea>
+            <div className="p-4 border-t mt-4">
+              <p className="text-sm text-muted-foreground">Document preview only. Download is not permitted.</p>
             </div>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
