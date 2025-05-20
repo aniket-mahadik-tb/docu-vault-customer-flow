@@ -1,11 +1,10 @@
-
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { useCustomers, CustomerDocument } from "@/contexts/CustomerContext";
 import { useDocuments } from "@/contexts/DocumentContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send, File, RefreshCw } from "lucide-react";
+import { ArrowLeft, Send, File, RefreshCw, Link, Copy } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import {
   Card,
@@ -15,6 +14,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 // Document sections with their titles
 const documentSections = [
@@ -44,6 +54,8 @@ const CustomerDetail = () => {
   const { getCustomer, generateUploadLink, syncCustomerDocuments } = useCustomers();
   const navigate = useNavigate();
   const initialSyncDone = useRef(false);
+  const [reuploadLink, setReuploadLink] = useState<string | null>(null);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
   const customer = getCustomer(id || "");
 
@@ -82,16 +94,28 @@ const CustomerDetail = () => {
 
   const handleSendLink = (documentId?: string, remarks?: string) => {
     const link = generateUploadLink(customer.id, documentId, remarks);
+    setReuploadLink(link);
+    setLinkDialogOpen(true);
     
     if (documentId) {
       toast({
         title: "Document reupload link generated",
-        description: `Reupload link for specific document sent to ${customer.email}`,
+        description: `Reupload link for specific document ready to share with ${customer.email}`,
       });
     } else {
       toast({
         title: "Upload link generated",
-        description: `Upload link sent to ${customer.email}`,
+        description: `Upload link ready to share with ${customer.email}`,
+      });
+    }
+  };
+
+  const copyLinkToClipboard = () => {
+    if (reuploadLink) {
+      navigator.clipboard.writeText(reuploadLink);
+      toast({
+        title: "Link copied",
+        description: "The link has been copied to your clipboard",
       });
     }
   };
@@ -259,6 +283,56 @@ const CustomerDetail = () => {
             </CardContent>
           </Card>
         </div>
+
+        <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Document Upload Link</DialogTitle>
+              <DialogDescription>
+                Share this link with the customer to allow them to upload the requested document.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center space-x-2">
+              <div className="grid flex-1 gap-2">
+                <Label htmlFor="link" className="sr-only">
+                  Link
+                </Label>
+                <Input
+                  id="link"
+                  defaultValue={reuploadLink || ""}
+                  readOnly
+                />
+              </div>
+              <Button type="submit" size="sm" className="px-3" onClick={copyLinkToClipboard}>
+                <span className="sr-only">Copy</span>
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground">
+                Click the link to preview the customer's view:
+              </p>
+              <Button
+                variant="link"
+                className="mt-2 w-full justify-start"
+                onClick={() => {
+                  if (reuploadLink) {
+                    window.open(reuploadLink, '_blank');
+                  }
+                }}
+              >
+                <Link className="mr-2 h-4 w-4" /> Open in new tab
+              </Button>
+            </div>
+            <DialogFooter className="sm:justify-start">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">
+                  Close
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
