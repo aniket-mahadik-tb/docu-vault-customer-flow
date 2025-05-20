@@ -14,7 +14,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { FileText, User, ArrowLeft, Users, Share2 } from "lucide-react";
+import { FileText, User, ArrowLeft, Users, Share2, Folder, FileText as NoteIcon } from "lucide-react";
 
 interface SidebarLinkProps {
   to: string;
@@ -38,7 +38,8 @@ const AdminLinks: SidebarLinkProps[] = [
 
 const BankLinks: SidebarLinkProps[] = [
   { to: "/bank/dashboard", icon: FileText, label: "Dashboard" },
-  { to: "/bank/documents", icon: FileText, label: "View Documents" },
+  { to: "/bank/documents", icon: Folder, label: "Shared Documents" },
+  { to: "/bank/notes", icon: NoteIcon, label: "View Notes" },
 ];
 
 const AppSidebar = () => {

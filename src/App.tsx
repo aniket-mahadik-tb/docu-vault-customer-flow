@@ -29,6 +29,8 @@ import ShareWithBank from "./pages/Admin/ShareWithBank";
 // Bank pages
 import BankEntry from "./pages/Bank/BankEntry";
 import BankDashboard from "./pages/Bank/BankDashboard";
+import BankDocuments from "./pages/Bank/BankDocuments";
+import BankNotes from "./pages/Bank/BankNotes";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +65,8 @@ const App = () => (
                 {/* Bank routes */}
                 <Route path="/bank" element={<BankEntry />} />
                 <Route path="/bank/dashboard" element={<BankDashboard />} />
+                <Route path="/bank/documents" element={<BankDocuments />} />
+                <Route path="/bank/notes" element={<BankNotes />} />
                 
                 {/* 404 route */}
                 <Route path="*" element={<NotFound />} />

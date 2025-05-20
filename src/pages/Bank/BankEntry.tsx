@@ -1,22 +1,91 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot
+} from "@/components/ui/input-otp";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// Mock PANs that are allowed to access the system
+const ALLOWED_PANS = ["ABCDE1234F", "PQRST5678G", "XYZAB9012C"];
+
+const formSchema = z.object({
+  pan: z.string().length(10, "PAN must be 10 characters").toUpperCase(),
+});
+
+const otpSchema = z.object({
+  otp: z.string().length(6, "OTP must be 6 digits"),
+});
 
 const BankEntry = () => {
   const navigate = useNavigate();
-  const { setUserId } = useUser();
+  const { setUserId, setRole } = useUser();
+  const { toast } = useToast();
+  const [showOTP, setShowOTP] = useState(false);
+  const [panValue, setPanValue] = useState("");
   
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const bankId = (form.elements.namedItem("bankId") as HTMLInputElement).value;
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      pan: "",
+    },
+  });
+
+  const otpForm = useForm<z.infer<typeof otpSchema>>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: {
+      otp: "",
+    },
+  });
+
+  const handlePANSubmit = (values: z.infer<typeof formSchema>) => {
+    if (!ALLOWED_PANS.includes(values.pan)) {
+      toast({
+        title: "Access Denied",
+        description: "This PAN is not authorized to access the system.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Store PAN for later use
+    setPanValue(values.pan);
     
-    setUserId(bankId);
+    // Simulate sending OTP
+    toast({
+      title: "OTP Sent",
+      description: "A 6-digit OTP has been sent to your registered mobile/email.",
+    });
+    
+    // Show OTP verification form
+    setShowOTP(true);
+  };
+
+  const handleOTPSubmit = (values: z.infer<typeof otpSchema>) => {
+    // In a real app, you'd verify the OTP with backend
+    // For this mock, we'll accept any 6-digit OTP
+    
+    // Set the user as authenticated
+    setUserId(panValue);
+    setRole("Bank");
+    
+    toast({
+      title: "Verification Successful",
+      description: "You now have access to shared documents.",
+    });
+    
+    // Navigate to bank dashboard
     navigate("/bank/dashboard");
   };
 
@@ -25,42 +94,85 @@ const BankEntry = () => {
       <div className="flex items-center justify-center min-h-[80vh]">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Bank Portal</CardTitle>
-            <CardDescription>Enter your bank credentials to continue</CardDescription>
+            <CardTitle>Bank Document Portal</CardTitle>
+            <CardDescription>
+              {!showOTP 
+                ? "Enter customer PAN to access shared documents" 
+                : "Enter the OTP sent to your registered contact details"}
+            </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent>
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <label htmlFor="bankId" className="text-sm font-medium">
-                    Bank ID
-                  </label>
-                  <Input
-                    id="bankId"
-                    name="bankId"
-                    placeholder="Enter bank ID"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="password" className="text-sm font-medium">
-                    Password
-                  </label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter password"
-                    required
-                  />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" className="w-full">
-                Login
-              </Button>
-            </CardFooter>
-          </form>
+          
+          {!showOTP ? (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handlePANSubmit)}>
+                <CardContent>
+                  <div className="grid gap-4">
+                    <FormField
+                      control={form.control}
+                      name="pan"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Customer PAN</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter PAN (e.g., ABCDE1234F)"
+                              {...field}
+                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button type="submit" className="w-full">
+                    Request Access
+                  </Button>
+                </CardFooter>
+              </form>
+            </Form>
+          ) : (
+            <Form {...otpForm}>
+              <form onSubmit={otpForm.handleSubmit(handleOTPSubmit)}>
+                <CardContent>
+                  <div className="grid gap-6">
+                    <FormField
+                      control={otpForm.control}
+                      name="otp"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Verification Code</FormLabel>
+                          <FormControl>
+                            <InputOTP maxLength={6} {...field}>
+                              <InputOTPGroup>
+                                <InputOTPSlot index={0} />
+                                <InputOTPSlot index={1} />
+                                <InputOTPSlot index={2} />
+                                <InputOTPSlot index={3} />
+                                <InputOTPSlot index={4} />
+                                <InputOTPSlot index={5} />
+                              </InputOTPGroup>
+                            </InputOTP>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="text-sm text-muted-foreground">
+                      For this demo, enter any 6 digits to verify
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button type="submit" className="w-full">
+                    Verify OTP
+                  </Button>
+                </CardFooter>
+              </form>
+            </Form>
+          )}
         </Card>
       </div>
     </MainLayout>
