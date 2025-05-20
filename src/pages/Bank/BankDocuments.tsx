@@ -14,8 +14,9 @@ import { Eye, FileImage, FileText, File, ZoomIn, ZoomOut, Search, Download, Arro
 import * as pdfjs from "pdfjs-dist";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog";
 
-// Initialize PDF.js worker with unpkg CDN (more reliable than cdnjs)
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Set up PDF.js worker with a direct path (instead of dynamic import)
+const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
 interface DocumentGroup {
   name: string;
@@ -208,7 +209,8 @@ const BankDocuments = () => {
       
       const loadingTask = pdfjs.getDocument({
         url: url,
-        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.6.172/cmaps/',
+        // Use standard CDN without version-specific path
+        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist/cmaps/',
         cMapPacked: true,
       });
       

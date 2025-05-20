@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
@@ -18,8 +17,9 @@ import {
 } from "@/components/ui/card";
 import * as pdfjs from "pdfjs-dist";
 
-// Set up the PDF.js worker with unpkg (more reliable than cdn)
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Set up PDF.js worker with a direct path (instead of dynamic import)
+const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
 const ReviewDocument = () => {
   const { customerId, documentId } = useParams<{ customerId: string; documentId: string }>();
@@ -60,9 +60,10 @@ const ReviewDocument = () => {
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
       }
 
+      // Create document loading task without dynamic imports
       const loadingTask = pdfjs.getDocument({
         url: url,
-        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.6.172/cmaps/',
+        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist/cmaps/',
         cMapPacked: true,
       });
       
