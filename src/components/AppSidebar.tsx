@@ -1,3 +1,4 @@
+
 import React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
@@ -67,7 +68,7 @@ const AppSidebar = () => {
     <Sidebar 
       variant="inset" 
       side="left" 
-      className="border-r border-gray-200"
+      className="border-r border-gray-200 h-[calc(100vh-4rem)] w-60"
     >
       <SidebarContent>
         <SidebarGroup>
@@ -77,7 +78,10 @@ const AppSidebar = () => {
               {links.map((link, index) => (
                 <SidebarMenuItem key={index}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={link.to} className={getNavClass}>
+                    <NavLink 
+                      to={link.to} 
+                      className={isActive(link.to) ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent/50"}
+                    >
                       <link.icon className="h-4 w-4" />
                       {!isCollapsed && <span>{link.label}</span>}
                     </NavLink>
@@ -86,7 +90,11 @@ const AppSidebar = () => {
               ))}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a href="/" onClick={handleBackToHome} className="hover:bg-sidebar-accent/50">
+                  <a 
+                    href="/" 
+                    onClick={handleBackToHome} 
+                    className="hover:bg-sidebar-accent/50"
+                  >
                     <ArrowLeft className="h-4 w-4" />
                     {!isCollapsed && <span>Back to Home</span>}
                   </a>
