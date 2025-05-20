@@ -73,6 +73,7 @@ const BankEntry = () => {
   };
 
   const handleOTPSubmit = (values: z.infer<typeof otpSchema>) => {
+    console.log("OTP submitted:", values.otp);
     // In a real app, you'd verify the OTP with backend
     // For this mock, we'll accept any 6-digit OTP
     
@@ -91,6 +92,11 @@ const BankEntry = () => {
 
   const handleOTPChange = (value: string) => {
     otpForm.setValue("otp", value);
+    
+    // If the OTP is complete (6 digits), automatically submit the form
+    if (value.length === 6) {
+      otpForm.handleSubmit(handleOTPSubmit)();
+    }
   };
 
   return (
@@ -152,17 +158,15 @@ const BankEntry = () => {
                             <InputOTP 
                               maxLength={6} 
                               value={field.value}
-                              onChange={(value) => handleOTPChange(value)}
-                            >
-                              <InputOTPGroup>
-                                <InputOTPSlot index={0} />
-                                <InputOTPSlot index={1} />
-                                <InputOTPSlot index={2} />
-                                <InputOTPSlot index={3} />
-                                <InputOTPSlot index={4} />
-                                <InputOTPSlot index={5} />
-                              </InputOTPGroup>
-                            </InputOTP>
+                              onChange={handleOTPChange}
+                              render={({ slots }) => (
+                                <InputOTPGroup>
+                                  {slots.map((slot, index) => (
+                                    <InputOTPSlot key={index} index={index} />
+                                  ))}
+                                </InputOTPGroup>
+                              )}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
