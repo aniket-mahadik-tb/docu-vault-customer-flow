@@ -76,12 +76,20 @@ const CustomerDetail = () => {
     {}
   );
 
-  const handleSendLink = () => {
-    const link = generateUploadLink(customer.id);
-    toast({
-      title: "Upload link generated",
-      description: `Upload link sent to ${customer.email}`,
-    });
+  const handleSendLink = (documentId?: string, remarks?: string) => {
+    const link = generateUploadLink(customer.id, documentId, remarks);
+    
+    if (documentId) {
+      toast({
+        title: "Document reupload link generated",
+        description: `Reupload link for specific document sent to ${customer.email}`,
+      });
+    } else {
+      toast({
+        title: "Upload link generated",
+        description: `Upload link sent to ${customer.email}`,
+      });
+    }
   };
 
   const handleSyncDocuments = () => {
@@ -111,7 +119,7 @@ const CustomerDetail = () => {
             <Button onClick={handleSyncDocuments} variant="outline">
               <RefreshCw className="mr-2 h-4 w-4" /> Sync Documents
             </Button>
-            <Button onClick={handleSendLink}>
+            <Button onClick={() => handleSendLink()}>
               <Send className="mr-2 h-4 w-4" /> Send Upload Link
             </Button>
           </div>
@@ -188,14 +196,31 @@ const CustomerDetail = () => {
                                 {getStatusBadge(doc.status)}
                               </div>
                               <CardContent className="p-3">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full"
-                                  onClick={() => navigate(`/admin/review/${customer.id}/${doc.id}`)}
-                                >
-                                  Review Document
-                                </Button>
+                                <div className="flex flex-col gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full"
+                                    onClick={() => navigate(`/admin/review/${customer.id}/${doc.id}`)}
+                                  >
+                                    Review Document
+                                  </Button>
+                                  {doc.status === "rejected" && doc.remarks && (
+                                    <>
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        <span className="font-medium">Rejection reason:</span> {doc.remarks}
+                                      </div>
+                                      <Button
+                                        variant="default"
+                                        size="sm"
+                                        className="w-full"
+                                        onClick={() => handleSendLink(doc.id, doc.remarks)}
+                                      >
+                                        <Send className="mr-2 h-3 w-3" /> Send Reupload Link
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
                               </CardContent>
                             </Card>
                           ))}
@@ -218,7 +243,7 @@ const CustomerDetail = () => {
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={handleSendLink}
+                      onClick={() => handleSendLink()}
                     >
                       <Send className="mr-2 h-4 w-4" /> Send Upload Link
                     </Button>

@@ -30,6 +30,7 @@ interface DocumentContextType {
   getFolderDocuments: (userId: string, folder: string) => DocumentFile[];
   isFolderSubmitted: (userId: string, folder: string) => boolean;
   clearUserDocuments: (userId: string) => void;
+  clearFolderDocuments: (userId: string, folder: string) => void;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -305,6 +306,25 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const clearFolderDocuments = (userId: string, folder: string) => {
+    setDocuments(prev => {
+      const updatedDocs = { ...prev };
+      
+      if (updatedDocs[userId] && updatedDocs[userId].folders[folder]) {
+        // Remove all file data from storage for this folder
+        updatedDocs[userId].folders[folder].files.forEach(file => {
+          removeFileData(file.id);
+        });
+        
+        // Clear files array and reset submitted status
+        updatedDocs[userId].folders[folder].files = [];
+        updatedDocs[userId].folders[folder].submitted = false;
+      }
+      
+      return updatedDocs;
+    });
+  };
+
   return (
     <DocumentContext.Provider 
       value={{ 
@@ -314,7 +334,8 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         submitFolder, 
         getFolderDocuments, 
         isFolderSubmitted, 
-        clearUserDocuments 
+        clearUserDocuments,
+        clearFolderDocuments 
       }}
     >
       {children}

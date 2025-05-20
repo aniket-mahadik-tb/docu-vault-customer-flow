@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +14,7 @@ import CustomerEntry from "./pages/Customer/CustomerEntry";
 import CustomerDashboard from "./pages/Customer/CustomerDashboard";
 import DocumentUpload from "./pages/Customer/DocumentUpload";
 import DocumentStatus from "./pages/Customer/DocumentStatus";
+import DocumentReupload from "./pages/Customer/DocumentReupload";
 
 // Admin pages
 import AdminEntry from "./pages/Admin/AdminEntry";
@@ -51,6 +51,7 @@ const App = () => (
                 <Route path="/customer/dashboard" element={<CustomerDashboard />} />
                 <Route path="/customer/upload" element={<DocumentUpload />} />
                 <Route path="/customer/status" element={<DocumentStatus />} />
+                <Route path="/customer/reupload" element={<DocumentReupload />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminEntry />} />

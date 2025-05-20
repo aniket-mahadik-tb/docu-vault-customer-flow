@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useDocuments } from "./DocumentContext";
 
@@ -37,7 +36,7 @@ interface CustomerContextType {
     remarks?: string
   ) => void;
   getCustomerDocuments: (customerId: string) => CustomerDocument[];
-  generateUploadLink: (customerId: string) => string;
+  generateUploadLink: (customerId: string, documentId?: string, remarks?: string) => string;
   syncCustomerDocuments: (panCard: string) => void;
   findCustomerByPanCard: (panCard: string) => Customer | undefined;
 }
@@ -195,8 +194,18 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     return customer ? customer.documents : [];
   };
 
-  const generateUploadLink = (customerId: string): string => {
-    return `https://example.com/upload/${customerId}/${Date.now()}`;
+  const generateUploadLink = (customerId: string, documentId?: string, remarks?: string): string => {
+    // In a real app, this would generate a secure, time-limited link
+    // For this demo, we'll just create a URL with query parameters
+    const baseUrl = window.location.origin;
+    
+    if (documentId) {
+      // If documentId is provided, create a reupload link for a specific document
+      return `${baseUrl}/customer/reupload?customerId=${customerId}&documentId=${documentId}&remarks=${encodeURIComponent(remarks || '')}`;
+    }
+    
+    // Regular upload link for all documents
+    return `${baseUrl}/customer?userId=${customerId}`;
   };
 
   // New function to sync documents from DocumentContext to CustomerContext

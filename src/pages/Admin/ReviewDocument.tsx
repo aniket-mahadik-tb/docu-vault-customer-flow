@@ -53,7 +53,7 @@ const ReviewDocument = () => {
     });
 
     if (status === "rejected") {
-      const link = generateUploadLink(customer.id);
+      const link = generateUploadLink(customer.id, document.id, remarks);
       // In a real app, this would send an email with the link
       toast({
         title: "Reupload link generated",
