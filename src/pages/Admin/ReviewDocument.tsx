@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import * as pdfjs from "pdfjs-dist";
 
-// Set up the PDF.js worker
+// Set up the PDF.js worker with unpkg (more reliable than cdn)
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 const ReviewDocument = () => {
@@ -60,14 +60,24 @@ const ReviewDocument = () => {
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
       }
 
-      const loadingTask = pdfjs.getDocument(url);
-      const pdf = await loadingTask.promise;
-      setPdfDoc(pdf);
-      setPageNum(1);
-      setIsLoading(false);
+      const loadingTask = pdfjs.getDocument({
+        url: url,
+        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.6.172/cmaps/',
+        cMapPacked: true,
+      });
+      
+      try {
+        const pdf = await loadingTask.promise;
+        setPdfDoc(pdf);
+        setPageNum(1);
+      } catch (err) {
+        console.error("Error loading PDF:", err);
+        setError("Failed to load PDF. Using image fallback.");
+      }
     } catch (err) {
-      console.error("Error loading PDF:", err);
+      console.error("Error in PDF loading process:", err);
       setError("Failed to load PDF. Using image fallback.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -80,6 +90,11 @@ const ReviewDocument = () => {
       const viewport = page.getViewport({ scale: zoomLevel });
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
+      
+      if (!context) {
+        console.error("Could not get canvas context");
+        return;
+      }
       
       canvas.height = viewport.height;
       canvas.width = viewport.width;

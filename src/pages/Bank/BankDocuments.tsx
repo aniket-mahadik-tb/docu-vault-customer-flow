@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
@@ -15,9 +14,8 @@ import { Eye, FileImage, FileText, File, ZoomIn, ZoomOut, Search, Download, Arro
 import * as pdfjs from "pdfjs-dist";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog";
 
-// Initialize PDF.js worker
-const pdfjsWorkerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc;
+// Initialize PDF.js worker with unpkg CDN (more reliable than cdnjs)
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 interface DocumentGroup {
   name: string;
@@ -206,6 +204,7 @@ const BankDocuments = () => {
     try {
       setIsLoading(true);
       setLoadingProgress(10);
+      setErrorMessage(""); // Clear previous errors
       
       const loadingTask = pdfjs.getDocument({
         url: url,
@@ -218,13 +217,19 @@ const BankDocuments = () => {
         setLoadingProgress(Math.min(percent, 90));
       };
       
-      const pdf = await loadingTask.promise;
-      setLoadingProgress(100);
-      setPdfDoc(pdf);
-      setNumPages(pdf.numPages);
-      setPageNum(1);
+      try {
+        const pdf = await loadingTask.promise;
+        setLoadingProgress(100);
+        setPdfDoc(pdf);
+        setNumPages(pdf.numPages);
+        setPageNum(1);
+      } catch (error) {
+        console.error("Error loading PDF:", error);
+        setErrorMessage("Failed to load the PDF document. Please check if the URL is accessible.");
+        setShowErrorDialog(true);
+      }
     } catch (error) {
-      console.error("Error loading PDF:", error);
+      console.error("Error in PDF loading process:", error);
       setErrorMessage("Failed to load the PDF document. The file might be corrupted or inaccessible.");
       setShowErrorDialog(true);
     } finally {
@@ -239,6 +244,11 @@ const BankDocuments = () => {
       const page = await pdfDoc.getPage(num);
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        console.error("Could not get canvas context");
+        return;
+      }
       
       // Scale viewport based on zoom level
       const viewport = page.getViewport({ scale: zoomLevel });
@@ -255,6 +265,7 @@ const BankDocuments = () => {
       await page.render(renderContext).promise;
     } catch (error) {
       console.error("Error rendering page:", error);
+      setErrorMessage("Error rendering PDF page. Please try again.");
     }
   };
 
