@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "@/hooks/use-toast";
 
@@ -91,7 +90,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         toast({
           title: "Storage Warning",
           description: "You're approaching the storage limit. Consider removing old documents.",
-          variant: "warning",
+          variant: "default",
         });
       }
       
