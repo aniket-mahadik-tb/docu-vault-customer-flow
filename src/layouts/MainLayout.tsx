@@ -18,7 +18,7 @@ const MainLayout = ({ children, showSidebar = false }: MainLayoutProps) => {
       <div className="min-h-screen flex flex-col w-full">
         <Header />
         <div className="flex flex-1">
-          {showSidebar && role && (
+          {(showSidebar && role) && (
             <AppSidebar />
           )}
           <SidebarInset className="p-4 md:p-6">

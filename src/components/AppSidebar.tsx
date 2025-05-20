@@ -14,7 +14,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { FileText, User, ArrowLeft } from "lucide-react";
+import { FileText, User, ArrowLeft, Users, Share2 } from "lucide-react";
 
 interface SidebarLinkProps {
   to: string;
@@ -23,13 +23,17 @@ interface SidebarLinkProps {
 }
 
 const CustomerLinks: SidebarLinkProps[] = [
+  { to: "/customer/dashboard", icon: FileText, label: "Dashboard" },
   { to: "/customer/upload", icon: FileText, label: "Upload Documents" },
   { to: "/customer/status", icon: FileText, label: "View Status" },
 ];
 
 const AdminLinks: SidebarLinkProps[] = [
   { to: "/admin/dashboard", icon: FileText, label: "Dashboard" },
-  { to: "/admin/users", icon: User, label: "Manage Users" },
+  { to: "/admin/customers", icon: Users, label: "Customer List" },
+  { to: "/admin/review", icon: FileText, label: "Review Documents" },
+  { to: "/admin/share", icon: Share2, label: "Share with Bank" },
+  { to: "/admin/new-customer", icon: User, label: "New Customer" },
 ];
 
 const BankLinks: SidebarLinkProps[] = [
