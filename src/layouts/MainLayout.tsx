@@ -24,14 +24,19 @@ const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) => {
           <Header />
         </div>
         
-        {/* Main content area with sidebar and content */}
         <div className="flex flex-1">
           {displaySidebar && role && (
-            <div className="fixed top-16 h-[calc(100vh-4rem)] z-40 left-0">
+            <div className="fixed left-0 top-16 bottom-0 z-40">
               <AppSidebar />
             </div>
           )}
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 ml-auto" style={{ marginLeft: displaySidebar && role ? "240px" : "0" }}>
+          <main 
+            className="flex-1 overflow-y-auto p-4 md:p-6" 
+            style={{ 
+              marginLeft: displaySidebar && role ? "240px" : "0",
+              marginTop: "0px" // Ensure content starts right after header
+            }}
+          >
             <div className="max-w-7xl mx-auto w-full">
               {children}
             </div>
