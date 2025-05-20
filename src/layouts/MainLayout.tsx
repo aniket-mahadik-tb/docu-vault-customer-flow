@@ -25,9 +25,9 @@ const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) => {
         </div>
         
         {/* Main content area with sidebar and content */}
-        <div className="flex flex-1 h-[calc(100vh-4rem)]">
+        <div className="flex flex-1">
           {displaySidebar && role && (
-            <div className="sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
+            <div className="sticky top-16 z-40">
               <AppSidebar />
             </div>
           )}

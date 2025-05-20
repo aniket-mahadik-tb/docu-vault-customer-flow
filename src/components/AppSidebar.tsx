@@ -1,4 +1,3 @@
-
 import React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
@@ -65,7 +64,11 @@ const AppSidebar = () => {
   };
   
   return (
-    <Sidebar variant="inset" side="left" className="h-full border-r border-gray-200">
+    <Sidebar 
+      variant="inset" 
+      side="left" 
+      className="border-r border-gray-200"
+    >
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
