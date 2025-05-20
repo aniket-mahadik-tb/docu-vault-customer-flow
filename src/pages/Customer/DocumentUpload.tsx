@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
@@ -10,6 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { FileText, X, ChevronDown, ChevronUp, Upload, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 const documentSections = [
   {
@@ -330,6 +330,30 @@ const DocumentUpload = () => {
     return requiredDocs.length > 0;
   };
 
+  // Calculate progress percentage for a section
+  const calculateSectionProgress = (sectionId: string): number => {
+    if (!userId) return 0;
+    
+    // Find section
+    const section = documentSections.find(s => s.id === sectionId);
+    if (!section) return 0;
+    
+    // Count required documents and submitted required documents
+    const requiredDocs = section.documentTypes.filter(doc => doc.required);
+    if (requiredDocs.length === 0) return 100; // If no required docs, progress is 100%
+    
+    let submittedCount = 0;
+    for (const doc of requiredDocs) {
+      const fullFolderId = `${sectionId}_${doc.id}`;
+      if (isFolderSubmitted(userId, fullFolderId)) {
+        submittedCount++;
+      }
+    }
+    
+    // Calculate percentage
+    return Math.round((submittedCount / requiredDocs.length) * 100);
+  };
+
   if (!userId) {
     return null; // Will redirect in useEffect
   }
@@ -343,6 +367,7 @@ const DocumentUpload = () => {
           {documentSections.map(section => {
             const isOpen = openSections[section.id] || false;
             const isSubmitted = isSectionSubmitted(section.id);
+            const progressPercentage = calculateSectionProgress(section.id);
             
             return (
               <Card key={section.id} className={isSubmitted ? "border-green-200 bg-green-50" : ""}>
@@ -368,7 +393,16 @@ const DocumentUpload = () => {
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <CardContent>
-                          <h3 className="text-lg font-medium mb-4">{section.title}</h3>
+                          <h3 className="text-lg font-medium mb-1">{section.title}</h3>
+                          {section.documentTypes.filter(doc => doc.required).length > 0 && (
+                            <div className="mb-4">
+                              <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                                <span>Upload progress</span>
+                                <span>{progressPercentage}%</span>
+                              </div>
+                              <Progress value={progressPercentage} className="h-2" />
+                            </div>
+                          )}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {section.documentTypes.map(docType => {
                               const fullFolderId = `${section.id}_${docType.id}`;
@@ -465,7 +499,18 @@ const DocumentUpload = () => {
                       </CollapsibleContent>
                     </Collapsible>
                   </div>
-                  {!isOpen && <CardDescription>{section.description}</CardDescription>}
+                  {!isOpen && (
+                    <>
+                      <CardDescription>{section.description}</CardDescription>
+                      <div className="mt-2">
+                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                          <span>Upload progress</span>
+                          <span>{calculateSectionProgress(section.id)}%</span>
+                        </div>
+                        <Progress value={calculateSectionProgress(section.id)} className="h-2" />
+                      </div>
+                    </>
+                  )}
                 </CardHeader>
               </Card>
             );
