@@ -151,106 +151,104 @@ const DocumentUpload = () => {
                         <CheckCircle className="h-5 w-5 text-green-500" />
                       )}
                     </div>
-                    <CollapsibleTrigger 
-                      onClick={() => toggleSection(section.id)}
-                      className="rounded-full p-1 hover:bg-accent"
-                    >
-                      {isOpen ? (
-                        <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                      )}
-                    </CollapsibleTrigger>
+                    <Collapsible open={isOpen} onOpenChange={(value) => setOpenSections(prev => ({ ...prev, [section.id]: value }))}>
+                      <CollapsibleTrigger 
+                        className="rounded-full p-1 hover:bg-accent"
+                      >
+                        {isOpen ? (
+                          <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <CardContent>
+                          {!isSubmitted && (
+                            <div className="mb-4">
+                              <label 
+                                htmlFor={`file-upload-${section.id}`}
+                                className="flex justify-center items-center border-2 border-dashed rounded-lg py-6 px-4 cursor-pointer hover:bg-accent/10"
+                              >
+                                <div className="text-center">
+                                  <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+                                  <p className="text-sm font-medium">Click to upload or drag and drop</p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Allowed types: {section.acceptedTypes}
+                                  </p>
+                                </div>
+                                <input
+                                  id={`file-upload-${section.id}`}
+                                  type="file"
+                                  multiple
+                                  accept={section.acceptedTypes}
+                                  className="hidden"
+                                  onChange={(e) => e.target.files && handleFileUpload(section.id, e.target.files)}
+                                />
+                              </label>
+                            </div>
+                          )}
+                          
+                          {sectionFiles.length > 0 && (
+                            <div>
+                              <h4 className="text-sm font-medium mb-3">Uploaded Files</h4>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                {sectionFiles.map((file) => (
+                                  <div 
+                                    key={file.id} 
+                                    className="relative border rounded-md p-2 group"
+                                  >
+                                    <div className="aspect-square w-full flex items-center justify-center bg-gray-100 rounded mb-1">
+                                      {file.type.includes('image') ? (
+                                        <img 
+                                          src={file.url} 
+                                          alt={file.name} 
+                                          className="h-full w-full object-cover rounded"
+                                        />
+                                      ) : (
+                                        <FileText className="h-10 w-10 text-muted-foreground" />
+                                      )}
+                                    </div>
+                                    <p className="text-xs truncate" title={file.name}>
+                                      {file.name}
+                                    </p>
+                                    {!isSubmitted && (
+                                      <button
+                                        onClick={() => handleRemoveFile(section.id, file.id)}
+                                        className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <X className="h-4 w-4 text-muted-foreground" />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                        
+                        {!isSubmitted && sectionFiles.length > 0 && (
+                          <CardFooter className="gap-2 flex-wrap">
+                            <Button 
+                              variant="outline" 
+                              onClick={() => handleSaveProgress(section.id)}
+                              disabled={saving[section.id]}
+                            >
+                              <Save className="h-4 w-4 mr-2" />
+                              {saving[section.id] ? 'Saving...' : 'Save Progress'}
+                            </Button>
+                            <Button 
+                              onClick={() => handleSubmitSection(section.id)}
+                              disabled={submitting[section.id]}
+                            >
+                              {submitting[section.id] ? 'Submitting...' : 'Submit Documents'}
+                            </Button>
+                          </CardFooter>
+                        )}
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
                   <CardDescription>{section.description}</CardDescription>
                 </CardHeader>
-                
-                <Collapsible open={isOpen}>
-                  <CollapsibleContent>
-                    <CardContent>
-                      {!isSubmitted && (
-                        <div className="mb-4">
-                          <label 
-                            htmlFor={`file-upload-${section.id}`}
-                            className="flex justify-center items-center border-2 border-dashed rounded-lg py-6 px-4 cursor-pointer hover:bg-accent/10"
-                          >
-                            <div className="text-center">
-                              <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
-                              <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Allowed types: {section.acceptedTypes}
-                              </p>
-                            </div>
-                            <input
-                              id={`file-upload-${section.id}`}
-                              type="file"
-                              multiple
-                              accept={section.acceptedTypes}
-                              className="hidden"
-                              onChange={(e) => e.target.files && handleFileUpload(section.id, e.target.files)}
-                            />
-                          </label>
-                        </div>
-                      )}
-                      
-                      {sectionFiles.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-medium mb-3">Uploaded Files</h4>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                            {sectionFiles.map((file) => (
-                              <div 
-                                key={file.id} 
-                                className="relative border rounded-md p-2 group"
-                              >
-                                <div className="aspect-square w-full flex items-center justify-center bg-gray-100 rounded mb-1">
-                                  {file.type.includes('image') ? (
-                                    <img 
-                                      src={file.url} 
-                                      alt={file.name} 
-                                      className="h-full w-full object-cover rounded"
-                                    />
-                                  ) : (
-                                    <FileText className="h-10 w-10 text-muted-foreground" />
-                                  )}
-                                </div>
-                                <p className="text-xs truncate" title={file.name}>
-                                  {file.name}
-                                </p>
-                                {!isSubmitted && (
-                                  <button
-                                    onClick={() => handleRemoveFile(section.id, file.id)}
-                                    className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    <X className="h-4 w-4 text-muted-foreground" />
-                                  </button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                    
-                    {!isSubmitted && sectionFiles.length > 0 && (
-                      <CardFooter className="gap-2 flex-wrap">
-                        <Button 
-                          variant="outline" 
-                          onClick={() => handleSaveProgress(section.id)}
-                          disabled={saving[section.id]}
-                        >
-                          <Save className="h-4 w-4 mr-2" />
-                          {saving[section.id] ? 'Saving...' : 'Save Progress'}
-                        </Button>
-                        <Button 
-                          onClick={() => handleSubmitSection(section.id)}
-                          disabled={submitting[section.id]}
-                        >
-                          {submitting[section.id] ? 'Submitting...' : 'Submit Documents'}
-                        </Button>
-                      </CardFooter>
-                    )}
-                  </CollapsibleContent>
-                </Collapsible>
               </Card>
             );
           })}
