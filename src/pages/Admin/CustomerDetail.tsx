@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+
+import React, { useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { useCustomers, CustomerDocument } from "@/contexts/CustomerContext";
@@ -42,15 +43,18 @@ const CustomerDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { getCustomer, generateUploadLink, syncCustomerDocuments } = useCustomers();
   const navigate = useNavigate();
+  const initialSyncDone = useRef(false);
 
   const customer = getCustomer(id || "");
 
   useEffect(() => {
-    // If customer exists, sync their documents to ensure we have the latest
-    if (customer) {
+    // Only sync documents on initial mount or when customer changes
+    // Using a ref to track if we've already synced for this customer
+    if (customer && !initialSyncDone.current) {
       syncCustomerDocuments(customer.panCard);
+      initialSyncDone.current = true;
     }
-  }, [customer]); // Run when customer changes
+  }, [customer?.id]); // Only re-run if customer ID changes, not on every render
 
   if (!customer) {
     return (
@@ -93,11 +97,13 @@ const CustomerDetail = () => {
   };
 
   const handleSyncDocuments = () => {
-    syncCustomerDocuments(customer.panCard);
-    toast({
-      title: "Documents Synchronized",
-      description: "Customer documents have been updated from uploads",
-    });
+    if (customer) {
+      syncCustomerDocuments(customer.panCard);
+      toast({
+        title: "Documents Synchronized",
+        description: "Customer documents have been updated from uploads",
+      });
+    }
   };
 
   return (
