@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
@@ -365,7 +366,8 @@ const DocumentUpload = () => {
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <h3 className="text-lg font-medium mb-4">{section.title}</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {section.documentTypes.map(docType => {
                               const fullFolderId = `${section.id}_${docType.id}`;
                               const docFiles = userId ? getFolderDocuments(userId, fullFolderId) : [];
@@ -473,3 +475,4 @@ const DocumentUpload = () => {
 };
 
 export default DocumentUpload;
+
