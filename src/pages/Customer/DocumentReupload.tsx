@@ -20,7 +20,7 @@ const DocumentReupload = () => {
   const navigate = useNavigate();
   const { userId, setUserId } = useUser();
   const { addDocument, submitFolder } = useDocuments();
-  const { getCustomer, syncCustomerDocuments } = useCustomers();
+  const { getCustomer, syncCustomerDocuments, updateDocumentStatus } = useCustomers();
   
   const [uploading, setUploading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -100,6 +100,9 @@ const DocumentReupload = () => {
       
       // Submit the document
       submitFolder(customerId, fullFolderId);
+      
+      // Update the document status to pending in the CustomerContext
+      updateDocumentStatus(customerId, documentId, "pending");
       
       // Sync the documents with the customer context
       syncCustomerDocuments(customerId);

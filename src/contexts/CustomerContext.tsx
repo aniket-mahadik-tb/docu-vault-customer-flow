@@ -32,12 +32,12 @@ interface CustomerContextType {
   updateDocumentStatus: (
     customerId: string, 
     documentId: string, 
-    status: "approved" | "rejected" | "on_hold", 
+    status: "approved" | "rejected" | "on_hold" | "pending", 
     remarks?: string
   ) => void;
   getCustomerDocuments: (customerId: string) => CustomerDocument[];
   generateUploadLink: (customerId: string, documentId?: string, remarks?: string) => string;
-  syncCustomerDocuments: (panCard: string) => void;
+  syncCustomerDocuments: (customerIdOrPanCard: string) => void;
   findCustomerByPanCard: (panCard: string) => Customer | undefined;
 }
 
@@ -165,7 +165,7 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
   const updateDocumentStatus = (
     customerId: string,
     documentId: string,
-    status: "approved" | "rejected" | "on_hold",
+    status: "approved" | "rejected" | "on_hold" | "pending", // Added "pending" as an option
     remarks?: string
   ) => {
     setCustomers(prev => 
@@ -176,8 +176,8 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
               return {
                 ...doc,
                 status,
-                remarks,
-                reviewedAt: new Date().toISOString()
+                remarks: status === "pending" ? undefined : remarks, // Clear remarks if setting to pending
+                reviewedAt: status === "pending" ? undefined : new Date().toISOString() // Only set reviewedAt for admin reviews
               };
             }
             return doc;
@@ -208,13 +208,20 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     return `${baseUrl}/customer?userId=${customerId}`;
   };
 
-  // New function to sync documents from DocumentContext to CustomerContext
-  const syncCustomerDocuments = (panCard: string) => {
-    const customer = findCustomerByPanCard(panCard);
+  // Updated syncCustomerDocuments to work with both customerId and panCard
+  const syncCustomerDocuments = (customerIdOrPanCard: string) => {
+    // Try to find customer by ID first, then by PAN card if not found
+    let customer = customers.find(c => c.id === customerIdOrPanCard);
+    
+    if (!customer) {
+      // If not found by ID, try by PAN card
+      customer = findCustomerByPanCard(customerIdOrPanCard);
+    }
+    
     if (!customer) return;
     
     // Find all documents uploaded by this user in the DocumentContext
-    const userId = panCard; // In this app, we're using PAN card as user ID
+    const userId = customer.panCard; // In this app, we're using PAN card as user ID
     const userDocuments = documents[userId];
     
     if (!userDocuments || !userDocuments.folders) return;
@@ -246,7 +253,7 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     if (newDocuments.length > 0) {
       setCustomers(prev => 
         prev.map(c => {
-          if (c.id === customer.id) {
+          if (c.id === customer!.id) {
             // Add only new documents that don't already exist
             const existingIds = new Set(c.documents.map(doc => doc.id));
             const uniqueNewDocs = newDocuments.filter(doc => !existingIds.has(doc.id));
