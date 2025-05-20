@@ -89,6 +89,10 @@ const BankEntry = () => {
     navigate("/bank/dashboard");
   };
 
+  const handleOTPChange = (value: string) => {
+    otpForm.setValue("otp", value);
+  };
+
   return (
     <MainLayout showSidebar={false}>
       <div className="flex items-center justify-center min-h-[80vh]">
@@ -145,7 +149,11 @@ const BankEntry = () => {
                         <FormItem>
                           <FormLabel>Verification Code</FormLabel>
                           <FormControl>
-                            <InputOTP maxLength={6} {...field}>
+                            <InputOTP 
+                              maxLength={6} 
+                              value={field.value}
+                              onChange={(value) => handleOTPChange(value)}
+                            >
                               <InputOTPGroup>
                                 <InputOTPSlot index={0} />
                                 <InputOTPSlot index={1} />
