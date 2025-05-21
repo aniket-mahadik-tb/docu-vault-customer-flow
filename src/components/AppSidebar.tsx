@@ -1,6 +1,6 @@
 
 import React from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import {
   Sidebar,
@@ -11,10 +11,9 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { FileText, User, ArrowLeft, Users, Share2, Folder, FileText as NoteIcon } from "lucide-react";
+import { FileText, User, Users, Share2, Folder, FileText as NoteIcon } from "lucide-react";
 
 interface SidebarLinkProps {
   to: string;
@@ -43,10 +42,9 @@ const BankLinks: SidebarLinkProps[] = [
 ];
 
 const AppSidebar = () => {
-  const { role, clearUser } = useUser();
+  const { role } = useUser();
   const { state: sidebarState } = useSidebar();
   const location = useLocation();
-  const navigate = useNavigate();
   
   const isActive = (path: string) => location.pathname === path;
   const getNavClass = ({ isActive }: { isActive: boolean }) => 
@@ -57,12 +55,6 @@ const AppSidebar = () => {
                role === "Bank" ? BankLinks : [];
   
   const isCollapsed = sidebarState === "collapsed";
-  
-  const handleBackToHome = (e: React.MouseEvent) => {
-    e.preventDefault();
-    clearUser(); // Clear user data when navigating back to home
-    navigate("/");
-  };
   
   return (
     <Sidebar 
@@ -88,18 +80,6 @@ const AppSidebar = () => {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <a 
-                    href="/" 
-                    onClick={handleBackToHome} 
-                    className="hover:bg-sidebar-accent/50"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    {!isCollapsed && <span>Back to Home</span>}
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
