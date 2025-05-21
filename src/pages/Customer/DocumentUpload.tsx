@@ -35,7 +35,7 @@ const documentSections = [
         id: 'kyc3',
         name: 'Certificate of Incorporation',
         description: 'For registered businesses and companies',
-        required: true,
+        required: false,
       },
       {
         id: 'kyc4',
@@ -79,7 +79,7 @@ const documentSections = [
         id: 'loan1',
         name: 'Existing Loan Statements',
         description: 'Last 12 months statements of existing business loans',
-        required: false,
+        required: true,
       },
       {
         id: 'loan2',
@@ -116,13 +116,13 @@ const documentSections = [
         id: 'fin2',
         name: 'Balance Sheet',
         description: 'Audited balance sheets for previous 3 financial years',
-        required: true,
+        required: false,
       },
       {
         id: 'fin3',
         name: 'Profit & Loss Statement',
         description: 'P&L statements for previous 3 financial years',
-        required: true,
+        required: false,
       },
       {
         id: 'fin4',
@@ -134,7 +134,7 @@ const documentSections = [
         id: 'fin5',
         name: 'Sales Tax Returns',
         description: 'GST/VAT returns for the last year',
-        required: true,
+        required: false,
       }
     ]
   },
@@ -184,13 +184,13 @@ const documentSections = [
         id: 'biz1',
         name: 'Business Plan',
         description: 'Detailed business plan including projections',
-        required: true,
+        required: false,
       },
       {
         id: 'biz2',
         name: 'Trade License',
         description: 'Valid trade license issued by local municipality',
-        required: true,
+        required: false,
       },
       {
         id: 'biz3',
