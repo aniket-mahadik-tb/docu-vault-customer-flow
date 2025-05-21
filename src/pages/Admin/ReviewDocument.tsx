@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
@@ -18,11 +17,9 @@ import {
 } from "@/components/ui/card";
 import * as pdfjs from "pdfjs-dist";
 
-// Import PDF worker directly to prevent dynamic imports
-import pdfWorker from "pdfjs-dist/build/pdf.worker.min.js?url";
-
-// Set the worker source directly using imported URL
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+// Configure PDF.js with a stable CDN URL for the worker
+// Note: Using version variable to ensure version compatibility
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 // Utility function to convert base64/dataURL to Blob
 const dataURLtoBlob = (dataURL: string): Blob | null => {
@@ -115,10 +112,10 @@ const ReviewDocument = () => {
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
       }
 
-      // Create document loading task - updated to use direct worker path
+      // Create document loading task with proper configuration for cmaps
       const loadingTask = pdfjs.getDocument({
         url: url,
-        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.2.133/cmaps/',
+        cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
         cMapPacked: true,
       });
       
