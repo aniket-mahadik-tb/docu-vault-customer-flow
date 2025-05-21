@@ -406,6 +406,27 @@ const DocumentUpload = () => {
     return Math.round((totalSubmittedDocs / totalRequiredDocs) * 100);
   };
 
+  // Check if at least one document is uploaded
+  const hasAnyDocumentsUploaded = (): boolean => {
+    if (!userId) return false;
+    
+    let hasDocuments = false;
+    
+    for (const section of documentSections) {
+      for (const doc of section.documentTypes) {
+        const fullFolderId = `${section.id}_${doc.id}`;
+        const documents = getFolderDocuments(userId, fullFolderId);
+        if (documents.length > 0) {
+          hasDocuments = true;
+          break;
+        }
+      }
+      if (hasDocuments) break;
+    }
+    
+    return hasDocuments;
+  };
+
   // Check if all required documents are uploaded
   const areAllRequiredDocsSubmitted = (): boolean => {
     if (!userId) return false;
@@ -427,12 +448,24 @@ const DocumentUpload = () => {
   const handleSubmitAllDocuments = () => {
     if (!userId) return;
     
+    // Submit all folders that have documents but aren't submitted yet
+    for (const section of documentSections) {
+      for (const doc of section.documentTypes) {
+        const fullFolderId = `${section.id}_${doc.id}`;
+        const documents = getFolderDocuments(userId, fullFolderId);
+        // Only submit folders that have documents and aren't already submitted
+        if (documents.length > 0 && !isFolderSubmitted(userId, fullFolderId)) {
+          submitFolder(userId, fullFolderId);
+        }
+      }
+    }
+    
     // Sync documents with customer context
     syncCustomerDocuments(userId);
     
     toast({
       title: "Documents Submitted",
-      description: "All your documents have been successfully submitted for review.",
+      description: "Your documents have been successfully submitted for review.",
     });
     
     // Navigate to document status page
@@ -630,7 +663,7 @@ const DocumentUpload = () => {
               
               <Button 
                 className="w-full py-6" 
-                disabled={!areAllRequiredDocsSubmitted()}
+                disabled={!hasAnyDocumentsUploaded()}
                 onClick={handleSubmitAllDocuments}
               >
                 Submit All Documents
