@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -58,8 +57,18 @@ const NewCustomer = () => {
 
   const onSubmit = (data: CustomerFormValues) => {
     try {
-      // Add the new customer
-      const newCustomer = addCustomer(data);
+      // Cast the data to the expected type required by addCustomer
+      // This ensures that name, email, phone, and panCard are treated as required fields
+      const customerData = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        panCard: data.panCard,
+        businessName: data.businessName || "",
+      };
+      
+      // Add the new customer with properly typed data
+      const newCustomer = addCustomer(customerData);
       
       // Generate upload link for the customer
       const uploadLink = generateUploadLink(newCustomer.id);
