@@ -25,14 +25,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-interface CustomerFormValues {
-  name: string;
-  email: string;
-  phone: string;
-  panCard: string;
-  businessName: string;
-}
+// Create a schema for form validation
+const customerSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  phone: z.string().min(10, { message: "Please enter a valid phone number" }),
+  panCard: z.string()
+    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, { message: "Please enter a valid PAN Card number (e.g., ABCDE1234F)" }),
+  businessName: z.string().optional(),
+});
+
+type CustomerFormValues = z.infer<typeof customerSchema>;
 
 const NewCustomer = () => {
   const { addCustomer, generateUploadLink } = useCustomers();
@@ -40,6 +46,7 @@ const NewCustomer = () => {
   const { toast } = useToast();
 
   const form = useForm<CustomerFormValues>({
+    resolver: zodResolver(customerSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -50,15 +57,29 @@ const NewCustomer = () => {
   });
 
   const onSubmit = (data: CustomerFormValues) => {
-    const newCustomer = addCustomer(data);
-    const uploadLink = generateUploadLink(newCustomer.id);
-    
-    toast({
-      title: "Customer added successfully",
-      description: `Upload link sent to ${data.email}`,
-    });
-    
-    navigate(`/admin/customers/${newCustomer.id}`);
+    try {
+      // Add the new customer
+      const newCustomer = addCustomer(data);
+      
+      // Generate upload link for the customer
+      const uploadLink = generateUploadLink(newCustomer.id);
+      
+      // Show success toast
+      toast({
+        title: "Customer added successfully",
+        description: `Upload link sent to ${data.email}`,
+      });
+      
+      // Navigate to the customer detail page
+      navigate(`/admin/customers/${newCustomer.id}`);
+    } catch (error) {
+      console.error("Error adding customer:", error);
+      toast({
+        title: "Error adding customer",
+        description: "There was a problem adding the customer. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -81,7 +102,7 @@ const NewCustomer = () => {
             </CardDescription>
           </CardHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
@@ -90,7 +111,7 @@ const NewCustomer = () => {
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="John Smith" {...field} required />
+                        <Input placeholder="John Smith" {...field} />
                       </FormControl>
                       <FormDescription>
                         Customer's full legal name
@@ -111,7 +132,6 @@ const NewCustomer = () => {
                           type="email" 
                           placeholder="john@example.com" 
                           {...field} 
-                          required 
                         />
                       </FormControl>
                       <FormDescription>
@@ -132,7 +152,6 @@ const NewCustomer = () => {
                         <Input 
                           placeholder="1234567890" 
                           {...field} 
-                          required 
                         />
                       </FormControl>
                       <FormMessage />
@@ -150,7 +169,11 @@ const NewCustomer = () => {
                         <Input 
                           placeholder="ABCDE1234F" 
                           {...field} 
-                          required 
+                          autoCapitalize="characters"
+                          onChange={(e) => {
+                            // Convert input to uppercase for PAN Card
+                            field.onChange(e.target.value.toUpperCase());
+                          }}
                         />
                       </FormControl>
                       <FormDescription>
