@@ -1,82 +1,16 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "@/hooks/use-toast";
-
-export interface DocumentFile {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  url: string;
-  lastModified: number;
-  uploaded: Date;
-  // Track if URL is a Blob URL that needs to be revoked
-  isBlobUrl?: boolean;
-}
-
-export interface DocumentFolder {
-  name: string;
-  files: DocumentFile[];
-  submitted: boolean;
-}
-
-export interface DocumentRoot {
-  userId: string;
-  folders: Record<string, DocumentFolder>;
-}
-
-interface DocumentContextType {
-  documents: Record<string, DocumentRoot>;
-  addDocument: (userId: string, folder: string, file: File) => Promise<DocumentFile>;
-  removeDocument: (userId: string, folder: string, fileId: string) => void;
-  submitFolder: (userId: string, folder: string) => void;
-  getFolderDocuments: (userId: string, folder: string) => DocumentFile[];
-  isFolderSubmitted: (userId: string, folder: string) => boolean;
-  clearUserDocuments: (userId: string) => void;
-  clearFolderDocuments: (userId: string, folder: string) => void;
-}
+import { DocumentFile, DocumentFolder, DocumentRoot, DocumentContextType } from "@/types/document";
+import { dataURLtoBlob, getFileData, saveFileData, removeFileData, STORAGE_KEY, STORAGE_META_KEY, MAX_FILE_SIZE, MAX_TOTAL_STORAGE } from "@/utils/documentUtils";
+import { useBlobUrls } from "@/hooks/useBlobUrls";
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
-
-const STORAGE_KEY = "document_storage";
-const STORAGE_META_KEY = "document_storage_meta";
-
-// Maximum file size in bytes (2MB)
-const MAX_FILE_SIZE = 2 * 1024 * 1024;
-// Maximum total storage size (estimated, 4MB to be safe)
-const MAX_TOTAL_STORAGE = 4 * 1024 * 1024;
-
-// Utility function to convert base64/dataURL to Blob
-const dataURLtoBlob = (dataURL: string): Blob | null => {
-  try {
-    // Convert base64/URL data to blob
-    const arr = dataURL.split(',');
-    if (arr.length < 2) return null;
-    
-    const mimeMatch = arr[0].match(/:(.*?);/);
-    if (!mimeMatch) return null;
-    
-    const mime = mimeMatch[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    
-    return new Blob([u8arr], { type: mime });
-  } catch (error) {
-    console.error("Error converting data URL to blob:", error);
-    return null;
-  }
-};
-
-// Keep track of created Blob URLs to revoke them when no longer needed
-const createdBlobUrls = new Set<string>();
 
 export const DocumentProvider = ({ children }: { children: ReactNode }) => {
   const [documents, setDocuments] = useState<Record<string, DocumentRoot>>({});
   const [storageUsage, setStorageUsage] = useState<number>(0);
+  const { trackBlobUrl, revokeBlobUrl } = useBlobUrls();
 
   // Load documents metadata from localStorage on mount
   useEffect(() => {
@@ -130,63 +64,6 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error calculating storage usage:", error);
       return 0;
-    }
-  };
-
-  // Get file data from storage
-  const getFileData = (fileId: string): string | null => {
-    try {
-      const storageData = localStorage.getItem(STORAGE_KEY);
-      if (!storageData) return null;
-      
-      const fileStorage = JSON.parse(storageData);
-      return fileStorage[fileId] || null;
-    } catch (error) {
-      console.error("Failed to get file data:", error);
-      return null;
-    }
-  };
-
-  // Save file data to storage
-  const saveFileData = (fileId: string, dataUrl: string): boolean => {
-    try {
-      // Get current storage
-      const storageData = localStorage.getItem(STORAGE_KEY);
-      let fileStorage: Record<string, string> = {};
-      
-      if (storageData) {
-        fileStorage = JSON.parse(storageData);
-      }
-      
-      // Add new file
-      fileStorage[fileId] = dataUrl;
-      
-      // Save back to storage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(fileStorage));
-      
-      return true;
-    } catch (error) {
-      console.error("Failed to save file data:", error);
-      return false;
-    }
-  };
-
-  // Remove file data from storage
-  const removeFileData = (fileId: string): boolean => {
-    try {
-      const storageData = localStorage.getItem(STORAGE_KEY);
-      if (!storageData) return true;
-      
-      const fileStorage = JSON.parse(storageData);
-      if (fileStorage[fileId]) {
-        delete fileStorage[fileId];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(fileStorage));
-      }
-      
-      return true;
-    } catch (error) {
-      console.error("Failed to remove file data:", error);
-      return false;
     }
   };
 
@@ -274,8 +151,15 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       const updatedDocs = { ...prev };
       
       if (updatedDocs[userId] && updatedDocs[userId].folders[folder]) {
-        updatedDocs[userId].folders[folder].files = 
-          updatedDocs[userId].folders[folder].files.filter(file => file.id !== fileId);
+        // First check for any Blob URLs to revoke
+        const files = updatedDocs[userId].folders[folder].files;
+        const fileToRemove = files.find(file => file.id === fileId);
+        
+        if (fileToRemove?.isBlobUrl && fileToRemove.url.startsWith('blob:')) {
+          revokeBlobUrl(fileToRemove.url);
+        }
+        
+        updatedDocs[userId].folders[folder].files = files.filter(file => file.id !== fileId);
       }
       
       return updatedDocs;
@@ -300,8 +184,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       // First revoke any previously created Blob URLs to prevent memory leaks
       documents[userId].folders[folder].files.forEach(file => {
         if (file.isBlobUrl && file.url.startsWith('blob:')) {
-          URL.revokeObjectURL(file.url);
-          createdBlobUrls.delete(file.url);
+          revokeBlobUrl(file.url);
         }
       });
       
@@ -315,8 +198,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
             const blob = dataURLtoBlob(fileData);
             if (blob) {
               // Create a Blob URL from the blob
-              const blobUrl = URL.createObjectURL(blob);
-              createdBlobUrls.add(blobUrl); // Track this URL for cleanup
+              const blobUrl = trackBlobUrl(URL.createObjectURL(blob));
               return { ...file, url: blobUrl, isBlobUrl: true };
             }
             return { ...file, url: fileData };
@@ -342,6 +224,11 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       Object.values(userFolders).forEach(folder => {
         folder.files.forEach(file => {
           removeFileData(file.id);
+          
+          // Also revoke any Blob URLs
+          if (file.isBlobUrl && file.url.startsWith('blob:')) {
+            revokeBlobUrl(file.url);
+          }
         });
       });
     }
@@ -359,9 +246,13 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       const updatedDocs = { ...prev };
       
       if (updatedDocs[userId] && updatedDocs[userId].folders[folder]) {
-        // Remove all file data from storage for this folder
+        // Remove all file data from storage for this folder and revoke Blob URLs
         updatedDocs[userId].folders[folder].files.forEach(file => {
           removeFileData(file.id);
+          
+          if (file.isBlobUrl && file.url.startsWith('blob:')) {
+            revokeBlobUrl(file.url);
+          }
         });
         
         // Clear files array and reset submitted status
@@ -372,16 +263,6 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       return updatedDocs;
     });
   };
-
-  // Cleanup function to revoke all created Blob URLs when context is unmounted
-  useEffect(() => {
-    return () => {
-      createdBlobUrls.forEach(url => {
-        URL.revokeObjectURL(url);
-      });
-      createdBlobUrls.clear();
-    };
-  }, []);
 
   return (
     <DocumentContext.Provider 
