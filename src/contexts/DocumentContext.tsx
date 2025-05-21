@@ -9,6 +9,8 @@ export interface DocumentFile {
   url: string;
   lastModified: number;
   uploaded: Date;
+  // Track if URL is a Blob URL that needs to be revoked
+  isBlobUrl?: boolean;
 }
 
 export interface DocumentFolder {
@@ -42,6 +44,35 @@ const STORAGE_META_KEY = "document_storage_meta";
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 // Maximum total storage size (estimated, 4MB to be safe)
 const MAX_TOTAL_STORAGE = 4 * 1024 * 1024;
+
+// Utility function to convert base64/dataURL to Blob
+const dataURLtoBlob = (dataURL: string): Blob | null => {
+  try {
+    // Convert base64/URL data to blob
+    const arr = dataURL.split(',');
+    if (arr.length < 2) return null;
+    
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    if (!mimeMatch) return null;
+    
+    const mime = mimeMatch[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    
+    return new Blob([u8arr], { type: mime });
+  } catch (error) {
+    console.error("Error converting data URL to blob:", error);
+    return null;
+  }
+};
+
+// Keep track of created Blob URLs to revoke them when no longer needed
+const createdBlobUrls = new Set<string>();
 
 export const DocumentProvider = ({ children }: { children: ReactNode }) => {
   const [documents, setDocuments] = useState<Record<string, DocumentRoot>>({});
@@ -263,14 +294,31 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  // Enhanced getFolderDocuments function that converts file data to Blob URLs
   const getFolderDocuments = (userId: string, folder: string): DocumentFile[] => {
     if (documents[userId] && documents[userId].folders[folder]) {
+      // First revoke any previously created Blob URLs to prevent memory leaks
+      documents[userId].folders[folder].files.forEach(file => {
+        if (file.isBlobUrl && file.url.startsWith('blob:')) {
+          URL.revokeObjectURL(file.url);
+          createdBlobUrls.delete(file.url);
+        }
+      });
+      
       // For each document, if it's just an ID reference, get the actual file data
       return documents[userId].folders[folder].files.map(file => {
-        // If the URL is just an ID (not a data URL), replace with the actual data
-        if (!file.url.startsWith('data:')) {
+        // If the URL is just an ID (not a data URL or blob URL), replace with the actual data
+        if (!file.url.startsWith('data:') && !file.url.startsWith('blob:')) {
           const fileData = getFileData(file.id);
           if (fileData) {
+            // Convert data URL to Blob URL for better performance
+            const blob = dataURLtoBlob(fileData);
+            if (blob) {
+              // Create a Blob URL from the blob
+              const blobUrl = URL.createObjectURL(blob);
+              createdBlobUrls.add(blobUrl); // Track this URL for cleanup
+              return { ...file, url: blobUrl, isBlobUrl: true };
+            }
             return { ...file, url: fileData };
           }
         }
@@ -324,6 +372,16 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       return updatedDocs;
     });
   };
+
+  // Cleanup function to revoke all created Blob URLs when context is unmounted
+  useEffect(() => {
+    return () => {
+      createdBlobUrls.forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+      createdBlobUrls.clear();
+    };
+  }, []);
 
   return (
     <DocumentContext.Provider 

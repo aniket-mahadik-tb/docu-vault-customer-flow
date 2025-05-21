@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
@@ -21,6 +22,32 @@ import * as pdfjs from "pdfjs-dist";
 const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
+// Utility function to convert base64/dataURL to Blob
+const dataURLtoBlob = (dataURL: string): Blob | null => {
+  try {
+    // Convert base64/URL data to blob
+    const arr = dataURL.split(',');
+    if (arr.length < 2) return null;
+    
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    if (!mimeMatch) return null;
+    
+    const mime = mimeMatch[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    
+    return new Blob([u8arr], { type: mime });
+  } catch (error) {
+    console.error("Error converting data URL to blob:", error);
+    return null;
+  }
+};
+
 const ReviewDocument = () => {
   const { customerId, documentId } = useParams<{ customerId: string; documentId: string }>();
   const { getCustomer, updateDocumentStatus, generateUploadLink } = useCustomers();
@@ -33,15 +60,41 @@ const ReviewDocument = () => {
   const [pageNum, setPageNum] = useState(1);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [documentBlobUrl, setDocumentBlobUrl] = useState<string | null>(null);
 
   const customer = getCustomer(customerId || "");
   const document = customer?.documents.find((doc) => doc.id === documentId);
 
   useEffect(() => {
-    if (document && document.fileUrl && document.fileUrl.toLowerCase().endsWith('.pdf')) {
-      loadPdf(document.fileUrl);
+    if (document && document.fileUrl) {
+      // If the fileUrl is a data URL, convert it to a Blob URL
+      if (document.fileUrl.startsWith('data:')) {
+        const blob = dataURLtoBlob(document.fileUrl);
+        if (blob) {
+          const blobUrl = URL.createObjectURL(blob);
+          setDocumentBlobUrl(blobUrl);
+          
+          if (document.fileUrl.toLowerCase().includes('application/pdf') || 
+              document.name.toLowerCase().endsWith('.pdf')) {
+            loadPdf(blobUrl);
+          }
+        } else {
+          setError("Failed to convert document data to viewable format");
+        }
+      } else if (document.fileUrl.toLowerCase().endsWith('.pdf')) {
+        loadPdf(document.fileUrl);
+      }
     }
   }, [document]);
+
+  // Clean up created Blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (documentBlobUrl) {
+        URL.revokeObjectURL(documentBlobUrl);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (pdfDoc && canvasRef.current) {
@@ -117,6 +170,17 @@ const ReviewDocument = () => {
   
   // Get a usable document URL or fallback
   const getDocumentUrl = () => {
+    // First try the blob URL if we created one
+    if (documentBlobUrl) {
+      return documentBlobUrl;
+    }
+    
+    // If document has a data URL, use it directly
+    if (document?.fileUrl && document.fileUrl.startsWith('data:')) {
+      return document.fileUrl;
+    }
+    
+    // Use the original URL or fallback
     if (!document?.fileUrl || document.fileUrl === "/placeholder.svg") {
       // Return appropriate fallback based on document type
       if (isPdf) {

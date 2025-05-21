@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
@@ -18,6 +19,32 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
+// Utility function to convert base64/dataURL to Blob
+const dataURLtoBlob = (dataURL: string): Blob | null => {
+  try {
+    // Convert base64/URL data to blob
+    const arr = dataURL.split(',');
+    if (arr.length < 2) return null;
+    
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    if (!mimeMatch) return null;
+    
+    const mime = mimeMatch[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    
+    return new Blob([u8arr], { type: mime });
+  } catch (error) {
+    console.error("Error converting data URL to blob:", error);
+    return null;
+  }
+};
+
 interface DocumentGroup {
   name: string;
   documents: Array<{
@@ -33,7 +60,7 @@ const BankDocuments = () => {
   const navigate = useNavigate();
   const { userId } = useUser();
   const { customers } = useCustomers();
-  const [previewDoc, setPreviewDoc] = useState<{id: string, name: string, url: string, type: string} | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{id: string, name: string, url: string, type: string, blobUrl?: string} | null>(null);
   const [documentGroups, setDocumentGroups] = useState<DocumentGroup[]>([]);
   const [customerName, setCustomerName] = useState<string>("");
   const [openDialog, setOpenDialog] = useState<boolean>(false);
@@ -50,6 +77,8 @@ const BankDocuments = () => {
   const [showSearchPopover, setShowSearchPopover] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false);
+  // Track created blob URLs to clean up
+  const createdBlobUrls = useRef<string[]>([]);
   
   // Redirect if not authenticated
   useEffect(() => {
@@ -117,9 +146,10 @@ const BankDocuments = () => {
     }
   }, [pageNum, zoomLevel, pdfDoc]);
 
-  // Clean up PDF document when dialog closes
+  // Clean up PDF document and blob URLs when dialog closes
   useEffect(() => {
     if (!openDialog) {
+      // Clean up resources when dialog closes
       setPdfDoc(null);
       setPageNum(1);
       setNumPages(0);
@@ -127,8 +157,28 @@ const BankDocuments = () => {
       setSearchText("");
       setSearchResults([]);
       setCurrentSearchIndex(0);
+      
+      // Revoke any blob URLs we created
+      createdBlobUrls.current.forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+      createdBlobUrls.current = [];
+      
+      // Clear preview document
+      if (previewDoc?.blobUrl) {
+        URL.revokeObjectURL(previewDoc.blobUrl);
+      }
     }
-  }, [openDialog]);
+  }, [openDialog, previewDoc]);
+
+  // Cleanup created blob URLs on component unmount
+  useEffect(() => {
+    return () => {
+      createdBlobUrls.current.forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, []);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -174,11 +224,21 @@ const BankDocuments = () => {
       ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension) ? 'image' : 
       'other';
     
-    // Check if fileUrl is a placeholder or actual file content
+    // Default URL (will be replaced if it's a data URL)
     let docUrl = doc.fileUrl;
+    let blobUrl: string | undefined = undefined;
     
+    // Handle base64 data URLs by converting to Blob URLs
+    if (docUrl.startsWith('data:')) {
+      const blob = dataURLtoBlob(docUrl);
+      if (blob) {
+        blobUrl = URL.createObjectURL(blob);
+        createdBlobUrls.current.push(blobUrl);
+        docUrl = blobUrl;
+      }
+    } 
     // If it's a placeholder, use a demo image instead
-    if (docUrl === "/placeholder.svg" || !docUrl) {
+    else if (docUrl === "/placeholder.svg" || !docUrl) {
       // Use placeholder based on file type
       if (fileType === 'image') {
         docUrl = "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80";
@@ -192,7 +252,8 @@ const BankDocuments = () => {
       id: doc.id,
       name: doc.name,
       url: docUrl,
-      type: fileType
+      type: fileType,
+      blobUrl: blobUrl
     });
     setOpenDialog(true);
     
