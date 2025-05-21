@@ -50,7 +50,7 @@ const AppSidebar = () => {
   
   const isActive = (path: string) => location.pathname === path;
   const getNavClass = ({ isActive }: { isActive: boolean }) => 
-    isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent/50";
+    isActive ? "bg-bharti-blueLight text-white font-medium" : "hover:bg-sidebar-accent/50";
   
   const links = role === "Customer" ? CustomerLinks :
                role === "Admin" ? AdminLinks :
@@ -71,7 +71,6 @@ const AppSidebar = () => {
       className="border-r border-gray-200 w-60 h-full"
     >
       <SidebarContent>
-        {/* Increased padding-top from pt-4 to pt-8 to create more space below header */}
         <SidebarGroup className="pt-8">
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -81,7 +80,7 @@ const AppSidebar = () => {
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to={link.to} 
-                      className={isActive(link.to) ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent/50"}
+                      className={isActive(link.to) ? "bg-bharti-blueLight text-white font-medium" : "hover:bg-sidebar-accent/50"}
                     >
                       <link.icon className="h-4 w-4" />
                       {!isCollapsed && <span>{link.label}</span>}

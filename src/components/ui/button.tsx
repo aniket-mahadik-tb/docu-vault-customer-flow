@@ -22,6 +22,7 @@ const buttonVariants = cva(
         bharti: "bg-bharti-blue text-white hover:bg-bharti-blueLight",
         bhartiRed: "bg-bharti-red text-white hover:bg-bharti-redLight",
         bhartiOrange: "bg-bharti-orange text-white hover:bg-bharti-orangeLight",
+        bhartiOutline: "border border-bharti-blue bg-transparent text-bharti-blue hover:bg-bharti-blue/10",
       },
       size: {
         default: "h-10 px-4 py-2",

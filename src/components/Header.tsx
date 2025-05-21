@@ -26,9 +26,9 @@ const Header = () => {
       
       <div className="text-sm font-medium">
         {role && userId ? (
-          <span className="px-3 py-1.5 bg-secondary/20 text-secondary-foreground rounded-md">
+          <div className="inline-flex h-9 items-center justify-center rounded-md border border-bharti-blue bg-transparent px-3 text-bharti-blue hover:bg-bharti-blue/10">
             {role} | {userId}
-          </span>
+          </div>
         ) : (
           <span>Welcome</span>
         )}
