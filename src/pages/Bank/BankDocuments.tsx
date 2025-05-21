@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { useUser } from "@/contexts/UserContext";
-import { useDocuments, DocumentFile } from "@/contexts/DocumentContext";
+import { useDocuments } from "@/contexts/DocumentContext";
+import type { DocumentFile } from "@/contexts/DocumentContext";
 import {
   Card,
   CardContent,

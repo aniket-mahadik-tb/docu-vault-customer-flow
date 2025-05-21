@@ -5,6 +5,9 @@ import { DocumentFile, DocumentFolder, DocumentRoot, DocumentContextType } from 
 import { dataURLtoBlob, getFileData, saveFileData, removeFileData, STORAGE_KEY, STORAGE_META_KEY, MAX_FILE_SIZE, MAX_TOTAL_STORAGE } from "@/utils/documentUtils";
 import { useBlobUrls } from "@/hooks/useBlobUrls";
 
+// Re-export the DocumentFile type from the types file
+export type { DocumentFile } from "@/types/document";
+
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
 
 export const DocumentProvider = ({ children }: { children: ReactNode }) => {
