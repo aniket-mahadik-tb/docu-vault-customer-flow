@@ -71,7 +71,8 @@ const AppSidebar = () => {
       className="border-r border-gray-200 w-60 h-full"
     >
       <SidebarContent>
-        <SidebarGroup>
+        {/* Add top padding to first SidebarGroup to create space below header */}
+        <SidebarGroup className="pt-4">
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
