@@ -18,9 +18,11 @@ import {
 } from "@/components/ui/card";
 import * as pdfjs from "pdfjs-dist";
 
-// Set up PDF.js worker with a direct path (instead of dynamic import)
-const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+// Import PDF worker directly to prevent dynamic imports
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.js?url";
+
+// Set the worker source directly using imported URL
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 // Utility function to convert base64/dataURL to Blob
 const dataURLtoBlob = (dataURL: string): Blob | null => {
@@ -113,10 +115,10 @@ const ReviewDocument = () => {
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
       }
 
-      // Create document loading task without dynamic imports
+      // Create document loading task - updated to use direct worker path
       const loadingTask = pdfjs.getDocument({
         url: url,
-        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist/cmaps/',
+        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.2.133/cmaps/',
         cMapPacked: true,
       });
       

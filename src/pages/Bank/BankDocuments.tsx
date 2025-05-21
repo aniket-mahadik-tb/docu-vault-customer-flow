@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
@@ -15,9 +14,11 @@ import { Eye, FileImage, FileText, File, ZoomIn, ZoomOut, Search, Download, Arro
 import * as pdfjs from "pdfjs-dist";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog";
 
-// Set up PDF.js worker with a direct path (instead of dynamic import)
-const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+// Import PDF worker directly to prevent dynamic imports
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.js?url";
+
+// Set the worker source directly using imported URL
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 // Utility function to convert base64/dataURL to Blob
 const dataURLtoBlob = (dataURL: string): Blob | null => {
@@ -270,8 +271,8 @@ const BankDocuments = () => {
       
       const loadingTask = pdfjs.getDocument({
         url: url,
-        // Use standard CDN without version-specific path
-        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist/cmaps/',
+        // Updated to use specific version that matches our imported PDF.js
+        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.2.133/cmaps/',
         cMapPacked: true,
       });
       
