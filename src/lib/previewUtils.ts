@@ -6,18 +6,18 @@
 // Map common document names/types to their sample previews
 const documentPreviewMap: Record<string, string> = {
   // KYC documents
-  "aadhar": "/samples/aadhar-card-sample.jpg",
-  "aadhaar": "/samples/aadhar-card-sample.jpg",
-  "pan": "/samples/pan-card-sample.jpg",
-  "pancard": "/samples/pan-card-sample.jpg",
+  "aadhar": "/lovable-uploads/ee24a3e8-e80f-4791-9af4-b78283b843b5.png",
+  "aadhaar": "/lovable-uploads/ee24a3e8-e80f-4791-9af4-b78283b843b5.png",
+  "pan": "/lovable-uploads/10b1e398-0dfc-4ede-9504-a7c4be863e24.png",
+  "pancard": "/lovable-uploads/10b1e398-0dfc-4ede-9504-a7c4be863e24.png",
   "passport": "/samples/passport-sample.jpg",
   "driving": "/samples/driving-license-sample.jpg",
   "license": "/samples/driving-license-sample.jpg",
   "voter": "/samples/voter-id-sample.jpg",
   
   // Financial documents
-  "bank": "/samples/bank-statement-sample.pdf",
-  "statement": "/samples/bank-statement-sample.pdf",
+  "bank": "/lovable-uploads/7a4a56e7-77df-4e36-bcd7-049f07e5e1ef.png",
+  "statement": "/lovable-uploads/7a4a56e7-77df-4e36-bcd7-049f07e5e1ef.png",
   "income": "/samples/income-tax-return-sample.pdf",
   "tax": "/samples/income-tax-return-sample.pdf",
   "itr": "/samples/income-tax-return-sample.pdf",
@@ -50,6 +50,19 @@ export const getSamplePreviewUrl = (fileName: string, fileType?: string): string
   // Convert to lowercase for matching
   const nameLower = fileName.toLowerCase();
   
+  // Special cases for our three main document types
+  if (nameLower.includes('aadhar') || nameLower.includes('aadhaar')) {
+    return documentPreviewMap['aadhar'];
+  }
+  
+  if (nameLower.includes('pan')) {
+    return documentPreviewMap['pan'];
+  }
+  
+  if (nameLower.includes('bank') || nameLower.includes('statement')) {
+    return documentPreviewMap['bank'];
+  }
+  
   // Try to find a matching sample based on keywords in the filename
   for (const [keyword, sampleUrl] of Object.entries(documentPreviewMap)) {
     if (nameLower.includes(keyword)) {
@@ -72,13 +85,15 @@ export const getSamplePreviewUrl = (fileName: string, fileType?: string): string
  * @returns boolean indicating if PDF viewer should be used
  */
 export const isPdfPreview = (url: string): boolean => {
-  // Consider both .pdf extension and bank statement (which may appear as .png in our sample)
-  if (url.toLowerCase().endsWith('.pdf')) return true;
+  // For our specific use case, we're treating all three main document types as images
+  if (url.includes('ee24a3e8-e80f-4791-9af4-b78283b843b5') || // Aadhaar card
+      url.includes('10b1e398-0dfc-4ede-9504-a7c4be863e24') || // PAN card
+      url.includes('7a4a56e7-77df-4e36-bcd7-049f07e5e1ef')) { // Bank statement
+    return false;
+  }
   
-  // Special case for bank statement sample which might be a PNG but we want to treat as PDF
-  if (url.toLowerCase().includes('bank-statement-sample')) return false;
-  
-  return false;
+  // For all other documents, check file extension
+  return url.toLowerCase().endsWith('.pdf');
 };
 
 /**
