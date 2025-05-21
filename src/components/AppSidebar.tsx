@@ -13,7 +13,18 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { FileText, User, Users, Share2, Folder, FileText as NoteIcon } from "lucide-react";
+import { 
+  BarChart2, 
+  Upload, 
+  ClipboardList, 
+  User, 
+  Users, 
+  FileText, 
+  Share2, 
+  Folder, 
+  MessageSquare,
+  Home 
+} from "lucide-react";
 
 interface SidebarLinkProps {
   to: string;
@@ -22,13 +33,13 @@ interface SidebarLinkProps {
 }
 
 const CustomerLinks: SidebarLinkProps[] = [
-  { to: "/customer/dashboard", icon: FileText, label: "Dashboard" },
-  { to: "/customer/upload", icon: FileText, label: "Upload Documents" },
-  { to: "/customer/status", icon: FileText, label: "View Status" },
+  { to: "/customer/dashboard", icon: Home, label: "Dashboard" },
+  { to: "/customer/upload", icon: Upload, label: "Upload Documents" },
+  { to: "/customer/status", icon: ClipboardList, label: "View Status" },
 ];
 
 const AdminLinks: SidebarLinkProps[] = [
-  { to: "/admin/dashboard", icon: FileText, label: "Dashboard" },
+  { to: "/admin/dashboard", icon: BarChart2, label: "Dashboard" },
   { to: "/admin/customers", icon: Users, label: "Customer List" },
   { to: "/admin/review", icon: FileText, label: "Review Documents" },
   { to: "/admin/share", icon: Share2, label: "Share with Bank" },
@@ -36,9 +47,9 @@ const AdminLinks: SidebarLinkProps[] = [
 ];
 
 const BankLinks: SidebarLinkProps[] = [
-  { to: "/bank/dashboard", icon: FileText, label: "Dashboard" },
+  { to: "/bank/dashboard", icon: BarChart2, label: "Dashboard" },
   { to: "/bank/documents", icon: Folder, label: "Shared Documents" },
-  { to: "/bank/notes", icon: NoteIcon, label: "View Notes" },
+  { to: "/bank/notes", icon: MessageSquare, label: "View Notes" },
 ];
 
 const AppSidebar = () => {
