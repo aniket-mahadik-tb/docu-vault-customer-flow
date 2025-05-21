@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
@@ -13,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Progress } from "@/components/ui/progress";
 import { Eye, FileImage, FileText, File, ZoomIn, ZoomOut, Search, Download, ArrowDown, ArrowUp, X } from "lucide-react";
 import * as pdfjs from "pdfjs-dist";
+import { getSamplePreviewUrl, isPdfPreview, usingSamplePreviews } from "@/lib/previewUtils";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog";
 
 // Set up PDF.js worker with a direct path (instead of dynamic import)
@@ -224,41 +224,41 @@ const BankDocuments = () => {
       ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension) ? 'image' : 
       'other';
     
-    // Default URL (will be replaced if it's a data URL)
-    let docUrl = doc.fileUrl;
-    let blobUrl: string | undefined = undefined;
-    
-    // Handle base64 data URLs by converting to Blob URLs
-    if (docUrl.startsWith('data:')) {
-      const blob = dataURLtoBlob(docUrl);
+    // Use sample preview if enabled
+    if (usingSamplePreviews()) {
+      doc.fileUrl = getSamplePreviewUrl(doc.name, fileType);
+    }
+    // Otherwise handle base64 data URLs by converting to Blob URLs
+    else if (doc.fileUrl.startsWith('data:')) {
+      const blob = dataURLtoBlob(doc.fileUrl);
       if (blob) {
-        blobUrl = URL.createObjectURL(blob);
+        const blobUrl = URL.createObjectURL(blob);
         createdBlobUrls.current.push(blobUrl);
-        docUrl = blobUrl;
+        doc.fileUrl = blobUrl;
       }
     } 
     // If it's a placeholder, use a demo image instead
-    else if (docUrl === "/placeholder.svg" || !docUrl) {
+    else if (doc.fileUrl === "/placeholder.svg" || !doc.fileUrl) {
       // Use placeholder based on file type
       if (fileType === 'image') {
-        docUrl = "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80";
+        doc.fileUrl = "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80";
       } else if (fileType === 'application/pdf') {
         // For PDFs, use a sample PDF that's publicly accessible
-        docUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
+        doc.fileUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
       }
     }
     
     setPreviewDoc({
       id: doc.id,
       name: doc.name,
-      url: docUrl,
+      url: doc.fileUrl,
       type: fileType,
-      blobUrl: blobUrl
+      blobUrl: doc.fileUrl
     });
     setOpenDialog(true);
     
     if (fileType === 'application/pdf') {
-      loadPdfDocument(docUrl);
+      loadPdfDocument(doc.fileUrl);
     }
   };
 
@@ -423,9 +423,10 @@ const BankDocuments = () => {
                       <div className="aspect-video relative bg-muted flex items-center justify-center">
                         {doc.type === 'image' ? (
                           <img 
-                            src={doc.fileUrl === "/placeholder.svg" ? 
-                              "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80" : 
-                              doc.fileUrl
+                            src={usingSamplePreviews() ? getSamplePreviewUrl(doc.name) : 
+                              (doc.fileUrl === "/placeholder.svg" ? 
+                                "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80" : 
+                                doc.fileUrl)
                             } 
                             alt={doc.name}
                             className="w-full h-full object-contain opacity-80" 
@@ -508,6 +509,12 @@ const BankDocuments = () => {
               
               {previewDoc && !isLoading && (
                 <div className="flex items-center justify-center min-h-[50vh]">
+                  {usingSamplePreviews() && (
+                    <div className="absolute top-0 right-0 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-bl text-xs">
+                      Sample Preview
+                    </div>
+                  )}
+                  
                   {previewDoc.type === 'image' ? (
                     <img 
                       src={previewDoc.url}
@@ -538,7 +545,9 @@ const BankDocuments = () => {
             </ScrollArea>
             
             <DialogFooter className="border-t mt-4 pt-4 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Document preview only. Download is not permitted.</p>
+              <p className="text-sm text-muted-foreground">
+                {usingSamplePreviews() ? "Sample document preview only." : "Document preview only. Download is not permitted."}
+              </p>
               
               {(previewDoc?.type === 'image' || previewDoc?.type === 'application/pdf') && (
                 <div className="flex items-center gap-2">

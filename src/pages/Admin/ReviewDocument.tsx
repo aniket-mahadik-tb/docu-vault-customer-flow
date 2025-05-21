@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
@@ -17,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import * as pdfjs from "pdfjs-dist";
+import { getSamplePreviewUrl, isPdfPreview, usingSamplePreviews } from "@/lib/previewUtils";
 
 // Set up PDF.js worker with a direct path (instead of dynamic import)
 const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -66,23 +66,35 @@ const ReviewDocument = () => {
   const document = customer?.documents.find((doc) => doc.id === documentId);
 
   useEffect(() => {
-    if (document && document.fileUrl) {
-      // If the fileUrl is a data URL, convert it to a Blob URL
-      if (document.fileUrl.startsWith('data:')) {
-        const blob = dataURLtoBlob(document.fileUrl);
-        if (blob) {
-          const blobUrl = URL.createObjectURL(blob);
-          setDocumentBlobUrl(blobUrl);
-          
-          if (document.fileUrl.toLowerCase().includes('application/pdf') || 
-              document.name.toLowerCase().endsWith('.pdf')) {
-            loadPdf(blobUrl);
-          }
+    if (document) {
+      if (usingSamplePreviews()) {
+        // Use sample preview based on document name
+        const sampleUrl = getSamplePreviewUrl(document.name, document.fileUrl?.split(';')[0]);
+        
+        if (isPdfPreview(sampleUrl)) {
+          loadPdf(sampleUrl);
         } else {
-          setError("Failed to convert document data to viewable format");
+          // For non-PDF samples, just set the URL without conversion
+          setDocumentBlobUrl(sampleUrl);
         }
-      } else if (document.fileUrl.toLowerCase().endsWith('.pdf')) {
-        loadPdf(document.fileUrl);
+      } else {
+        // If the fileUrl is a data URL, convert it to a Blob URL
+        if (document.fileUrl.startsWith('data:')) {
+          const blob = dataURLtoBlob(document.fileUrl);
+          if (blob) {
+            const blobUrl = URL.createObjectURL(blob);
+            setDocumentBlobUrl(blobUrl);
+            
+            if (document.fileUrl.toLowerCase().includes('application/pdf') || 
+                document.name.toLowerCase().endsWith('.pdf')) {
+              loadPdf(blobUrl);
+            }
+          } else {
+            setError("Failed to convert document data to viewable format");
+          }
+        } else if (document.fileUrl.toLowerCase().endsWith('.pdf')) {
+          loadPdf(document.fileUrl);
+        }
       }
     }
   }, [document]);
@@ -165,11 +177,17 @@ const ReviewDocument = () => {
     }
   };
 
-  const isPdf = document?.name.toLowerCase().endsWith('.pdf');
+  const isPdf = document?.name.toLowerCase().endsWith('.pdf') || 
+               getSamplePreviewUrl(document?.name || '').toLowerCase().endsWith('.pdf');
   const isImage = document?.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/);
   
   // Get a usable document URL or fallback
   const getDocumentUrl = () => {
+    // If we're using sample previews, return the appropriate sample
+    if (usingSamplePreviews() && document) {
+      return getSamplePreviewUrl(document.name);
+    }
+    
     // First try the blob URL if we created one
     if (documentBlobUrl) {
       return documentBlobUrl;
@@ -314,6 +332,11 @@ const ReviewDocument = () => {
           <Card>
             <CardHeader>
               <CardTitle>Document Preview</CardTitle>
+              {usingSamplePreviews() && (
+                <CardDescription className="text-yellow-500">
+                  Showing sample preview - original content not displayed
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent className="flex flex-col justify-center items-center min-h-[400px] bg-muted/40 relative">
               {isLoading ? (
