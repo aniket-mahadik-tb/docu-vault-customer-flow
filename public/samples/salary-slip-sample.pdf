@@ -1,4 +1,18 @@
 
-<!-- This would be a binary file in real implementation -->
-<!-- For this simulation, we're using a placeholder comment -->
-<!-- In a real app, you would add actual PDF files here -->
+<!-- This is a placeholder for a salary slip sample PDF -->
+<!-- In a real implementation, this would be an actual PDF file -->
+<!-- The PDF would contain a salary slip with fictional details like: -->
+<!-- Company Name: ABC CORPORATION -->
+<!-- Employee Name: JOHN DOE -->
+<!-- Employee ID: EMP123456 -->
+<!-- Month: April 2023 -->
+<!-- Basic Salary: ₹50,000 -->
+<!-- HRA: ₹20,000 -->
+<!-- Conveyance: ₹5,000 -->
+<!-- Special Allowance: ₹15,000 -->
+<!-- Gross Salary: ₹90,000 -->
+<!-- PF Deduction: ₹6,000 -->
+<!-- Professional Tax: ₹200 -->
+<!-- Income Tax: ₹8,000 -->
+<!-- Net Salary: ₹75,800 -->
+<!-- With a "SAMPLE - NOT REAL" watermark across it -->

@@ -1,4 +1,9 @@
 
-<!-- This would be a binary file in real implementation -->
-<!-- For this simulation, we're using a placeholder comment -->
-<!-- In a real app, you would add actual JPG files here -->
+<!-- This is a placeholder for a PAN card sample image -->
+<!-- In a real implementation, this would be an actual JPG file -->
+<!-- The image would show a PAN card with fictional details like: -->
+<!-- Name: JOHN DOE -->
+<!-- Father's Name: ROBERT DOE -->
+<!-- Date of Birth: 01/01/1990 -->
+<!-- PAN: ABCDE1234F -->
+<!-- With a "SAMPLE" watermark across it -->

@@ -1,4 +1,12 @@
 
-<!-- This would be a binary file in real implementation -->
-<!-- For this simulation, we're using a placeholder comment -->
-<!-- In a real app, you would add actual JPG files here -->
+<!-- This is a placeholder for a passport sample image -->
+<!-- In a real implementation, this would be an actual JPG file -->
+<!-- The image would show a passport page with fictional details like: -->
+<!-- Name: SMITH, JANE -->
+<!-- Nationality: INDIAN -->
+<!-- Date of Birth: 15/03/1985 -->
+<!-- Place of Birth: MUMBAI -->
+<!-- Date of Issue: 10/05/2018 -->
+<!-- Date of Expiry: 09/05/2028 -->
+<!-- Passport No: A1234567 -->
+<!-- With a "SAMPLE" watermark across it -->

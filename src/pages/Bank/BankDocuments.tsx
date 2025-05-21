@@ -15,9 +15,8 @@ import * as pdfjs from "pdfjs-dist";
 import { getSamplePreviewUrl, isPdfPreview, usingSamplePreviews } from "@/lib/previewUtils";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog";
 
-// Set up PDF.js worker with a direct path (instead of dynamic import)
-const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+// Modify PDF.js worker setup to use a more reliable CDN that matches our version
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 // Utility function to convert base64/dataURL to Blob
 const dataURLtoBlob = (dataURL: string): Blob | null => {
@@ -224,41 +223,22 @@ const BankDocuments = () => {
       ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension) ? 'image' : 
       'other';
     
-    // Use sample preview if enabled
-    if (usingSamplePreviews()) {
-      doc.fileUrl = getSamplePreviewUrl(doc.name, fileType);
-    }
-    // Otherwise handle base64 data URLs by converting to Blob URLs
-    else if (doc.fileUrl.startsWith('data:')) {
-      const blob = dataURLtoBlob(doc.fileUrl);
-      if (blob) {
-        const blobUrl = URL.createObjectURL(blob);
-        createdBlobUrls.current.push(blobUrl);
-        doc.fileUrl = blobUrl;
-      }
-    } 
-    // If it's a placeholder, use a demo image instead
-    else if (doc.fileUrl === "/placeholder.svg" || !doc.fileUrl) {
-      // Use placeholder based on file type
-      if (fileType === 'image') {
-        doc.fileUrl = "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80";
-      } else if (fileType === 'application/pdf') {
-        // For PDFs, use a sample PDF that's publicly accessible
-        doc.fileUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
-      }
-    }
+    console.log(`Opening preview for document: ${doc.name}, type: ${fileType}`);
+    
+    // Use sample preview
+    const sampleUrl = getSamplePreviewUrl(doc.name, fileType);
+    console.log(`Sample preview URL: ${sampleUrl}`);
     
     setPreviewDoc({
       id: doc.id,
       name: doc.name,
-      url: doc.fileUrl,
-      type: fileType,
-      blobUrl: doc.fileUrl
+      url: sampleUrl,
+      type: fileType
     });
     setOpenDialog(true);
     
     if (fileType === 'application/pdf') {
-      loadPdfDocument(doc.fileUrl);
+      loadPdfDocument(sampleUrl);
     }
   };
 
@@ -268,10 +248,11 @@ const BankDocuments = () => {
       setLoadingProgress(10);
       setErrorMessage(""); // Clear previous errors
       
+      console.log(`Loading PDF document from URL: ${url}`);
+      
       const loadingTask = pdfjs.getDocument({
         url: url,
-        // Use standard CDN without version-specific path
-        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist/cmaps/',
+        cMapUrl: 'https://unpkg.com/pdfjs-dist@latest/cmaps/',
         cMapPacked: true,
       });
       
@@ -282,6 +263,7 @@ const BankDocuments = () => {
       
       try {
         const pdf = await loadingTask.promise;
+        console.log(`PDF loaded successfully with ${pdf.numPages} pages`);
         setLoadingProgress(100);
         setPdfDoc(pdf);
         setNumPages(pdf.numPages);
@@ -522,6 +504,7 @@ const BankDocuments = () => {
                       className="max-w-full max-h-[70vh] object-contain" 
                       style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center' }}
                       onError={(e) => {
+                        console.error(`Failed to load image: ${previewDoc.url}`);
                         // Fallback to placeholder if image fails to load
                         (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80";
                       }}
