@@ -72,7 +72,13 @@ export const getSamplePreviewUrl = (fileName: string, fileType?: string): string
  * @returns boolean indicating if PDF viewer should be used
  */
 export const isPdfPreview = (url: string): boolean => {
-  return url.toLowerCase().endsWith('.pdf');
+  // Consider both .pdf extension and bank statement (which may appear as .png in our sample)
+  if (url.toLowerCase().endsWith('.pdf')) return true;
+  
+  // Special case for bank statement sample which might be a PNG but we want to treat as PDF
+  if (url.toLowerCase().includes('bank-statement-sample')) return false;
+  
+  return false;
 };
 
 /**

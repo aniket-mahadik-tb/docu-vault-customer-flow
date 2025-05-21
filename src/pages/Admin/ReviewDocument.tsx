@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
@@ -18,7 +19,7 @@ import {
 import * as pdfjs from "pdfjs-dist";
 import { getSamplePreviewUrl, isPdfPreview, usingSamplePreviews } from "@/lib/previewUtils";
 
-// Set up PDF.js worker with a direct path (instead of dynamic import)
+// Updated PDF.js worker with a direct path (using cdnjs instead of unpkg)
 const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 

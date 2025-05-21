@@ -15,8 +15,8 @@ import * as pdfjs from "pdfjs-dist";
 import { getSamplePreviewUrl, isPdfPreview, usingSamplePreviews } from "@/lib/previewUtils";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog";
 
-// Modify PDF.js worker setup to use a more reliable CDN that matches our version
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Updated PDF.js worker setup to use a more reliable CDN
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 // Utility function to convert base64/dataURL to Blob
 const dataURLtoBlob = (dataURL: string): Blob | null => {
@@ -233,11 +233,11 @@ const BankDocuments = () => {
       id: doc.id,
       name: doc.name,
       url: sampleUrl,
-      type: fileType
+      type: isPdfPreview(sampleUrl) ? 'application/pdf' : 'image'
     });
     setOpenDialog(true);
     
-    if (fileType === 'application/pdf') {
+    if (isPdfPreview(sampleUrl)) {
       loadPdfDocument(sampleUrl);
     }
   };
