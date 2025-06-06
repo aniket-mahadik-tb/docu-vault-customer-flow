@@ -1,11 +1,11 @@
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import MainLayout from "@/layouts/MainLayout";
-import { useCustomers } from "@/contexts/CustomerContext";
+import { Customer } from "@/contexts/CustomerContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Eye, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCustomerService } from "@/services/customerService";
 import {
   Table,
   TableBody,
@@ -23,9 +23,28 @@ import {
 } from "@/components/ui/card";
 
 const CustomerList = () => {
-  const { customers } = useCustomers();
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const customerService = useCustomerService();
+
+  useEffect(() => {
+    const loadCustomers = async () => {
+      try {
+        const response = await customerService.getAllCustomers();
+        setCustomers(response.data);
+      } catch (error) {
+        console.error("Failed to fetch customers:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load customers. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    loadCustomers();
+  }, []);
 
   const viewCustomer = (customerId: string) => {
     navigate(`/admin/customers/${customerId}`);
