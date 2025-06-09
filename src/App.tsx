@@ -17,7 +17,7 @@ import DocumentStatus from "./pages/Customer/DocumentStatus";
 import DocumentReupload from "./pages/Customer/DocumentReupload";
 
 // Admin pages
-import AdminEntry from "./pages/Admin/AdminEntry";
+import AdminEntry from "./pages/Admin/Login";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import CustomerList from "./pages/Admin/CustomerList";
 import CustomerDetail from "./pages/Admin/CustomerDetail";
@@ -31,6 +31,7 @@ import BankEntry from "./pages/Bank/BankEntry";
 import BankDashboard from "./pages/Bank/BankDashboard";
 import BankDocuments from "./pages/Bank/BankDocuments";
 import BankNotes from "./pages/Bank/BankNotes";
+import Login from "./pages/Admin/Login";
 
 const queryClient = new QueryClient();
 
@@ -54,7 +55,7 @@ const App = () => (
                 <Route path="/customer/reupload" element={<DocumentReupload />} />
 
 
-                <Route path="/admin" element={<AdminEntry />} >
+                <Route path="/admin" element={<Login />} >
                   <Route index element={< Navigate to={"dashboard"} />} />
                   <Route path="dashboard" element={<AdminDashboard />} />
                   <Route path="customers" element={<CustomerList />} />

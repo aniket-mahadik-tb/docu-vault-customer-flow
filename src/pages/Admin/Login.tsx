@@ -10,7 +10,7 @@ import { useUserService } from "@/services/userService";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 
-const AdminEntry = () => {
+const Login = () => {
   const navigate = useNavigate();
   const { setUserId, setRole, userId, role } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,7 +37,7 @@ const AdminEntry = () => {
     try {
       const response = await userService.getUserById(userId);
       if (response.status === 200 && response.data) {
-        return response.data.userId === password && response.data.role === "Admin";
+        return response.data === "Admin" || response.data === "SuperAdmin";
       }
       return false;
     } catch (err) {
@@ -95,15 +95,15 @@ const AdminEntry = () => {
       <div className="flex items-center justify-center min-h-[80vh]">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Customer Portal</CardTitle>
-            <CardDescription>Enter your PAN card number to continue</CardDescription>
+            <CardTitle>Admin Portal</CardTitle>
+            <CardDescription>Enter your authorization details to continue</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent>
               <div className="grid gap-4">
                 <div className="grid gap-2">
                   <label htmlFor="pan" className="text-sm font-medium">
-                    PAN Card Number
+                    User Id
                   </label>
                   <Input
                     name="userId"
@@ -118,7 +118,7 @@ const AdminEntry = () => {
                 </div>
                 <div className="grid gap-2">
                   <label htmlFor="pan" className="text-sm font-medium">
-                    PAN Card Number
+                    Password
                   </label>
                   <Input
                     name="password"
@@ -135,7 +135,7 @@ const AdminEntry = () => {
             </CardContent>
             <CardFooter>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Verifying..." : "Continue"}
+                {isSubmitting ? "Signing In..." : "Sign In"}
               </Button>
             </CardFooter>
           </form>
@@ -144,4 +144,4 @@ const AdminEntry = () => {
     </MainLayout>);
 
 }
-export default AdminEntry;
+export default Login;
