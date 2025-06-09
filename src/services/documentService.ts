@@ -1,6 +1,6 @@
 import { DocumentFile, DocumentFolder, DocumentRoot, ModifiedDocumentRoot } from "@/contexts/DocumentContext";
 import { useCustomerService } from "./customerService";
-import { constants } from "@/utils/constants";
+import { constants } from "@/utils/globalConstants";
 
 
 const { mockFile, mockDocumentFolder1, mockDocumentFolder2, mockDocumentFolder3, mockDocumentRoot } = constants;

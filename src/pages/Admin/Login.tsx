@@ -9,6 +9,7 @@ import { useCustomerService } from "@/services/customerService";
 import { useUserService } from "@/services/userService";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -20,9 +21,11 @@ const Login = () => {
     userId: "",
     password: "",
   });
+  const { setValueToLocalStorage } = useLocalStorage();
 
-
-
+  useEffect(() => {
+    localStorage.removeItem("role");
+  }, [])
   useEffect(() => {
     if (userId && role === "Admin") {
       console.log("Admin already logged in:", userId);
@@ -49,6 +52,18 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    try {
+      const response = await userService.getUserById(formData.userId);
+      const role = response.data;
+      console.log(role);
+      setValueToLocalStorage("role", role);
+      //here i want to set the role in the local storage
+    }
+    catch (err) {
+      console.error("Validation error:", err);
+      return false;
+    }
+
 
     // try {
     //   const response = await customerService.getCustomerByPanCard(panNumber)
@@ -67,14 +82,14 @@ const Login = () => {
 
 
 
-    if (!await validateUser(formData.userId, formData.password)) {
-      toast({
-        title: "Invalid User Credebtials",
-        description: "Please enter valid Credentials",
-        variant: "destructive",
-      });
-      return;
-    }
+    // if (!await validateUser(formData.userId, formData.password)) {
+    //   toast({
+    //     title: "Invalid User Credebtials",
+    //     description: "Please enter valid Credentials",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
 
     setIsSubmitting(true);
 
@@ -95,7 +110,7 @@ const Login = () => {
       <div className="flex items-center justify-center min-h-[80vh]">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Admin Portal</CardTitle>
+            <CardTitle>Enter your credentials</CardTitle>
             <CardDescription>Enter your authorization details to continue</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>

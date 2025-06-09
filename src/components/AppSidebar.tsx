@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import {
@@ -13,64 +13,58 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { 
-  BarChart2, 
-  Upload, 
-  ClipboardList, 
-  User, 
-  Users, 
-  FileText, 
-  Share2, 
-  Folder, 
+import {
+  BarChart2,
+  Upload,
+  ClipboardList,
+  User,
+  Users,
+  FileText,
+  Share2,
+  Folder,
   MessageSquare,
-  Home 
+  Home,
+  Shield
 } from "lucide-react";
 
+import {CustomerLinks,AdminLinks,SuperAdminLinks,BankLinks} from "@/utils/globalConstants";
+
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 interface SidebarLinkProps {
   to: string;
   icon: React.ComponentType<any>;
   label: string;
 }
 
-const CustomerLinks: SidebarLinkProps[] = [
-  { to: "/customer/dashboard", icon: Home, label: "Dashboard" },
-  { to: "/customer/upload", icon: Upload, label: "Upload Documents" },
-  { to: "/customer/status", icon: ClipboardList, label: "View Status" },
-];
-
-const AdminLinks: SidebarLinkProps[] = [
-  { to: "/admin/dashboard", icon: BarChart2, label: "Dashboard" },
-  { to: "/admin/customers", icon: Users, label: "Customer List" },
-  { to: "/admin/review", icon: FileText, label: "Review Documents" },
-  { to: "/admin/share", icon: Share2, label: "Share with Bank" },
-  { to: "/admin/new-customer", icon: User, label: "New Customer" },
-];
-
-const BankLinks: SidebarLinkProps[] = [
-  { to: "/bank/dashboard", icon: BarChart2, label: "Dashboard" },
-  { to: "/bank/documents", icon: Folder, label: "Shared Documents" },
-  { to: "/bank/notes", icon: MessageSquare, label: "View Notes" },
-];
-
 const AppSidebar = () => {
-  const { role } = useUser();
+  // const { role } = useUser();
   const { state: sidebarState } = useSidebar();
   const location = useLocation();
+  const[Role,SetRole] = useState<string>("");
+  const { getValueFromLocalStorage } = useLocalStorage();
+
+  useEffect(()=>{
+    const roleFromStorage = getValueFromLocalStorage("role");
+    SetRole(roleFromStorage);
   
+  },[]);
+
   const isActive = (path: string) => location.pathname === path;
-  const getNavClass = ({ isActive }: { isActive: boolean }) => 
+  const getNavClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "bg-bharti-blueLight text-white font-medium" : "hover:bg-sidebar-accent/50";
-  
-  const links = role === "Customer" ? CustomerLinks :
-               role === "Admin" ? AdminLinks :
-               role === "Bank" ? BankLinks : [];
-  
+
+  // const links = role === "Customer" ? CustomerLinks :
+  //   role === "Admin" ? AdminLinks :
+  //     role === "Bank" ? BankLinks : [];
+
+  const links = Role === "Admin" ? AdminLinks :SuperAdminLinks;
+
   const isCollapsed = sidebarState === "collapsed";
-  
+
   return (
-    <Sidebar 
-      variant="inset" 
-      side="left" 
+    <Sidebar
+      variant="inset"
+      side="left"
       className="border-r border-gray-200 w-60 h-full"
     >
       <SidebarContent>
@@ -81,8 +75,8 @@ const AppSidebar = () => {
               {links.map((link, index) => (
                 <SidebarMenuItem key={index}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={link.to} 
+                    <NavLink
+                      to={link.to}
                       className={isActive(link.to) ? "bg-bharti-blueLight text-white font-medium" : "hover:bg-sidebar-accent/50"}
                     >
                       <link.icon className="h-4 w-4" />

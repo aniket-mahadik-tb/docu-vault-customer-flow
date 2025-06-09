@@ -45,7 +45,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={<Login />} />
 
                 {/* Customer routes */}
                 <Route path="/customer" element={<CustomerEntry />} />
@@ -55,7 +55,7 @@ const App = () => (
                 <Route path="/customer/reupload" element={<DocumentReupload />} />
 
 
-                <Route path="/admin" element={<Login />} >
+                {/* <Route path="/admin" element={<Login />} >
                   <Route index element={< Navigate to={"dashboard"} />} />
                   <Route path="dashboard" element={<AdminDashboard />} />
                   <Route path="customers" element={<CustomerList />} />
@@ -64,17 +64,17 @@ const App = () => (
                   <Route path="review/:customerId/:documentId" element={<ReviewDocument />} />
                   <Route path="new-customer" element={<NewCustomer />} />
                   <Route path="share" element={<ShareWithBank />} />
-                </Route>
+                </Route> */}
 
                 {/* Admin routes */}
-                {/* <Route path="/admin" element={<AdminEntry />} />
+                <Route path="/admin" element={<AdminEntry />} />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/customers" element={<CustomerList />} />
                 <Route path="/admin/customers/:id" element={<CustomerDetail />} />
                 <Route path="/admin/review" element={<ReviewDocuments />} />
                 <Route path="/admin/review/:customerId/:documentId" element={<ReviewDocument />} />
                 <Route path="/admin/new-customer" element={<NewCustomer />} />
-                <Route path="/admin/share" element={<ShareWithBank />} /> */}
+                <Route path="/admin/share" element={<ShareWithBank />} />
 
                 {/* Bank routes */}
                 <Route path="/bank" element={<BankEntry />} />

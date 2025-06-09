@@ -1,5 +1,5 @@
 import { UserContextType } from "@/contexts/UserContext";
-import { constants } from "@/utils/constants";
+import { constants } from "@/utils/globalConstants";
 
 const { mockUsers } = constants;
 
@@ -22,8 +22,9 @@ export function useUserService() {
     service.getUserById = async (userId: String) => {
         try {
             await delay(500);
-            const user = mockUsers.find(u => u.role == "Admin" || u.role == "SuperAdmin");
-            if (!user) throw new Error("User Not Found");
+             const user = mockUsers[0];
+             if (!user) throw new Error("User Not Found");
+
             return {
                 data: user.role,
                 status: 200

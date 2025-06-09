@@ -1,21 +1,27 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { useUser } from "@/contexts/UserContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, FileText, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { userId } = useUser();
+  const { getValueFromLocalStorage } = useLocalStorage();
+  const [role, setRole] = useState<string | null>(null);
   
   useEffect(() => {
     if (!userId) {
       navigate("/admin");
+    }else {
+      const storedRole = getValueFromLocalStorage("role"); // Get the role from local storage
+      setRole(storedRole); // Set 
     }
-  }, [userId, navigate]);
+  }, [userId, navigate,getValueFromLocalStorage]);
 
   const dashboardCards = [
     {
@@ -48,9 +54,9 @@ const AdminDashboard = () => {
   return (
     <MainLayout showSidebar={true}>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold mb-6">{role === "Admin" ? "Admin Dashboard" : "Super Admin Dashboard"}</h1>
         <p className="text-muted-foreground mb-6">
-          Welcome to the admin dashboard. Here you can manage customers, review document submissions, and share approved documents with the bank.
+          Welcome to the {role === "Admin" ? "Admin Dashboard" : "Super Admin Dashboard"}. Here you can manage customers, review document submissions, and share approved documents with the bank.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
