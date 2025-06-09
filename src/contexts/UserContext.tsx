@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export type UserRole = "Customer" | "Admin" | "Bank" | null;
 
-interface UserContextType {
+export interface UserContextType {
   role: UserRole;
   userId: string | null;
   setRole: (role: UserRole) => void;

@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
+import { useUserService } from "@/services/userService";
+import { useCustomerService } from "@/services/customerService";
 
 const validatePAN = (pan: string): boolean => {
   // Basic PAN card validation: 5 letters, 4 numbers, 1 letter (AAAAA1234A format)
@@ -19,10 +21,30 @@ const CustomerEntry = () => {
   const { setUserId, setRole } = useUser();
   const [panNumber, setPanNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const customerService = useCustomerService();
+  const UserService = useUserService();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     
+    // try {
+    //   const response = await customerService.getCustomerByPanCard(panNumber)
+    //   setUserId(panNumber);
+    //   setRole("Customer");
+    //   navigate("/customer/dashboard");
+    //   setIsSubmitting(false);
+    // } catch (err: any) {
+    //   console.error("Failed to fetch customers:", err);
+    //   toast({
+    //     title: "Error",
+    //     description: "Failed to load customers. Please try again.",
+    //     variant: "destructive",
+    //   });
+    // }
+
+
+
     if (!validatePAN(panNumber)) {
       toast({
         title: "Invalid PAN",
@@ -33,7 +55,7 @@ const CustomerEntry = () => {
     }
 
     setIsSubmitting(true);
-    
+
     // Simulate API call delay
     setTimeout(() => {
       setUserId(panNumber);
