@@ -1,27 +1,7 @@
 import { UserContextType } from "@/contexts/UserContext";
+import { constants } from "@/utils/constants";
 
-const mockUsers: Partial<UserContextType>[] = [
-    {
-        role: "Customer",
-        userId: "CUST001",
-    },
-    {
-        role: "Customer",
-        userId: "CUST002",
-    },
-    {
-        role: "Customer",
-        userId: "CUST003",
-    },
-    {
-        role: "Bank",
-        userId: "CUST004",
-    },
-    {
-        role: "Admin",
-        userId: "CUST003",
-    },
-]
+const { mockUsers } = constants;
 
 const delay = (ms: number) => new Promise(Resolve => setTimeout(Resolve, ms));
 
@@ -70,5 +50,7 @@ export function useUserService() {
             throw err;
         }
     }
+
+    return service;
 
 }

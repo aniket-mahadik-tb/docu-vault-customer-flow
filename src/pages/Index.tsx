@@ -38,7 +38,7 @@ const Index = () => {
   ];
 
   const handlePortalSelect = (path: string, role: "Customer" | "Admin" | "Bank") => {
-    setRole(role);
+    // setRole(role);
     navigate(path);
   };
 

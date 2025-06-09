@@ -75,5 +75,28 @@ const mockDocumentRoot: ModifiedDocumentRoot[] = [
     }
 ]
 
-export const constants = { mockFile, mockDocumentFolder1, mockDocumentFolder2, mockDocumentFolder3, mockDocumentRoot };
+const mockUsers: Partial<UserContextType>[] = [
+    {
+        role: "Customer",
+        userId: "CUST001",
+    },
+    {
+        role: "Customer",
+        userId: "CUST002",
+    },
+    {
+        role: "Customer",
+        userId: "CUST003",
+    },
+    {
+        role: "Bank",
+        userId: "CUST004",
+    },
+    {
+        role: "Admin",
+        userId: "CUST005",
+    },
+]
+
+export const constants = { mockFile, mockDocumentFolder1, mockDocumentFolder2, mockDocumentFolder3, mockDocumentRoot, mockUsers };
 
