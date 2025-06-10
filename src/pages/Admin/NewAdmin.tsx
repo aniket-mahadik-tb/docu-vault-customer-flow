@@ -2,10 +2,10 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
+import { useAdmins, Admin } from "@/contexts/AdminContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, UserPlus } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAdminService, adminSchema } from "@/services/adminService";
 import {
   Form,
   FormControl,
@@ -31,47 +31,53 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-type AdminFormValues = {
-  name: string;
-  email: string;
-  userId: string;
-  password: string;
-  role: "Admin" | "SuperAdmin";
-};
+// Create a schema for form validation
+const adminSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type AdminFormValues = z.infer<typeof adminSchema>;
 
 const NewAdmin = () => {
   const navigate = useNavigate();
+  const { addAdmin } = useAdmins();
   const { toast } = useToast();
-  const adminService = useAdminService();
 
   const form = useForm<AdminFormValues>({
     resolver: zodResolver(adminSchema),
     defaultValues: {
       name: "",
       email: "",
-      userId: "",
       password: "",
-      role: "Admin",
+      confirmPassword: "",
     },
   });
 
   const onSubmit = async (data: AdminFormValues) => {
     try {
-      const response = await adminService.addAdmin(data);
+      // Remove confirmPassword before adding to context
+      const { confirmPassword, ...adminData } = data;
+      addAdmin(adminData as Omit<Admin, 'id' | 'lastLogin' | 'status'>);
       
       toast({
-        title: "Admin added successfully",
-        description: `New admin ${data.name} has been created.`,
+        title: "Success",
+        description: "New admin has been created successfully.",
       });
       
       navigate("/admin/admins");
     } catch (error) {
-      console.error("Error adding admin:", error);
       toast({
-        title: "Error adding admin",
-        description: "There was a problem adding the admin. Please try again.",
+        title: "Error",
+        description: "Failed to create admin. Please try again.",
         variant: "destructive",
       });
     }
@@ -93,7 +99,7 @@ const NewAdmin = () => {
           <CardHeader>
             <CardTitle>Add New Admin</CardTitle>
             <CardDescription>
-              Create a new admin account with appropriate permissions
+              Create a new administrator account
             </CardDescription>
           </CardHeader>
           <Form {...form}>
@@ -109,7 +115,7 @@ const NewAdmin = () => {
                         <Input placeholder="John Smith" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Admin's full name
+                        Admin's full legal name
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -123,34 +129,10 @@ const NewAdmin = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="john@example.com" 
-                          {...field} 
-                        />
+                        <Input placeholder="john.smith@example.com" type="email" {...field} />
                       </FormControl>
                       <FormDescription>
                         Admin's email address
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="userId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>User ID</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="admin123" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Unique identifier for login
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -164,14 +146,10 @@ const NewAdmin = () => {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="password"
-                          placeholder="••••••••" 
-                          {...field} 
-                        />
+                        <Input type="password" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Minimum 6 characters
+                        Password must be at least 8 characters long
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -180,35 +158,26 @@ const NewAdmin = () => {
 
                 <FormField
                   control={form.control}
-                  name="role"
+                  name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Role</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a role" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Admin">Admin</SelectItem>
-                          <SelectItem value="SuperAdmin">Super Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
                       <FormDescription>
-                        Admin role determines access level
+                        Re-enter the password to confirm
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+              
               </CardContent>
               <CardFooter>
-                <Button type="submit">
-                  <UserPlus className="mr-2 h-4 w-4" /> Create Admin Account
+                <Button type="submit" className="w-full">
+                  Create Admin
                 </Button>
               </CardFooter>
             </form>

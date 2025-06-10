@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { UserProvider } from "@/contexts/UserContext";
 import { DocumentProvider } from "@/contexts/DocumentContext";
 import { CustomerProvider } from "@/contexts/CustomerContext";
+import { AdminProvider } from "@/contexts/AdminContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +33,8 @@ import BankDashboard from "./pages/Bank/BankDashboard";
 import BankDocuments from "./pages/Bank/BankDocuments";
 import BankNotes from "./pages/Bank/BankNotes";
 import Login from "./pages/Admin/Login";
+import AdminsList from "./pages/SuperAdmin/AdminsList";
+import NewAdmin from "./pages/Admin/NewAdmin";
 
 const queryClient = new QueryClient();
 
@@ -41,51 +44,54 @@ const App = () => (
       <UserProvider>
         <DocumentProvider>
           <CustomerProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Login />} />
+            <AdminProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Login />} />
 
-                {/* Customer routes */}
-                <Route path="/customer" element={<CustomerEntry />} />
-                <Route path="/customer/dashboard" element={<CustomerDashboard />} />
-                <Route path="/customer/upload" element={<DocumentUpload />} />
-                <Route path="/customer/status" element={<DocumentStatus />} />
-                <Route path="/customer/reupload" element={<DocumentReupload />} />
+                  {/* Customer routes */}
+                  <Route path="/customer" element={<CustomerEntry />} />
+                  <Route path="/customer/dashboard" element={<CustomerDashboard />} />
+                  <Route path="/customer/upload" element={<DocumentUpload />} />
+                  <Route path="/customer/status" element={<DocumentStatus />} />
+                  <Route path="/customer/reupload" element={<DocumentReupload />} />
 
 
-                {/* <Route path="/admin" element={<Login />} >
-                  <Route index element={< Navigate to={"dashboard"} />} />
-                  <Route path="dashboard" element={<AdminDashboard />} />
-                  <Route path="customers" element={<CustomerList />} />
-                  <Route path="customers/:id" element={<CustomerDetail />} />
-                  <Route path="review" element={<ReviewDocuments />} />
-                  <Route path="review/:customerId/:documentId" element={<ReviewDocument />} />
-                  <Route path="new-customer" element={<NewCustomer />} />
-                  <Route path="share" element={<ShareWithBank />} />
-                </Route> */}
+                  {/* <Route path="/admin" element={<Login />} >
+                    <Route index element={< Navigate to={"dashboard"} />} />
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="customers" element={<CustomerList />} />
+                    <Route path="customers/:id" element={<CustomerDetail />} />
+                    <Route path="review" element={<ReviewDocuments />} />
+                    <Route path="review/:customerId/:documentId" element={<ReviewDocument />} />
+                    <Route path="new-customer" element={<NewCustomer />} />
+                    <Route path="share" element={<ShareWithBank />} />
+                  </Route> */}
 
-                {/* Admin routes */}
-                <Route path="/admin" element={<AdminEntry />} />
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/customers" element={<CustomerList />} />
-                <Route path="/admin/customers/:id" element={<CustomerDetail />} />
-                <Route path="/admin/review" element={<ReviewDocuments />} />
-                <Route path="/admin/review/:customerId/:documentId" element={<ReviewDocument />} />
-                <Route path="/admin/new-customer" element={<NewCustomer />} />
-                <Route path="/admin/share" element={<ShareWithBank />} />
+                  {/* Admin routes */}
+                  <Route path="/admin" element={<AdminEntry />} />
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/customers" element={<CustomerList />} />
+                  <Route path="/admin/customers/:id" element={<CustomerDetail />} />
+                  <Route path="/admin/review" element={<ReviewDocuments />} />
+                  <Route path="/admin/review/:customerId/:documentId" element={<ReviewDocument />} />
+                  <Route path="/admin/new-customer" element={<NewCustomer />} />
+                  <Route path="/admin/share" element={<ShareWithBank />} />
+                  <Route path="/admin/admins" element={<AdminsList/>} />
+                  <Route path="/admin/new-admin" element={<NewAdmin/>} />
+                  {/* Bank routes */}
+                  <Route path="/bank" element={<BankEntry />} />
+                  <Route path="/bank/dashboard" element={<BankDashboard />} />
+                  <Route path="/bank/documents" element={<BankDocuments />} />
+                  <Route path="/bank/notes" element={<BankNotes />} />
 
-                {/* Bank routes */}
-                <Route path="/bank" element={<BankEntry />} />
-                <Route path="/bank/dashboard" element={<BankDashboard />} />
-                <Route path="/bank/documents" element={<BankDocuments />} />
-                <Route path="/bank/notes" element={<BankNotes />} />
-
-                {/* 404 route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
+                  {/* 404 route */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </AdminProvider>
           </CustomerProvider>
         </DocumentProvider>
       </UserProvider>

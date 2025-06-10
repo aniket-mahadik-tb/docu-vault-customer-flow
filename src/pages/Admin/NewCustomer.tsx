@@ -2,9 +2,9 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
-import { useCustomers } from "@/contexts/CustomerContext";
+import { useCustomers, Customer } from "@/contexts/CustomerContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
@@ -31,7 +31,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 const customerSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
-  phone: z.string().min(10, { message: "Please enter a valid phone number" }),
+  phone: z.string()
+    .length(10, { message: "Phone number must be exactly 10 digits" })
+    .regex(/^[0-9]+$/, { message: "Phone number must contain only digits" }),
   panCard: z.string()
     .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, { message: "Please enter a valid PAN Card number (e.g., ABCDE1234F)" }),
   businessName: z.string().optional(),
@@ -40,8 +42,8 @@ const customerSchema = z.object({
 type CustomerFormValues = z.infer<typeof customerSchema>;
 
 const NewCustomer = () => {
-  const { addCustomer, generateUploadLink } = useCustomers();
   const navigate = useNavigate();
+  const { addCustomer } = useCustomers();
   const { toast } = useToast();
 
   const form = useForm<CustomerFormValues>({
@@ -55,37 +57,20 @@ const NewCustomer = () => {
     },
   });
 
-  const onSubmit = (data: CustomerFormValues) => {
+  const onSubmit = async (data: CustomerFormValues) => {
     try {
-      // Cast the data to the expected type required by addCustomer
-      // This ensures that name, email, phone, and panCard are treated as required fields
-      const customerData = {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        panCard: data.panCard,
-        businessName: data.businessName || "",
-      };
+      addCustomer(data as Omit<Customer, 'id' | 'createdAt' | 'documentsSubmitted' | 'documents'>);
       
-      // Add the new customer with properly typed data
-      const newCustomer = addCustomer(customerData);
-      
-      // Generate upload link for the customer
-      const uploadLink = generateUploadLink(newCustomer.id);
-      
-      // Show success toast
       toast({
-        title: "Customer added successfully",
-        description: `Upload link sent to ${data.email}`,
+        title: "Success",
+        description: "New customer has been created successfully.",
       });
       
-      // Navigate to the customer detail page
-      navigate(`/admin/customers/${newCustomer.id}`);
+      navigate("/admin/customers");
     } catch (error) {
-      console.error("Error adding customer:", error);
       toast({
-        title: "Error adding customer",
-        description: "There was a problem adding the customer. Please try again.",
+        title: "Error",
+        description: "Failed to create customer. Please try again.",
         variant: "destructive",
       });
     }
@@ -107,7 +92,7 @@ const NewCustomer = () => {
           <CardHeader>
             <CardTitle>Add New Customer</CardTitle>
             <CardDescription>
-              Create a new customer and send them a document upload link
+              Create a new customer account
             </CardDescription>
           </CardHeader>
           <Form {...form}>
@@ -137,14 +122,10 @@ const NewCustomer = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="john@example.com" 
-                          {...field} 
-                        />
+                        <Input placeholder="john.smith@example.com" type="email" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Document upload link will be sent to this email
+                        Customer's email address
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -159,10 +140,18 @@ const NewCustomer = () => {
                       <FormLabel>Phone Number</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="1234567890" 
-                          {...field} 
+                          placeholder="9876543210" 
+                          {...field}
+                          maxLength={10}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^0-9]/g, '');
+                            field.onChange(value);
+                          }}
                         />
                       </FormControl>
+                      <FormDescription>
+                        Enter a 10-digit phone number
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -173,20 +162,19 @@ const NewCustomer = () => {
                   name="panCard"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>PAN Card</FormLabel>
+                      <FormLabel>PAN Card Number</FormLabel>
                       <FormControl>
                         <Input 
                           placeholder="ABCDE1234F" 
-                          {...field} 
-                          autoCapitalize="characters"
+                          {...field}
                           onChange={(e) => {
-                            // Convert input to uppercase for PAN Card
-                            field.onChange(e.target.value.toUpperCase());
+                            const value = e.target.value.toUpperCase();
+                            field.onChange(value);
                           }}
                         />
                       </FormControl>
                       <FormDescription>
-                        Permanent Account Number card details
+                        Enter PAN Card number (e.g., ABCDE1234F)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -198,15 +186,12 @@ const NewCustomer = () => {
                   name="businessName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Business Name</FormLabel>
+                      <FormLabel>Business Name (Optional)</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="ABC Enterprises" 
-                          {...field} 
-                        />
+                        <Input placeholder="Business Name" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Optional - Leave blank for individual customers
+                        Customer's business name, if applicable
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -214,8 +199,8 @@ const NewCustomer = () => {
                 />
               </CardContent>
               <CardFooter>
-                <Button type="submit">
-                  <Send className="mr-2 h-4 w-4" /> Create & Send Upload Link
+                <Button type="submit" className="w-full">
+                  Create Customer
                 </Button>
               </CardFooter>
             </form>

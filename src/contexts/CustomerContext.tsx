@@ -39,6 +39,10 @@ interface CustomerContextType {
   generateUploadLink: (customerId: string, documentId?: string, remarks?: string) => string;
   syncCustomerDocuments: (customerIdOrPanCard: string) => void;
   findCustomerByPanCard: (panCard: string) => Customer | undefined;
+  updateCustomer: (id: string, customer: Partial<Customer>) => void;
+  deleteCustomer: (id: string) => void;
+  addCustomerDocument: (customerId: string, document: Omit<CustomerDocument, 'id' | 'uploadedAt'>) => void;
+  updateCustomerDocument: (customerId: string, documentId: string, document: Partial<CustomerDocument>) => void;
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined);
@@ -270,6 +274,54 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateCustomer = (id: string, customerData: Partial<Customer>) => {
+    setCustomers(prev =>
+      prev.map(customer =>
+        customer.id === id ? { ...customer, ...customerData } : customer
+      )
+    );
+  };
+
+  const deleteCustomer = (id: string) => {
+    setCustomers(prev => prev.filter(customer => customer.id !== id));
+  };
+
+  const addCustomerDocument = (customerId: string, documentData: Omit<CustomerDocument, 'id' | 'uploadedAt'>) => {
+    setCustomers(prev =>
+      prev.map(customer => {
+        if (customer.id === customerId) {
+          const newDocument: CustomerDocument = {
+            ...documentData,
+            id: `DOC${Date.now()}`,
+            uploadedAt: new Date().toISOString(),
+          };
+          return {
+            ...customer,
+            documents: [...customer.documents, newDocument],
+            documentsSubmitted: true,
+          };
+        }
+        return customer;
+      })
+    );
+  };
+
+  const updateCustomerDocument = (customerId: string, documentId: string, documentData: Partial<CustomerDocument>) => {
+    setCustomers(prev =>
+      prev.map(customer => {
+        if (customer.id === customerId) {
+          return {
+            ...customer,
+            documents: customer.documents.map(doc =>
+              doc.id === documentId ? { ...doc, ...documentData } : doc
+            ),
+          };
+        }
+        return customer;
+      })
+    );
+  };
+
   return (
     <CustomerContext.Provider
       value={{
@@ -280,7 +332,11 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
         getCustomerDocuments,
         generateUploadLink,
         syncCustomerDocuments,
-        findCustomerByPanCard
+        findCustomerByPanCard,
+        updateCustomer,
+        deleteCustomer,
+        addCustomerDocument,
+        updateCustomerDocument,
       }}
     >
       {children}

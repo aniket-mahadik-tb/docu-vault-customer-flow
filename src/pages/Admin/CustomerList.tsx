@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import MainLayout from "@/layouts/MainLayout";
-import { Customer } from "@/contexts/CustomerContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Eye, Search } from "lucide-react";
+import { Eye, Trash2, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useCustomerService } from "@/services/customerService";
+import { Customer, useCustomers } from "@/contexts/CustomerContext";
 import {
   Table,
   TableBody,
@@ -21,33 +20,52 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const CustomerList = () => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const { customers, deleteCustomer } = useCustomers();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const customerService = useCustomerService();
+  const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [customerToDelete, setCustomerToDelete] = React.useState<Customer | null>(null);
 
-  useEffect(() => {
-    const loadCustomers = async () => {
+  const handleViewCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setViewDialogOpen(true);
+  };
+
+  const handleDeleteClick = (customer: Customer) => {
+    setCustomerToDelete(customer);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (customerToDelete) {
       try {
-        const response = await customerService.getAllCustomers();
-        setCustomers(response.data);
+        deleteCustomer(customerToDelete.id);
+        toast({
+          title: "Success",
+          description: "Customer has been removed from the system.",
+        });
       } catch (error) {
-        console.error("Failed to fetch customers:", error);
         toast({
           title: "Error",
-          description: "Failed to load customers. Please try again.",
+          description: "Failed to delete customer. Please try again.",
           variant: "destructive",
         });
       }
-    };
-
-    loadCustomers();
-  }, []);
-
-  const viewCustomer = (customerId: string) => {
-    navigate(`/admin/customers/${customerId}`);
+      setDeleteDialogOpen(false);
+      setCustomerToDelete(null);
+    }
   };
 
   return (
@@ -61,7 +79,7 @@ const CustomerList = () => {
             </p>
           </div>
           <Button onClick={() => navigate("/admin/new-customer")}>
-            Add New Customer
+            <UserPlus className="mr-2 h-4 w-4" /> Add New Customer
           </Button>
         </div>
 
@@ -80,8 +98,9 @@ const CustomerList = () => {
                     <TableHead>Customer ID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>PAN Card</TableHead>
                     <TableHead>Phone</TableHead>
+                    <TableHead>PAN Card</TableHead>
+                    <TableHead>Business</TableHead>
                     <TableHead>Documents</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -93,8 +112,9 @@ const CustomerList = () => {
                         <TableCell>{customer.id}</TableCell>
                         <TableCell className="font-medium">{customer.name}</TableCell>
                         <TableCell>{customer.email}</TableCell>
-                        <TableCell>{customer.panCard}</TableCell>
                         <TableCell>{customer.phone}</TableCell>
+                        <TableCell>{customer.panCard}</TableCell>
+                        <TableCell>{customer.businessName || "-"}</TableCell>
                         <TableCell>
                           {customer.documentsSubmitted ? (
                             <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
@@ -111,9 +131,17 @@ const CustomerList = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => viewCustomer(customer.id)}
+                              onClick={() => handleViewCustomer(customer)}
                             >
                               <Eye className="h-4 w-4 mr-1" /> View
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteClick(customer)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" /> Delete
                             </Button>
                           </div>
                         </TableCell>
@@ -121,7 +149,7 @@ const CustomerList = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-4">
+                      <TableCell colSpan={8} className="text-center py-4">
                         No customers found
                       </TableCell>
                     </TableRow>
@@ -131,6 +159,88 @@ const CustomerList = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* View Customer Dialog */}
+        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Customer Details</DialogTitle>
+              <DialogDescription>
+                View detailed information about the customer
+              </DialogDescription>
+            </DialogHeader>
+            {selectedCustomer && (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Customer ID</p>
+                  <p className="font-medium">{selectedCustomer.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Name</p>
+                  <p className="font-medium">{selectedCustomer.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium">{selectedCustomer.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="font-medium">{selectedCustomer.phone}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">PAN Card</p>
+                  <p className="font-medium">{selectedCustomer.panCard}</p>
+                </div>
+                {selectedCustomer.businessName && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Business Name</p>
+                    <p className="font-medium">{selectedCustomer.businessName}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm text-muted-foreground">Registration Date</p>
+                  <p className="font-medium">
+                    {new Date(selectedCustomer.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Documents Status</p>
+                  <p className="font-medium">
+                    {selectedCustomer.documentsSubmitted 
+                      ? `Submitted (${selectedCustomer.documents.length} documents)`
+                      : "No documents submitted"}
+                  </p>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Customer</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this customer? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteConfirm}
+              >
+                Delete Customer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

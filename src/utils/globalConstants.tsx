@@ -86,7 +86,7 @@ const mockDocumentRoot: ModifiedDocumentRoot[] = [
 
 const mockUsers: Partial<UserContextType>[] = [
     {
-        role: "Admin",
+        role: "SuperAdmin",
     }
 ];
 
@@ -107,12 +107,15 @@ export const AdminLinks: SidebarLinkProps[] = [
 
 export const SuperAdminLinks: SidebarLinkProps[] = [
     { to: "/admin/dashboard", icon: BarChart2, label: "Dashboard" },
+    { to: "/admin/new-customer", icon: User, label: "Create New Customer" },
     { to: "/admin/customers", icon: Users, label: "Customer List" },
     { to: "/admin/review", icon: FileText, label: "Review Documents" },
     { to: "/admin/share", icon: Share2, label: "Share with Bank" },
-    { to: "/admin/new-customer", icon: User, label: "New Customer" },
     { to: "/admin/new-admin", icon: User, label: "Create New Admin" },
-    { to: "/admin/admins", icon: Shield, label: "Admin List" }
+    { to: "/admin/admins", icon: Shield, label: "Admin List" },
+    { to: "/admin/bank-user", icon: User, label: "Create New Bank-User" },
+    { to: "/admin/admins", icon: Users, label: "Bank User List" },
+
 ];
 
 export const BankLinks: SidebarLinkProps[] = [

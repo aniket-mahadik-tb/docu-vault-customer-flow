@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
@@ -10,6 +9,7 @@ import { useUserService } from "@/services/userService";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { Lock, User } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -55,9 +55,7 @@ const Login = () => {
     try {
       const response = await userService.getUserById(formData.userId);
       const role = response.data;
-      console.log(role);
       setValueToLocalStorage("role", role);
-      //here i want to set the role in the local storage
     }
     catch (err) {
       console.error("Validation error:", err);
@@ -107,56 +105,82 @@ const Login = () => {
 
   return (role == "Admin" && userId) ? <Outlet /> : (
     <MainLayout showSidebar={false}>
-      <div className="flex items-center justify-center min-h-[80vh]">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Enter your credentials</CardTitle>
-            <CardDescription>Enter your authorization details to continue</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent>
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <label htmlFor="pan" className="text-sm font-medium">
-                    User Id
-                  </label>
-                  <Input
-                    name="userId"
-                    type="text"
-                    placeholder="user_123"
-                    value={formData.userId}
-                    onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-                    maxLength={10}
-                    className="uppercase"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="pan" className="text-sm font-medium">
-                    Password
-                  </label>
-                  <Input
-                    name="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    maxLength={10}
-                    className="uppercase"
-                    required
-                  />
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="w-full max-w-md p-6">
+          <Card className="border-none shadow-lg">
+            <CardHeader className="space-y-1 text-center">
+              <div className="mb-4">
+                {/* Replace with your actual logo */}
+                <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                  <Lock className="w-8 h-8 text-primary" />
                 </div>
               </div>
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Signing In..." : "Sign In"}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
+              <CardTitle className="text-2xl font-bold tracking-tight">Welcome back</CardTitle>
+              <CardDescription className="text-gray-500">
+                Enter your credentials to access your account
+              </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      name="userId"
+                      type="text"
+                      placeholder="Enter your user ID"
+                      value={formData.userId}
+                      onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+                      className="pl-10 h-11 bg-gray-50/50 focus:bg-white transition-colors"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      name="password"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="pl-10 h-11 bg-gray-50/50 focus:bg-white transition-colors"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="text-sm text-right">
+                  <a href="#" className="text-primary hover:underline">
+                    Forgot password?
+                  </a>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  type="submit" 
+                  className="w-full h-11 bg-primary hover:bg-primary/90 transition-colors"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Signing in...
+                    </div>
+                  ) : (
+                    "Sign in"
+                  )}
+                </Button>
+              </CardFooter>
+            </form>
+            <div className="px-6 pb-6 text-center text-sm text-gray-500">
+              <p>Protected by DocuVault Security</p>
+            </div>
+          </Card>
+        </div>
       </div>
-    </MainLayout>);
+    </MainLayout>
+  );
+};
 
-}
 export default Login;
