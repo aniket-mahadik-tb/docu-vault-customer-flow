@@ -100,7 +100,7 @@ export const CustomerLinks: SidebarLinkProps[] = [
 export const AdminLinks: SidebarLinkProps[] = [
     { to: "/admin/dashboard", icon: BarChart2, label: "Dashboard" },
     { to: "/admin/customers", icon: Users, label: "Customer List" },
-    { to: "/admin/review", icon: FileText, label: "Review Documents" },
+    // { to: "/admin/review", icon: FileText, label: "Review Documents" },
     { to: "/admin/share", icon: Share2, label: "Share with Bank" },
     { to: "/admin/new-customer", icon: User, label: "New Customer" },
 ];
@@ -109,7 +109,7 @@ export const SuperAdminLinks: SidebarLinkProps[] = [
     { to: "/admin/dashboard", icon: BarChart2, label: "Dashboard" },
     { to: "/admin/new-customer", icon: User, label: "Create New Customer" },
     { to: "/admin/customers", icon: Users, label: "Customer List" },
-    { to: "/admin/review", icon: FileText, label: "Review Documents" },
+    // { to: "/admin/review", icon: FileText, label: "Review Documents" },
     { to: "/admin/share", icon: Share2, label: "Share with Bank" },
     { to: "/admin/new-admin", icon: User, label: "Create New Admin" },
     { to: "/admin/admins", icon: Shield, label: "Admin List" },

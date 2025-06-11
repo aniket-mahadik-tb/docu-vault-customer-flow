@@ -75,7 +75,7 @@ const App = () => (
                   <Route path="/admin/dashboard" element={<AdminDashboard />} />
                   <Route path="/admin/customers" element={<CustomerList />} />
                   <Route path="/admin/customers/:id" element={<CustomerDetail />} />
-                  <Route path="/admin/review" element={<ReviewDocuments />} />
+                  {/* <Route path="/admin/review" element={<ReviewDocuments />} /> */}
                   <Route path="/admin/review/:customerId/:documentId" element={<ReviewDocument />} />
                   <Route path="/admin/new-customer" element={<NewCustomer />} />
                   <Route path="/admin/share" element={<ShareWithBank />} />
