@@ -113,8 +113,8 @@ export const SuperAdminLinks: SidebarLinkProps[] = [
     { to: "/admin/share", icon: Share2, label: "Share with Bank" },
     { to: "/admin/new-admin", icon: User, label: "Create New Admin" },
     { to: "/admin/admins", icon: Shield, label: "Admin List" },
-    { to: "/admin/bank-user", icon: User, label: "Create New Bank-User" },
-    { to: "/admin/admins", icon: Users, label: "Bank User List" },
+    { to: "/admin/new-bank-user", icon: User, label: "Create New Bank User" },
+    { to: "/admin/bank-users", icon: Users, label: "Bank User List" },
 
 ];
 
