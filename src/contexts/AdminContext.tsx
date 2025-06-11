@@ -4,7 +4,7 @@ export interface Admin {
   id: string;
   name: string;
   email: string;
-  role: "Admin" | "Super Admin";
+  role: "Admin" | "SuperAdmin";
   status: "active" | "inactive";
   lastLogin: string;
   password?: string; // Only used during creation
@@ -35,7 +35,7 @@ const initialAdmins: Admin[] = [
     id: "ADM002",
     name: "Jane Smith",
     email: "jane.smith@example.com",
-    role: "Super Admin",
+    role: "SuperAdmin",
     status: "active",
     lastLogin: "2024-03-15T09:15:00Z",
   },
@@ -80,12 +80,12 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const canEditAdmin = (currentAdminId: string, targetAdminId: string) => {
     const currentAdmin = getAdmin(currentAdminId);
     const targetAdmin = getAdmin(targetAdminId);
-    
+
     if (!currentAdmin || !targetAdmin) return false;
-    
+
     // Super Admin can edit anyone
-    if (currentAdmin.role === "Super Admin") return true;
-    
+    if (currentAdmin.role === "SuperAdmin") return true;
+
     // Regular Admin can only edit themselves
     return currentAdmin.id === targetAdmin.id;
   };
