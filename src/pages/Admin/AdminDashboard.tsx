@@ -31,13 +31,13 @@ const AdminDashboard = () => {
       action: () => navigate("/admin/customers"),
       color: "bg-primary/5 hover:bg-primary/10 border-primary/20",
     },
-    {
-      title: "Review Documents",
-      description: "Review and approve/reject customer documents",
-      icon: <FileText className="h-8 w-8 text-secondary" />,
-      action: () => navigate("/admin/review"),
-      color: "bg-secondary/5 hover:bg-secondary/10 border-secondary/20",
-    },
+    // {
+    //   title: "Review Documents",
+    //   description: "Review and approve/reject customer documents",
+    //   icon: <FileText className="h-8 w-8 text-secondary" />,
+    //   action: () => navigate("/admin/review"),
+    //   color: "bg-secondary/5 hover:bg-secondary/10 border-secondary/20",
+    // },
     {
       title: "Share with Bank",
       description: "Share approved documents with the bank",
@@ -59,7 +59,7 @@ const AdminDashboard = () => {
           Welcome to the {role === "Admin" ? "Admin Dashboard" : "Super Admin Dashboard"}. Here you can manage customers, review document submissions, and share approved documents with the bank.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {dashboardCards.map((card, index) => (
             <Card 
               key={index} 
