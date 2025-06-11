@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { toast } from "@/components/ui/use-toast";
 import { useUserService } from "@/services/userService";
 import { useCustomerService } from "@/services/customerService";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const validatePAN = (pan: string): boolean => {
   // Basic PAN card validation: 5 letters, 4 numbers, 1 letter (AAAAA1234A format)
@@ -23,6 +24,7 @@ const CustomerEntry = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const customerService = useCustomerService();
   const UserService = useUserService();
+  const { getValueFromLocalStorage,setValueToLocalStorage } = useLocalStorage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +65,7 @@ const CustomerEntry = () => {
       navigate("/customer/dashboard");
       setIsSubmitting(false);
     }, 500);
+    setValueToLocalStorage("role","Customer");
   };
 
   return (

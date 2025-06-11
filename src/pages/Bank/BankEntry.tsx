@@ -17,6 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 // Mock PANs that are allowed to access the system
 const ALLOWED_PANS = ["ABCDE1234F", "PQRST5678G", "XYZAB9012C"];
@@ -44,6 +45,8 @@ const BankEntry = () => {
       pan: "",
     },
   });
+
+  const { getValueFromLocalStorage,setValueToLocalStorage } = useLocalStorage();
 
   // Default OTP value for easier demo access
   const defaultOTP = "123456";
@@ -105,6 +108,8 @@ const BankEntry = () => {
       title: "Verification Successful",
       description: "You now have access to shared documents.",
     });
+
+    setValueToLocalStorage("role","Bank");
     
     // Navigate to bank dashboard
     navigate("/bank/dashboard");
