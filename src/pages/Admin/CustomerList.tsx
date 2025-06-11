@@ -40,7 +40,7 @@ const CustomerList = () => {
 
   const handleViewCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
-    setViewDialogOpen(true);
+    navigate(`/admin/customers/${customer.id}`);
   };
 
   const handleDeleteClick = (customer: Customer) => {

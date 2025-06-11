@@ -38,6 +38,9 @@ import BankEntry from "./pages/Bank/BankEntry";
 import BankDashboard from "./pages/Bank/BankDashboard";
 import BankDocuments from "./pages/Bank/BankDocuments";
 import BankNotes from "./pages/Bank/BankNotes";
+// import Login from "./pages/Admin/Login";
+// import AdminsList from "./pages/SuperAdmin/AdminsList";
+// import NewAdmin from "./pages/Admin/NewAdmin";
 
 const queryClient = new QueryClient();
 
@@ -67,7 +70,7 @@ const App = () => (
                     <Route path="/admin/dashboard" element={<AdminDashboard />} />
                     <Route path="/admin/customers" element={<CustomerList />} />
                     <Route path="/admin/customers/:id" element={<CustomerDetail />} />
-                    <Route path="/admin/review" element={<ReviewDocuments />} />
+                    {/*<Route path="/admin/review" element={<ReviewDocuments />} />*/}
                     <Route path="/admin/review/:customerId/:documentId" element={<ReviewDocument />} />
                     <Route path="/admin/new-customer" element={<NewCustomer />} />
                     <Route path="/admin/share" element={<ShareWithBank />} />
