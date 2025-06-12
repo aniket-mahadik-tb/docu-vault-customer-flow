@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
-import { useCustomers, CustomerDocument } from "@/contexts/CustomerContext";
+import { useCustomers, CustomerDocument, Customer } from "@/contexts/CustomerContext";
 import { useDocuments } from "@/contexts/DocumentContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, File, RefreshCw, Link, Copy, FileText, Folder, Eye } from "lucide-react";
@@ -27,6 +27,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ReviewDocuments from "./ReviewDocuments";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useCustomerService } from "@/services/customerService";
+import { ShimmerButton, ShimmerSectionHeader, ShimmerText, ShimmerThumbnail, ShimmerTitle } from "react-shimmer-effects";
+import { resolve } from "path";
 
 // Document sections with their titles
 const documentSections = [
@@ -55,10 +58,12 @@ const CustomerDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { getCustomer, generateUploadLink, syncCustomerDocuments } = useCustomers();
   const navigate = useNavigate();
-  const initialSyncDone = useRef(false);
+  const customerService = useCustomerService();
+  // const initialSyncDone = useRef(false);
   const [reuploadLink, setReuploadLink] = useState<string | null>(null);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
-   const documentSections = {
+  // const [error, setError] = useState<boolean>(false);
+  const documentSections = {
     section1: "KYC Documents",
     section2: "Bank Statements",
     section3: "Loan Statements",
@@ -67,40 +72,220 @@ const CustomerDetail = () => {
     section6: "Business Documents"
   }
 
-  const customer = getCustomer(id || "");
+  const [customer, setCustomer] = useState<Customer | null>(null);
+
+  // let customer;//= getCustomer(id || "");
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 
   useEffect(() => {
-    // Only sync documents on initial mount or when customer changes
-    // Using a ref to track if we've already synced for this customer
-    if (customer && !initialSyncDone.current) {
-      syncCustomerDocuments(customer.panCard);
-      initialSyncDone.current = true;
+    (async function fetchCustomer() {
+      if (id) {
+        await delay(2000);
+        const res = await customerService.getCustomerById(id);
+        if (res.status == 200) {
+          setCustomer(res.data);
+        } else {
+          // If customer not found, redirect to customer list
+          toast({
+            title: `failed to fetch customer details`,
+            description: "Something went wrong please try again",
+            variant: "destructive",
+          });
+          navigate("/admin/customers");
+        }
+        console.log("Fetched customer:", customer);
+      }
     }
-  }, [customer?.id]); // Only re-run if customer ID changes, not on every render
+    )();
+  }, [])
+
+  // useEffect(() => {
+  //   // Only sync documents on initial mount or when customer changes
+  //   // Using a ref to track if we've already synced for this customer
+  //   (async () => {
+  //     if (customer && !initialSyncDone.current) {
+  //       const res = await customerService.getCustomerById(id);
+  //       if (res.status == 200) {
+  //         setCustomer(res.data);
+  //       } else {
+  //         // If customer not found, redirect to customer list
+  //         navigate("/admin/customers");
+  //       }
+  //     }
+  //   })();
+
+  // }, [customer?.id]); // Only re-run if customer ID changes, not on every render
 
   if (!customer) {
     return (
       <MainLayout showSidebar={true}>
-        <div className="py-6">
-          <p>Customer not found.</p>
-          <Button onClick={() => navigate("/admin/customers")} className="mt-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customer List
-          </Button>
+        <div >
+          <div className="py-6">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/admin/customers")}
+                  className="mb-4"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customer List
+                </Button>
+                <h1 className="text-2xl font-bold">Customer Details</h1>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => { }} variant="outline">
+                  <RefreshCw className="mr-2 h-4 w-4" /> Sync Documents
+                </Button>
+                <Button onClick={() => { }}>
+                  <Send className="mr-2 h-4 w-4" /> Send Upload Link
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="md:col-span-1">
+                <CardHeader>
+                  <CardTitle>Customer Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Customer ID</p>
+                    <p className="font-medium mt-1"><ShimmerTitle line={1} variant="secondary" /></p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Name</p>
+                    <p className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">PAN Card</p>
+                    <p className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-muted-foreground">Registration Date</p>
+                    <p className="font-medium">
+                      <p className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></p>
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle>Submitted Documents</CardTitle>
+                  <CardDescription>
+                    <p className="font-medium mt-2  "><ShimmerTitle variant="secondary" line={1} /></p>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+
+                  <div className="space-y-6">
+
+
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Document Type</TableHead>
+                            <TableHead>Document Name</TableHead>
+                            <TableHead>Uploaded</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+
+                          {[1].map((item) => {
+                            return (<TableRow >
+                              <TableCell >
+                                <p className="mt-3 mb-0">
+                                  <ShimmerThumbnail height={20} />
+                                </p>
+                              </TableCell>
+                              <TableCell>
+                                <p className="mt-3 mb-0">
+                                  <ShimmerThumbnail height={20} />
+                                </p>
+                              </TableCell>
+                              <TableCell>
+                                <p className="mt-3 mb-0">
+                                  <ShimmerThumbnail height={20} />
+                                </p>
+                              </TableCell>
+                              <TableCell>
+                                <p className="mt-3 mb-0">
+                                  <ShimmerThumbnail height={20} />
+                                </p>
+                              </TableCell>
+                              <TableCell>
+                                <p className="mt-3 mb-0">
+                                  <ShimmerThumbnail height={20} />
+                                </p>
+                              </TableCell>
+                              {/*                             
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Folder className="h-4 w-4" />
+                                <ShimmerText line={1} />
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                <ShimmerText line={1} />
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <ShimmerText line={1} />
+                            </TableCell>
+                            <TableCell> <ShimmerText line={1} /></TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => { }}
+                              >
+                                <Eye className="h-4 w-4 mr-1" /> Review
+                              </Button>
+                            </TableCell> */}
+                            </TableRow>)
+                          })}
+
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                  </div>
+
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </MainLayout>
     );
   }
 
-  const groupedDocuments = customer.documents.reduce<Record<string, CustomerDocument[]>>(
-    (groups, document) => {
-      if (!groups[document.sectionId]) {
-        groups[document.sectionId] = [];
-      }
-      groups[document.sectionId].push(document);
-      return groups;
-    },
-    {}
-  );
+  // const groupedDocuments = customer.documents.reduce<Record<string, CustomerDocument[]>>(
+  //   (groups, document) => {
+  //     if (!groups[document.sectionId]) {
+  //       groups[document.sectionId] = [];
+  //     }
+  //     groups[document.sectionId].push(document);
+  //     return groups;
+  //   },
+  //   {}
+  // );
 
   const handleSendLink = (documentId?: string, remarks?: string) => {
     const link = generateUploadLink(customer.id, documentId, remarks);
@@ -130,9 +315,21 @@ const CustomerDetail = () => {
     }
   };
 
-  const handleSyncDocuments = () => {
+  const handleSyncDocuments = async () => {
     if (customer) {
-      syncCustomerDocuments(customer.panCard);
+      const res = await customerService.getCustomerById(id);
+      if (res.status == 200) {
+        setCustomer(res.data);
+      } else {
+        // If customer not found, redirect to customer list
+        toast({
+          title: `failed to fetch customer details`,
+          description: "Something went wrong please try again",
+          variant: "destructive",
+
+        });
+        navigate("/admin/customers");
+      }
       toast({
         title: "Documents Synchronized",
         description: "Customer documents have been updated from uploads",

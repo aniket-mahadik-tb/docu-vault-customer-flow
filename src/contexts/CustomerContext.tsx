@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useDocuments } from "./DocumentContext";
+import { initialCustomers } from "@/utils/globalConstants";
 
 export interface CustomerDocument {
   id: string;
@@ -30,9 +31,9 @@ interface CustomerContextType {
   addCustomer: (customer: Omit<Customer, "id" | "createdAt" | "documentsSubmitted" | "documents">) => Customer;
   getCustomer: (id: string) => Customer | undefined;
   updateDocumentStatus: (
-    customerId: string, 
-    documentId: string, 
-    status: "approved" | "rejected" | "on_hold" | "pending", 
+    customerId: string,
+    documentId: string,
+    status: "approved" | "rejected" | "on_hold" | "pending",
     remarks?: string
   ) => void;
   getCustomerDocuments: (customerId: string) => CustomerDocument[];
@@ -50,70 +51,6 @@ const CustomerContext = createContext<CustomerContextType | undefined>(undefined
 const STORAGE_KEY = "admin_customers";
 
 // Mock data for initial customers
-const initialCustomers: Customer[] = [
-  {
-    id: "CUST001",
-    name: "Rajesh Kumar",
-    email: "rajesh@example.com",
-    phone: "9876543210",
-    panCard: "ABCDE1234F",
-    businessName: "Kumar Enterprises",
-    documentsSubmitted: true,
-    createdAt: new Date().toISOString(),
-    documents: [
-      {
-        id: "DOC001",
-        name: "PAN Card.pdf",
-        sectionId: "section1",
-        documentTypeId: "kyc1",
-        status: "pending",
-        uploadedAt: new Date().toISOString(),
-        fileUrl: "/placeholder.svg",
-      },
-      {
-        id: "DOC002",
-        name: "Aadhaar Card.pdf",
-        sectionId: "section1",
-        documentTypeId: "kyc2",
-        status: "pending",
-        uploadedAt: new Date().toISOString(),
-        fileUrl: "/placeholder.svg",
-      },
-    ],
-  },
-  {
-    id: "CUST002",
-    name: "Priya Sharma",
-    email: "priya@example.com",
-    phone: "8765432109",
-    panCard: "FGHIJ5678K",
-    businessName: "Sharma Trading Co.",
-    documentsSubmitted: true,
-    createdAt: new Date().toISOString(),
-    documents: [
-      {
-        id: "DOC003",
-        name: "Income Tax Returns.pdf",
-        sectionId: "section4",
-        documentTypeId: "fin1",
-        status: "pending",
-        uploadedAt: new Date().toISOString(),
-        fileUrl: "/placeholder.svg",
-      },
-    ],
-  },
-  {
-    id: "CUST003",
-    name: "Amit Patel",
-    email: "amit@example.com",
-    phone: "7654321098",
-    panCard: "LMNOP9012Q",
-    businessName: "Patel Industries",
-    documentsSubmitted: false,
-    createdAt: new Date().toISOString(),
-    documents: [],
-  },
-];
 
 export const CustomerProvider = ({ children }: { children: ReactNode }) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -172,7 +109,7 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     status: "approved" | "rejected" | "on_hold" | "pending", // Added "pending" as an option
     remarks?: string
   ) => {
-    setCustomers(prev => 
+    setCustomers(prev =>
       prev.map(customer => {
         if (customer.id === customerId) {
           const updatedDocuments = customer.documents.map(doc => {
@@ -202,12 +139,12 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     // In a real app, this would generate a secure, time-limited link
     // For this demo, we'll just create a URL with query parameters
     const baseUrl = window.location.origin;
-    
+
     if (documentId) {
       // If documentId is provided, create a reupload link for a specific document
       return `${baseUrl}/customer/reupload?customerId=${customerId}&documentId=${documentId}&remarks=${encodeURIComponent(remarks || '')}`;
     }
-    
+
     // Regular upload link for all documents
     return `${baseUrl}/customer?userId=${customerId}`;
   };
@@ -216,29 +153,29 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
   const syncCustomerDocuments = (customerIdOrPanCard: string) => {
     // Try to find customer by ID first, then by PAN card if not found
     let customer = customers.find(c => c.id === customerIdOrPanCard);
-    
+
     if (!customer) {
       // If not found by ID, try by PAN card
       customer = findCustomerByPanCard(customerIdOrPanCard);
     }
-    
+
     if (!customer) return;
-    
+
     // Find all documents uploaded by this user in the DocumentContext
     const userId = customer.panCard; // In this app, we're using PAN card as user ID
     const userDocuments = documents[userId];
-    
+
     if (!userDocuments || !userDocuments.folders) return;
-    
+
     // Convert documents from DocumentContext format to CustomerDocument format
     const newDocuments: CustomerDocument[] = [];
-    
+
     Object.entries(userDocuments.folders).forEach(([folderId, folder]) => {
       // Only process submitted folders
       if (folder.submitted && folder.files.length > 0) {
         // Extract section info from folderId (e.g., "section1_kyc1")
         const [sectionId, documentTypeId] = folderId.split('_');
-        
+
         folder.files.forEach(file => {
           newDocuments.push({
             id: file.id,
@@ -252,16 +189,16 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     });
-    
+
     // Update the customer with the new documents
     if (newDocuments.length > 0) {
-      setCustomers(prev => 
+      setCustomers(prev =>
         prev.map(c => {
           if (c.id === customer!.id) {
             // Add only new documents that don't already exist
             const existingIds = new Set(c.documents.map(doc => doc.id));
             const uniqueNewDocs = newDocuments.filter(doc => !existingIds.has(doc.id));
-            
+
             return {
               ...c,
               documentsSubmitted: true,
