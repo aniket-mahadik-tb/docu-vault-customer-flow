@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
-import { useBankUsers } from "@/contexts/BankContext";
+import { BankUser, useBankUsers } from "@/contexts/BankContext";
 import { Button } from "@/components/ui/button";
-import { Plus, MoreVertical, Pencil, Trash2, Search, ArrowUpDown } from "lucide-react";
+import { Plus, MoreVertical, Pencil, Trash2, Search, ArrowUpDown, Eye } from "lucide-react";
+
 import {
   Table,
   TableBody,
@@ -31,22 +32,71 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { CardContent, CardFooter } from "@/components/ui/card";
+
 
 type SortField = "name" | "email" | "bankName" | "status" | "lastLogin";
 type SortOrder = "asc" | "desc";
 
 const BankUsersList = () => {
+
   const navigate = useNavigate();
-  const { bankUsers, deleteBankUser } = useBankUsers();
+  const { bankUsers, deleteBankUser, updateBankUser } = useBankUsers();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [editBankUser, setEditBankUser] = useState<boolean>(false);
+  const [editBankUserData, setEditBankUserData] = useState<BankUser | null>(null);
+  const [submit, setSubmit] = useState<boolean>(false);
+  const handleEditBankUser = function (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) {
+    e.preventDefault();
+    setEditBankUserData({ ...editBankUserData, [e.target.name]: e.target.value });
+  };
+
+  const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+  const handleSubmitEditBankUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmit(true);
+    if (!editBankUserData) return;
+    if (editBankUserData.status !== "active" && editBankUserData.status !== "inactive") {
+      await setEditBankUserData({ ...editBankUserData, status: "active" });
+    }
+    try {
+      // Assuming you have a function to update the bank user
+      // await updateBankUser(editBankUserData);
+
+      await delay(1000);
+      updateBankUser(editBankUserData.id, editBankUserData);
+      setSubmit(false);
+      toast({
+        title: "Success",
+        description: "Bank user has been updated successfully.",
+      });
+      setEditBankUser(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update bank user. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Failed to update bank user:", error);
+    }
+    setSubmit(false);
+  };
+
 
   // Filter and sort bank users
   const filteredAndSortedUsers = useMemo(() => {
-    let filtered = bankUsers.filter(user => 
+    let filtered = bankUsers.filter(user =>
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.bankName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -188,11 +238,10 @@ const BankUsersList = () => {
                   <TableCell>{user.bankName}</TableCell>
                   <TableCell>
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.status === "active"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                        }`}
                     >
                       {user.status}
                     </span>
@@ -200,7 +249,7 @@ const BankUsersList = () => {
                   <TableCell>
                     {format(new Date(user.lastLogin), "MMM d, yyyy HH:mm")}
                   </TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -223,7 +272,29 @@ const BankUsersList = () => {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                  </TableCell> */}
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { setEditBankUserData(user), setEditBankUser(true) }}
+                      >
+                        {/* <Eye className="h-4 w-4 mr-1" /> View */}
+                        <Pencil className="mr-1 h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => setUserToDelete(user.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" /> Delete
+                      </Button>
+                    </div>
                   </TableCell>
+
                 </TableRow>
               ))}
               {filteredAndSortedUsers.length === 0 && (
@@ -253,6 +324,97 @@ const BankUsersList = () => {
                 className="bg-red-600 hover:bg-red-700"
               >
                 Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+
+        <AlertDialog open={editBankUser} onOpenChange={() => setEditBankUser(false)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Edit Bank User</AlertDialogTitle>
+              {/* <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the bank user
+                and remove their data from our servers.
+              </AlertDialogDescription> */}
+            </AlertDialogHeader>
+            <form onSubmit={handleSubmitEditBankUser}>
+              <CardContent>
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <label htmlFor="pan" className="text-sm font-medium">
+                      Name
+                    </label>
+                    <Input
+                      name="name"
+                      placeholder="Jhon doe"
+                      value={editBankUserData?.name || ""}
+                      onChange={handleEditBankUser}
+                      maxLength={50}
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="pan" className="text-sm font-medium">
+                      Email
+                    </label>
+                    <Input
+                      name="email"
+                      type="email"
+                      placeholder="abc@gmail.com"
+                      value={editBankUserData?.email || ""}
+                      onChange={handleEditBankUser}
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="pan" className="text-sm font-medium">
+                      Bank Name
+                    </label>
+                    <Input
+                      name="bankName"
+                      type="text"
+                      placeholder="paisewali bank"
+                      value={editBankUserData?.bankName || ""}
+                      onChange={handleEditBankUser}
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="status" className="text-sm font-medium">
+                      Status
+                    </label>
+                    <select
+                      name="status"
+                      value={editBankUserData?.status || ""}
+                      onChange={handleEditBankUser}
+                      required
+                      className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    >
+                      <option value="">Select Status</option>
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+
+              </CardContent>
+              {/* <CardFooter>
+                <Button type="submit" className="w-full" disabled={true}>
+                  {false ? "Verifying..." : "Continue"}
+                </Button>
+              </CardFooter> */}
+            </form>
+
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => handleSubmitEditBankUser(e)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {submit ? "submitting..." : "submit"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
