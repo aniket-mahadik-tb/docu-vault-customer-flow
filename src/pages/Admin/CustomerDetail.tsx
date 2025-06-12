@@ -4,7 +4,7 @@ import MainLayout from "@/layouts/MainLayout";
 import { useCustomers, CustomerDocument } from "@/contexts/CustomerContext";
 import { useDocuments } from "@/contexts/DocumentContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send, File, RefreshCw, Link, Copy } from "lucide-react";
+import { ArrowLeft, Send, File, RefreshCw, Link, Copy, FileText, Folder, Eye } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import {
   Card,
@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ReviewDocuments from "./ReviewDocuments";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Document sections with their titles
 const documentSections = [
@@ -56,6 +58,14 @@ const CustomerDetail = () => {
   const initialSyncDone = useRef(false);
   const [reuploadLink, setReuploadLink] = useState<string | null>(null);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+   const documentSections = {
+    section1: "KYC Documents",
+    section2: "Bank Statements",
+    section3: "Loan Statements",
+    section4: "Financial Documents",
+    section5: "Property Documents",
+    section6: "Business Documents"
+  }
 
   const customer = getCustomer(id || "");
 
@@ -96,7 +106,7 @@ const CustomerDetail = () => {
     const link = generateUploadLink(customer.id, documentId, remarks);
     setReuploadLink(link);
     setLinkDialogOpen(true);
-    
+
     if (documentId) {
       toast({
         title: "Document reupload link generated",
@@ -208,7 +218,64 @@ const CustomerDetail = () => {
             <CardContent>
               {customer.documents.length > 0 ? (
                 <div className="space-y-6">
-                  {documentSections.map((section) => {
+
+
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Document Type</TableHead>
+                          <TableHead>Document Name</TableHead>
+                          <TableHead>Uploaded</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {
+                          customer.documents.map((doc) => (
+                            <TableRow key={`${doc.id}-${doc.id}`}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Folder className="h-4 w-4" />
+                                  {documentSections[doc.sectionId] || "Unknown TYpe"}
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4" />
+                                  {doc.name}
+                                </div>
+                              </TableCell>
+                              {/* <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4" />
+                                  {doc.customerName}
+                                </div>
+                              </TableCell> */}
+                              <TableCell>
+                                {new Date(doc.uploadedAt).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell>{getStatusBadge(doc.status)}</TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => navigate(`/admin/review/${customer.id}/${doc.id}`)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" /> Review
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        }
+                      </TableBody>
+                    </Table>
+                  </div>
+
+
+
+                  {/* {documentSections.map((section) => {
                     const sectionDocuments = groupedDocuments[section.id] || [];
                     if (sectionDocuments.length === 0) return null;
 
@@ -257,7 +324,8 @@ const CustomerDetail = () => {
                         </div>
                       </div>
                     );
-                  })}
+                  })} */}
+                  {/* <ReviewDocuments customerId={customer.id} /> */}
                 </div>
               ) : (
                 <div className="text-center py-8">
