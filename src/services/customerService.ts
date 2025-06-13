@@ -1,71 +1,9 @@
 // No need to import useAxios anymore
 import { Customer } from "../contexts/CustomerContext";
+import { initialCustomers } from "@/utils/globalConstants";
 
 // Simulated data
-const mockCustomers: Customer[] = [
-    {
-      id: "CUST001",
-      name: "Rajesh Kumar",
-      email: "rajesh@example.com",
-      phone: "9876543210",
-      panCard: "ABCDE1234F",
-      businessName: "Kumar Enterprises",
-      documentsSubmitted: true,
-      createdAt: new Date().toISOString(),
-      documents: [
-        {
-          id: "DOC001",
-          name: "PAN Card.pdf",
-          sectionId: "section1",
-          documentTypeId: "kyc1",
-          status: "pending",
-          uploadedAt: new Date().toISOString(),
-          fileUrl: "/placeholder.svg",
-        },
-        {
-          id: "DOC002",
-          name: "Aadhaar Card.pdf",
-          sectionId: "section1",
-          documentTypeId: "kyc2",
-          status: "pending",
-          uploadedAt: new Date().toISOString(),
-          fileUrl: "/placeholder.svg",
-        },
-      ],
-    },
-    {
-      id: "CUST002",
-      name: "Priya Sharma",
-      email: "priya@example.com",
-      phone: "8765432109",
-      panCard: "FGHIJ5678K",
-      businessName: "Sharma Trading Co.",
-      documentsSubmitted: true,
-      createdAt: new Date().toISOString(),
-      documents: [
-        {
-          id: "DOC003",
-          name: "Income Tax Returns.pdf",
-          sectionId: "section4",
-          documentTypeId: "fin1",
-          status: "pending",
-          uploadedAt: new Date().toISOString(),
-          fileUrl: "/placeholder.svg",
-        },
-      ],
-    },
-    {
-      id: "CUST003",
-      name: "Amit Patel",
-      email: "amit@example.com",
-      phone: "7654321098",
-      panCard: "LMNOP9012Q",
-      businessName: "Patel Industries",
-      documentsSubmitted: false,
-      createdAt: new Date().toISOString(),
-      documents: [],
-    },
-  ];
+const mockCustomers: Customer[] = initialCustomers;
 
 // Simulate API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

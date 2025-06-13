@@ -2,6 +2,7 @@ import { DocumentFile, DocumentFolder, ModifiedDocumentRoot } from "@/contexts/D
 import { BarChart2, ClipboardList, FileText, Folder, Home, MessageSquare, Share2, Shield, Upload, User, Users } from "lucide-react";
 // import { SidebarLinkProps } from "@/components/AppSidebar";
 import { UserContextType } from "@/contexts/UserContext"
+import { Customer } from "@/contexts/CustomerContext";
 
 interface SidebarLinkProps {
     to: string;
@@ -124,9 +125,146 @@ export const BankLinks: SidebarLinkProps[] = [
     { to: "/bank/notes", icon: MessageSquare, label: "View Notes" },
 ];
 
+export const initialCustomers: Customer[] = [
+    {
+        id: "CUST001",
+        name: "Rajesh Kumar",
+        email: "rajesh@example.com",
+        phone: "9876543210",
+        panCard: "ABCDE1234F",
+        businessName: "Kumar Enterprises",
+        documentsSubmitted: true,
+        createdAt: new Date().toISOString(),
+        documents: [
+            {
+                id: "DOC001",
+                name: "PAN Card.pdf",
+                sectionId: "section1",
+                documentTypeId: "kyc1",
+                status: "pending",
+                uploadedAt: new Date().toISOString(),
+                fileUrl: "/placeholder.svg",
+            },
+            {
+                id: "DOC002",
+                name: "Aadhaar Card.pdf",
+                sectionId: "section1",
+                documentTypeId: "kyc2",
+                status: "pending",
+                uploadedAt: new Date().toISOString(),
+                fileUrl: "/placeholder.svg",
+            },
+            {
+                id: "DOC001",
+                name: "PAN Card.pdf",
+                sectionId: "section1",
+                documentTypeId: "kyc1",
+                status: "pending",
+                uploadedAt: new Date().toISOString(),
+                fileUrl: "/placeholder.svg",
+            },
+            {
+                id: "DOC003",
+                name: "Bank Statement.pdf",
+                sectionId: "section2",
+                documentTypeId: "kyc2",
+                status: "pending",
+                uploadedAt: new Date().toISOString(),
+                fileUrl: "/placeholder.svg",
+            },
+            {
+                id: "DOC004",
+                name: "Bank Noc.pdf",
+                sectionId: "section2",
+                documentTypeId: "kyc1",
+                status: "pending",
+                uploadedAt: new Date().toISOString(),
+                fileUrl: "/placeholder.svg",
+            },
+            {
+                id: "DOC005",
+                name: "Tax Reciept.pdf",
+                sectionId: "section1",
+                documentTypeId: "kyc4",
+                status: "pending",
+                uploadedAt: new Date().toISOString(),
+                fileUrl: "/placeholder.svg",
+            },
+            {
+                id: "DOC006",
+                name: "Loan Statement.pdf",
+                sectionId: "section3",
+                documentTypeId: "kyc1",
+                status: "pending",
+                uploadedAt: new Date().toISOString(),
+                fileUrl: "/placeholder.svg",
+            },
+            {
+                id: "DOC007",
+                name: "7/12.pdf",
+                sectionId: "section5",
+                documentTypeId: "kyc2",
+                status: "pending",
+                uploadedAt: new Date().toISOString(),
+                fileUrl: "/placeholder.svg",
+            },
+            {
+                id: "DOC008",
+                name: "8A.pdf",
+                sectionId: "section5",
+                documentTypeId: "kyc1",
+                status: "pending",
+                uploadedAt: new Date().toISOString(),
+                fileUrl: "/placeholder.svg",
+            },
+            {
+                id: "DOC009",
+                name: "Loan Closure.pdf",
+                sectionId: "section3",
+                documentTypeId: "kyc2",
+                status: "pending",
+                uploadedAt: new Date().toISOString(),
+                fileUrl: "/placeholder.svg",
+            },
+        ],
+    },
+    {
+        id: "CUST002",
+        name: "Priya Sharma",
+        email: "priya@example.com",
+        phone: "8765432109",
+        panCard: "FGHIJ5678K",
+        businessName: "Sharma Trading Co.",
+        documentsSubmitted: true,
+        createdAt: new Date().toISOString(),
+        documents: [
+            {
+                id: "DOC003",
+                name: "Income Tax Returns.pdf",
+                sectionId: "section4",
+                documentTypeId: "fin1",
+                status: "pending",
+                uploadedAt: new Date().toISOString(),
+                fileUrl: "/placeholder.svg",
+            },
+        ],
+    },
+    {
+        id: "CUST003",
+        name: "Amit Patel",
+        email: "amit@example.com",
+        phone: "7654321098",
+        panCard: "LMNOP9012Q",
+        businessName: "Patel Industries",
+        documentsSubmitted: false,
+        createdAt: new Date().toISOString(),
+        documents: [],
+    },
+];
 
 
 
 
-export const constants = { mockFile, mockDocumentFolder1, mockDocumentFolder2, mockDocumentFolder3, mockDocumentRoot, mockUsers ,CustomerLinks,AdminLinks,SuperAdminLinks,BankLinks};
+
+export const constants = { mockFile, mockDocumentFolder1, mockDocumentFolder2, mockDocumentFolder3, mockDocumentRoot, mockUsers, CustomerLinks, AdminLinks, SuperAdminLinks, BankLinks };
 
