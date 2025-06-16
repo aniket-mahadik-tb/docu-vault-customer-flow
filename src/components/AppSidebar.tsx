@@ -57,7 +57,24 @@ const AppSidebar = () => {
   //   role === "Admin" ? AdminLinks :
   //     role === "Bank" ? BankLinks : [];
 
-  const links = Role === "Admin" ? AdminLinks :SuperAdminLinks;
+  const getLinksByRole = (role: string) => {
+    switch (role) {
+      case "Admin":
+        return AdminLinks;
+      case "SuperAdmin":
+        return SuperAdminLinks;
+      case "Bank":
+        return BankLinks;
+      case "Customer":
+        return CustomerLinks;
+      default:
+        return []; // ✨ fallback if no role found
+    }
+  };
+
+  // ✨ Get links for current role
+  const links = getLinksByRole(Role);
+
 
   const isCollapsed = sidebarState === "collapsed";
 
