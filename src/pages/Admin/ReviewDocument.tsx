@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
-import { useCustomers } from "@/contexts/CustomerContext";
+import { Customer, useCustomers } from "@/contexts/CustomerContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Check, X, Clock, ZoomIn, ZoomOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import * as pdfjs from "pdfjs-dist";
 import { getSamplePreviewUrl, isPdfPreview, usingSamplePreviews } from "@/lib/previewUtils";
+import { useCustomerService } from "@/services/customerService";
 
 // Updated PDF.js worker with a direct path (using cdnjs instead of unpkg)
 const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -28,19 +29,19 @@ const dataURLtoBlob = (dataURL: string): Blob | null => {
     // Convert base64/URL data to blob
     const arr = dataURL.split(',');
     if (arr.length < 2) return null;
-    
+
     const mimeMatch = arr[0].match(/:(.*?);/);
     if (!mimeMatch) return null;
-    
+
     const mime = mimeMatch[1];
     const bstr = atob(arr[1]);
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
-    
+
     while (n--) {
       u8arr[n] = bstr.charCodeAt(n);
     }
-    
+
     return new Blob([u8arr], { type: mime });
   } catch (error) {
     console.error("Error converting data URL to blob:", error);
@@ -62,15 +63,15 @@ const ReviewDocument = () => {
   const [error, setError] = useState<string | null>(null);
   const [documentBlobUrl, setDocumentBlobUrl] = useState<string | null>(null);
 
-  const customer = getCustomer(customerId || "");
+  const [customer, setCustomer] = useState<Customer | null>(null);// getCustomer(customerId || "");
   const document = customer?.documents.find((doc) => doc.id === documentId);
-
+  const customerService = useCustomerService();
   useEffect(() => {
     if (document) {
       if (usingSamplePreviews()) {
         // Use sample preview based on document name
         const sampleUrl = getSamplePreviewUrl(document.name, document.fileUrl?.split(';')[0]);
-        
+
         if (isPdfPreview(sampleUrl)) {
           loadPdf(sampleUrl);
         } else {
@@ -84,9 +85,9 @@ const ReviewDocument = () => {
           if (blob) {
             const blobUrl = URL.createObjectURL(blob);
             setDocumentBlobUrl(blobUrl);
-            
-            if (document.fileUrl.toLowerCase().includes('application/pdf') || 
-                document.name.toLowerCase().endsWith('.pdf')) {
+
+            if (document.fileUrl.toLowerCase().includes('application/pdf') ||
+              document.name.toLowerCase().endsWith('.pdf')) {
               loadPdf(blobUrl);
             }
           } else {
@@ -101,12 +102,27 @@ const ReviewDocument = () => {
 
   // Clean up created Blob URL on unmount
   useEffect(() => {
+    (async () => {
+      if (customerId && documentId) {
+        try {
+          const res = await customerService.getCustomerById(customerId);
+          setCustomer(res.data || null);
+        } catch (error) {
+          console.error("Failed to fetch customer", error);
+          setCustomer(null);
+        }
+      } else {
+        setCustomer(null);
+      }
+    })();
+
     return () => {
       if (documentBlobUrl) {
         URL.revokeObjectURL(documentBlobUrl);
       }
     };
   }, []);
+
 
   useEffect(() => {
     if (pdfDoc && canvasRef.current) {
@@ -118,7 +134,7 @@ const ReviewDocument = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Handle placeholder URLs
       if (url === "/placeholder.svg" || !url) {
         // Use a sample PDF for demo purposes
@@ -131,7 +147,7 @@ const ReviewDocument = () => {
         cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist/cmaps/',
         cMapPacked: true,
       });
-      
+
       try {
         const pdf = await loadingTask.promise;
         setPdfDoc(pdf);
@@ -150,26 +166,26 @@ const ReviewDocument = () => {
 
   const renderPage = async () => {
     if (!pdfDoc || !canvasRef.current) return;
-    
+
     try {
       const page = await pdfDoc.getPage(pageNum);
       const viewport = page.getViewport({ scale: zoomLevel });
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
-      
+
       if (!context) {
         console.error("Could not get canvas context");
         return;
       }
-      
+
       canvas.height = viewport.height;
       canvas.width = viewport.width;
-      
+
       const renderContext = {
         canvasContext: context,
         viewport: viewport
       };
-      
+
       await page.render(renderContext).promise;
     } catch (err) {
       console.error("Error rendering PDF page:", err);
@@ -177,27 +193,27 @@ const ReviewDocument = () => {
     }
   };
 
-  const isPdf = document?.name.toLowerCase().endsWith('.pdf') || 
-               getSamplePreviewUrl(document?.name || '').toLowerCase().endsWith('.pdf');
+  const isPdf = document?.name.toLowerCase().endsWith('.pdf') ||
+    getSamplePreviewUrl(document?.name || '').toLowerCase().endsWith('.pdf');
   const isImage = document?.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/);
-  
+
   // Get a usable document URL or fallback
   const getDocumentUrl = () => {
     // If we're using sample previews, return the appropriate sample
     if (usingSamplePreviews() && document) {
       return getSamplePreviewUrl(document.name);
     }
-    
+
     // First try the blob URL if we created one
     if (documentBlobUrl) {
       return documentBlobUrl;
     }
-    
+
     // If document has a data URL, use it directly
     if (document?.fileUrl && document.fileUrl.startsWith('data:')) {
       return document.fileUrl;
     }
-    
+
     // Use the original URL or fallback
     if (!document?.fileUrl || document.fileUrl === "/placeholder.svg") {
       // Return appropriate fallback based on document type
@@ -224,13 +240,14 @@ const ReviewDocument = () => {
     );
   }
 
-  const handleUpdateStatus = (status: "approved" | "rejected" | "on_hold") => {
-    updateDocumentStatus(customer.id, document.id, status, remarks);
+  const handleUpdateStatus = async (status: "approved" | "rejected" | "on_hold") => {
+    // updateDocumentStatus(customer.id, document.id, status, remarks);
+    await customerService.updateDocumentStatus(customer.id, document.id, status, remarks)
 
-    const statusMessage = 
+    const statusMessage =
       status === "approved" ? "Document approved successfully" :
-      status === "rejected" ? "Document rejected - customer notified" : 
-      "Document put on hold";
+        status === "rejected" ? "Document rejected - customer notified" :
+          "Document put on hold";
 
     toast({
       title: statusMessage,
