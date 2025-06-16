@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import MainLayout from "@/layouts/MainLayout";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useCustomerService } from "@/services/customerService";
 
 const CustomerList = () => {
   const { customers, deleteCustomer } = useCustomers();
@@ -42,6 +43,15 @@ const CustomerList = () => {
     setSelectedCustomer(customer);
     navigate(`/admin/customers/${customer.id}`);
   };
+
+  //UNCOMMENT THIS WHEN YOU WANT TO FETCH CUSTOMERS FROM THE SERVER
+  // useEffect(() => {
+  //   const fetchCustomers = async () => {
+  //     const response = await useCustomerService()?.getAllCustomers();
+  //     console.log("response",response);
+  //   }
+  //   fetchCustomers();
+  // }, []);
 
   const handleDeleteClick = (customer: Customer) => {
     setCustomerToDelete(customer);
@@ -206,7 +216,7 @@ const CustomerList = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Documents Status</p>
                   <p className="font-medium">
-                    {selectedCustomer.documentsSubmitted 
+                    {selectedCustomer.documentsSubmitted
                       ? `Submitted (${selectedCustomer.documents.length} documents)`
                       : "No documents submitted"}
                   </p>

@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -7,20 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
-import { useCustomers } from "@/contexts/CustomerContext";
-import { 
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot
-} from "@/components/ui/input-otp";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-
-// Mock PANs that are allowed to access the system
-const ALLOWED_PANS = ["ABCDE1234F", "PQRST5678G", "XYZAB9012C"];
+import { BankService } from "@/services/BankService";
 
 const formSchema = z.object({
   pan: z.string().length(10, "PAN must be 10 characters").toUpperCase(),
@@ -34,10 +25,9 @@ const BankEntry = () => {
   const navigate = useNavigate();
   const { setUserId, setRole } = useUser();
   const { toast } = useToast();
-  const { customers } = useCustomers();
   const [showOTP, setShowOTP] = useState(false);
   const [panValue, setPanValue] = useState("");
-  const [sharedCustomerPANs, setSharedCustomerPANs] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,73 +36,85 @@ const BankEntry = () => {
     },
   });
 
-  const { getValueFromLocalStorage,setValueToLocalStorage } = useLocalStorage();
-
-  // Default OTP value for easier demo access
-  const defaultOTP = "123456";
+  const { setValueToLocalStorage } = useLocalStorage();
   
   const otpForm = useForm<z.infer<typeof otpSchema>>({
     resolver: zodResolver(otpSchema),
     defaultValues: {
-      otp: defaultOTP,
+      otp: "123456", // Default OTP for demo
     },
   });
 
-  // Extract PANs of customers who have at least one approved document
-  useEffect(() => {
-    const pansWithApprovedDocs = customers
-      .filter(customer => 
-        customer.documents.some(doc => doc.status === "approved")
-      )
-      .map(customer => customer.panCard);
-    
-    setSharedCustomerPANs(pansWithApprovedDocs);
-  }, [customers]);
+  const handlePANSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      setIsLoading(true);
+      const response = await BankService.verifyPAN(values.pan);
+      
+      if (!response.success) {
+        toast({
+          title: "Access Denied",
+          description: response.message,
+          variant: "destructive",
+        });
+        return;
+      }
 
-  const handlePANSubmit = (values: z.infer<typeof formSchema>) => {
-    // Check if PAN is in either the hardcoded list or the shared customers list
-    const isAllowed = ALLOWED_PANS.includes(values.pan) || sharedCustomerPANs.includes(values.pan);
-    
-    if (!isAllowed) {
+      // Store PAN for later use
+      setPanValue(values.pan);
+      
       toast({
-        title: "Access Denied",
-        description: "This PAN is not authorized to access the system.",
+        title: "OTP Sent",
+        description: "A 6-digit OTP has been sent to your registered mobile/email.",
+      });
+      
+      // Show OTP verification form
+      setShowOTP(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to verify PAN. Please try again.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    // Store PAN for later use
-    setPanValue(values.pan);
-    
-    // Simulate sending OTP
-    toast({
-      title: "OTP Sent",
-      description: "A 6-digit OTP has been sent to your registered mobile/email.",
-    });
-    
-    // Show OTP verification form
-    setShowOTP(true);
   };
 
-  const handleOTPSubmit = (values: z.infer<typeof otpSchema>) => {
-    console.log("OTP submitted:", values.otp);
-    // In a real app, you'd verify the OTP with backend
-    // For this mock, we'll accept any 6-digit OTP
-    
-    // Set the user as authenticated
-    setUserId(panValue);
-    setRole("Bank");
-    
-    toast({
-      title: "Verification Successful",
-      description: "You now have access to shared documents.",
-    });
+  const handleOTPSubmit = async (values: z.infer<typeof otpSchema>) => {
+    try {
+      setIsLoading(true);
+      const response = await BankService.verifyOTP(panValue, values.otp);
+      
+      if (!response.success) {
+        toast({
+          title: "Verification Failed",
+          description: response.message,
+          variant: "destructive",
+        });
+        return;
+      }
 
-    setValueToLocalStorage("role","Bank");
-    
-    // Navigate to bank dashboard
-    navigate("/bank/dashboard");
+      // Set the user as authenticated
+      setUserId(panValue);
+      setRole("Bank");
+      setValueToLocalStorage("role", "Bank");
+      
+      toast({
+        title: "Verification Successful",
+        description: "You now have access to shared documents.",
+      });
+      
+      // Navigate to bank dashboard
+      navigate("/bank/dashboard");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to verify OTP. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOTPChange = (value: string) => {
@@ -153,6 +155,7 @@ const BankEntry = () => {
                               placeholder="Enter PAN (e.g., ABCDE1234F)"
                               {...field}
                               onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                              disabled={isLoading}
                             />
                           </FormControl>
                           <FormMessage />
@@ -162,8 +165,8 @@ const BankEntry = () => {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full">
-                    Request Access
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Verifying..." : "Request Access"}
                   </Button>
                 </CardFooter>
               </form>
@@ -183,7 +186,7 @@ const BankEntry = () => {
                             <div className="mb-4">
                               <div className="flex justify-between items-center mb-2">
                                 <div className="bg-muted rounded p-2 text-center w-full font-mono text-lg">
-                                  {defaultOTP}
+                                  {field.value}
                                 </div>
                               </div>
                               <p className="text-xs text-muted-foreground text-center">Pre-filled OTP for demo purposes</p>
@@ -199,8 +202,8 @@ const BankEntry = () => {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full">
-                    Verify OTP
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Verifying..." : "Verify OTP"}
                   </Button>
                 </CardFooter>
               </form>
