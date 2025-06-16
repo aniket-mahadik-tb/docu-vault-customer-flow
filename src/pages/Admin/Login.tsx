@@ -23,9 +23,9 @@ const Login = () => {
   });
   const { setValueToLocalStorage } = useLocalStorage();
 
-  useEffect(() => {
-    localStorage.removeItem("role");
-  }, [])
+  // useEffect(() => {
+  //   localStorage.removeItem("role");
+  // }, [])
   useEffect(() => {
     if (userId && role === "Admin") {
       console.log("Admin already logged in:", userId);

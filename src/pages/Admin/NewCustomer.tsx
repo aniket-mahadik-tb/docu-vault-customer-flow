@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/card";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useCustomerService } from "@/services/customerService";
 
 // Create a schema for form validation
 const customerSchema = z.object({
@@ -43,7 +44,8 @@ type CustomerFormValues = z.infer<typeof customerSchema>;
 
 const NewCustomer = () => {
   const navigate = useNavigate();
-  const { addCustomer } = useCustomers();
+  // const { addCustomer } = useCustomers();
+  const { addCustomer } = useCustomerService();
   const { toast } = useToast();
 
   const form = useForm<CustomerFormValues>({
@@ -59,13 +61,13 @@ const NewCustomer = () => {
 
   const onSubmit = async (data: CustomerFormValues) => {
     try {
-      addCustomer(data as Omit<Customer, 'id' | 'createdAt' | 'documentsSubmitted' | 'documents'>);
-      
+      await addCustomer(data as Omit<Customer, 'id' | 'createdAt' | 'documentsSubmitted' | 'documents'>);
+
       toast({
         title: "Success",
         description: "New customer has been created successfully.",
       });
-      
+
       navigate("/admin/customers");
     } catch (error) {
       toast({
@@ -139,8 +141,8 @@ const NewCustomer = () => {
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="9876543210" 
+                        <Input
+                          placeholder="9876543210"
                           {...field}
                           maxLength={10}
                           onChange={(e) => {
@@ -164,8 +166,8 @@ const NewCustomer = () => {
                     <FormItem>
                       <FormLabel>PAN Card Number</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="ABCDE1234F" 
+                        <Input
+                          placeholder="ABCDE1234F"
                           {...field}
                           onChange={(e) => {
                             const value = e.target.value.toUpperCase();
