@@ -80,21 +80,31 @@ const CustomerDetail = () => {
 
   useEffect(() => {
     (async function fetchCustomer() {
-      if (id) {
-        await delay(2000);
-        const res = await customerService.getCustomerById(id);
-        if (res.status == 200) {
-          setCustomer(res.data);
-        } else {
-          // If customer not found, redirect to customer list
-          toast({
-            title: `failed to fetch customer details`,
-            description: "Something went wrong please try again",
-            variant: "destructive",
-          });
-          navigate("/admin/customers");
+      try {
+        if (id) {
+          await delay(2000);
+          const res = await customerService.getCustomerById(id);
+          if (res.status == 200) {
+            setCustomer(res.data);
+          } else {
+            // If customer not found, redirect to customer list
+            toast({
+              title: `failed to fetch customer details`,
+              description: "Something went wrong please try again",
+              variant: "destructive",
+            });
+            navigate("/admin/customers");
+          }
+          console.log("Fetched customer:", customer);
         }
-        console.log("Fetched customer:", customer);
+      } catch (error) {
+        console.error("Error fetching customer:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch customer details. Please try again.",
+          variant: "destructive",
+        });
+        navigate("/admin/customers");
       }
     }
     )();
@@ -117,6 +127,7 @@ const CustomerDetail = () => {
 
   // }, [customer?.id]); // Only re-run if customer ID changes, not on every render
 
+  console.log("Customer Detail Rendered", customer);
   if (!customer) {
     return (
       <MainLayout showSidebar={true}>
@@ -275,6 +286,7 @@ const CustomerDetail = () => {
       </MainLayout>
     );
   }
+  console.log("Customer Detail Rendered 2", customer);
 
   // const groupedDocuments = customer.documents.reduce<Record<string, CustomerDocument[]>>(
   //   (groups, document) => {

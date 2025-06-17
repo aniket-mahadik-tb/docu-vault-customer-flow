@@ -10,22 +10,23 @@ import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { Lock, User } from "lucide-react";
+import { useAdminService } from "@/services/adminService";
 
 const Login = () => {
   const navigate = useNavigate();
   const { setUserId, setRole, userId, role } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const customerService = useCustomerService();
+  const adminService = useAdminService();
   const userService = useUserService();
   const [formData, setFormData] = useState({
-    userId: "",
+    username: "",
     password: "",
   });
   const { setValueToLocalStorage } = useLocalStorage();
 
-  useEffect(() => {
-    localStorage.removeItem("role");
-  }, [])
+  // useEffect(() => {
+  //   localStorage.removeItem("role");
+  // }, [])
   useEffect(() => {
     if (userId && role === "Admin") {
       console.log("Admin already logged in:", userId);
@@ -53,12 +54,34 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const response = await userService.getUserById(formData.userId);
-      const role = response.data;
-      setValueToLocalStorage("role", role);
+      const response = await adminService.getAdminByUserNameAndPassword(formData);
+      const role = response;
+      if (!response) {
+        toast({
+          title: "Invalid Credentials",
+          description: "Please enter valid credentials.",
+          variant: "destructive",
+        })
+        return
+      }
+      // setValueToLocalStorage("role", role);
+      setIsSubmitting(true);
+
+      // Simulate API call delay
+      setTimeout(() => {
+        setUserId("admin123"); // Simulated user ID
+        setRole("Admin");
+        navigate("/admin/dashboard");
+        setIsSubmitting(false);
+      }, 500);
     }
     catch (err) {
       console.error("Validation error:", err);
+      toast({
+        title: "Invalid Credentials",
+        description: "Please enter valid credentials.",
+        variant: "destructive",
+      })
       return false;
     }
 
@@ -89,15 +112,7 @@ const Login = () => {
     //   return;
     // }
 
-    setIsSubmitting(true);
 
-    // Simulate API call delay
-    setTimeout(() => {
-      setUserId("ADMIN123");
-      setRole("Admin");
-      navigate("/admin/dashboard");
-      setIsSubmitting(false);
-    }, 500);
   };
 
 
@@ -129,8 +144,8 @@ const Login = () => {
                       name="userId"
                       type="text"
                       placeholder="Enter your user ID"
-                      value={formData.userId}
-                      onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                       className="pl-10 h-11 bg-gray-50/50 focus:bg-white transition-colors"
                       required
                     />
@@ -157,8 +172,8 @@ const Login = () => {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full h-11 bg-primary hover:bg-primary/90 transition-colors"
                   disabled={isSubmitting}
                 >

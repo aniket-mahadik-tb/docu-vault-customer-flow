@@ -458,6 +458,6 @@ export const documentSections = [
   ];
 
 
-
+export const basePath="http://localhost:8080/api/v1";
 export const constants = { mockFile, mockDocumentFolder1, mockDocumentFolder2, mockDocumentFolder3, mockDocumentRoot, mockUsers, CustomerLinks, AdminLinks, SuperAdminLinks, BankLinks , documentSections };
 
