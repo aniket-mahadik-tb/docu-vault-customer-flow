@@ -3,7 +3,7 @@ import axios from "axios";
 
 // ✅ Create Axios instance
 const api = axios.create({
-  baseURL: "https://api/v1", // 🔁 Replace with your actual API base URL
+  baseURL: "http://localhost:8080/api/v1", // ✅ CORRECT for local dev
   headers: {
     "Content-Type": "application/json",
   },

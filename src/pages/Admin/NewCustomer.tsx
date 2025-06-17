@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/card";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useCustomerService, ClientCreateRequest } from "@/services/customerService";
 
 // Create a schema for promoter validation
 const promoterSchema = z.object({
@@ -58,6 +59,8 @@ const NewCustomer = () => {
   const navigate = useNavigate();
   const { addCustomer } = useCustomers();
   const { toast } = useToast();
+  const customerService = useCustomerService();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
@@ -79,21 +82,24 @@ const NewCustomer = () => {
   const clientType = form.watch("clientType");
 
   const onSubmit = async (data: CustomerFormValues) => {
+    setIsLoading(true);
     try {
-      // Transform the data to match the existing Customer interface
-      const customerData = {
+      // Create the API payload with correct field names and casing
+      const payload: ClientCreateRequest = {
+        clientType: data.clientType === "Individual" ? "Individual" : "Organisation",
         name: data.name,
+        pan: data.pan,
         email: data.email,
         phone: data.phone,
-        panCard: data.pan,
-        customerType: data.clientType.toLowerCase() as 'individual' | 'organization',
-        promoters: data.promoters || [],
-      } as Omit<Customer, 'id' | 'createdAt' | 'documentsSubmitted' | 'documents'> & { promoters: any[] };
+        promoters: (data.promoters || []).filter(p => p.name && p.email && p.phone && p.pan) as { name: string; pan: string; email: string; phone: string; }[]
+      };
+
+      console.log('API Payload:', payload);
       
-      addCustomer(customerData);
-
-
-      console.log(customerData)
+      // Make the API call
+      const response = await customerService.createClient(payload);
+      
+      console.log('API Response:', response.data);
       
       toast({
         title: "Success",
@@ -101,12 +107,15 @@ const NewCustomer = () => {
       });
       
       navigate("/admin/customers");
-    } catch (error) {
+    } catch (error: any) {
+      console.error('API Error:', error);
       toast({
         title: "Error",
-        description: "Failed to create customer. Please try again.",
+        description: error.response?.data?.message || "Failed to create customer. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -391,8 +400,8 @@ const NewCustomer = () => {
                 )}
               </CardContent>
               <CardFooter>
-                <Button type="submit" className="w-full">
-                  Create Customer
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Creating...' : 'Create Customer'}
                 </Button>
               </CardFooter>
             </form>

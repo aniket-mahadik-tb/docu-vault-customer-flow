@@ -1,178 +1,227 @@
-// No need to import useAxios anymore
-import { Customer } from "../contexts/CustomerContext";
-import { initialCustomers } from "@/utils/globalConstants";
+  // No need to import useAxios anymore
+  import { Customer } from "../contexts/CustomerContext";
+  import { initialCustomers } from "@/utils/globalConstants";
+  import api from "../instances/axios";
 
-// Simulated data
-const mockCustomers: Customer[] = initialCustomers;
+  // Types for API requests and responses
+  export interface ClientCreateRequest {
+    clientType: "Individual" | "Organisation";
+    name: string;
+    pan: string;
+    email: string;
+    phone: string;
+    promoters: Array<{
+      name: string;
+      pan: string;
+      email: string;
+      phone: string;
+    }>;
+  }
 
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  export interface ClientCreateResponse {
+    id: string;
+    clientType: "Individual" | "Organisation";
+    name: string;
+    pan: string;
+    email: string;
+    phone: string;
+    promoters: Array<{
+      id: string;
+      name: string;
+      pan: string;
+      email: string;
+      phone: string;
+    }>;
+    createdAt: string;
+  }
 
-export function useCustomerService() {
-  const service: any = {};
+  export interface GenericApiResponse<T> {
+    success: boolean;
+    data: T;
+    message: string;
+  }
 
-  service.getAllCustomers = async () => {
-    try {
-      await delay(500);
-      return {
-        data: mockCustomers,
-        status: 200,
-      };
-    } catch (error: any) {
-      console.error("Failed to fetch customers");
-      throw error;
-    }
-  };
+  // Simulated data
+  const mockCustomers: Customer[] = initialCustomers;
 
-  service.getCustomerById = async (id: string) => {
-    try {
-      await delay(300);
-      const customer = mockCustomers.find(c => c.id === id);
-      if (!customer) throw new Error("Customer not found");
-      return {
-        data: customer,
-        status: 200,
-      };
-    } catch (error: any) {
-      console.error("Failed to fetch customer");
-      throw error;
-    }
-  };
+  // Simulate API delay
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  service.getCustomerByPanCard = async (panCard: string) => {
-    try {
-      await delay(300);
-      const customer = mockCustomers.find(
-        c => c.panCard.toLowerCase() === panCard.toLowerCase()
-      );
-      if (!customer) throw new Error("Customer not found");
-      return {
-        data: customer,
-        status: 200,
-      };
-    } catch (error: any) {
-      console.error("Failed to fetch customer");
-      throw error;
-    }
-  };
+  export function useCustomerService() {
+    const service: any = {};
 
-  service.addCustomer = async (customerData: Omit<Customer, "id" | "createdAt" | "documentsSubmitted" | "documents">) => {
-    try {
-      await delay(500);
-      const newCustomer: Customer = {
-        ...customerData,
-        id: `CUST${String(mockCustomers.length + 1).padStart(3, '0')}`,
-        documentsSubmitted: false,
-        createdAt: new Date().toISOString(),
-        documents: []
-      };
+    service.createClient = async (data: ClientCreateRequest): Promise<any> => {
+      try {
+        const response = await api.post<GenericApiResponse<ClientCreateResponse>>('/clients', data);
+        return response;
+      } catch (error: any) {
+        console.error("Failed to create client:", error);
+        throw error;
+      }
+    };
 
-      // If using a real API:
-      // const response = await fetch("/api/customers", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(newCustomer),
-      // });
-      // return await response.json();
+    service.getAllCustomers = async () => {
+      try {
+        await delay(500);
+        return {
+          data: mockCustomers,
+          status: 200,
+        };
+      } catch (error: any) {
+        console.error("Failed to fetch customers");
+        throw error;
+      }
+    };
 
-      return {
-        data: newCustomer,
-        status: 201,
-      };
-    } catch (error: any) {
-      console.error("Failed to add customer");
-      throw error;
-    }
-  };
+    service.getCustomerById = async (id: string) => {
+      try {
+        await delay(300);
+        const customer = mockCustomers.find(c => c.id === id);
+        if (!customer) throw new Error("Customer not found");
+        return {
+          data: customer,
+          status: 200,
+        };
+      } catch (error: any) {
+        console.error("Failed to fetch customer");
+        throw error;
+      }
+    };
 
-  service.updateCustomer = async (id: string, customerData: Partial<Customer>) => {
-    try {
-      await delay(500);
-      const customerIndex = mockCustomers.findIndex(c => c.id === id);
-      if (customerIndex === -1) throw new Error("Customer not found");
+    service.getCustomerByPanCard = async (panCard: string) => {
+      try {
+        await delay(300);
+        const customer = mockCustomers.find(
+          c => c.panCard.toLowerCase() === panCard.toLowerCase()
+        );
+        if (!customer) throw new Error("Customer not found");
+        return {
+          data: customer,
+          status: 200,
+        };
+      } catch (error: any) {
+        console.error("Failed to fetch customer");
+        throw error;
+      }
+    };
 
-      const updatedCustomer = {
-        ...mockCustomers[customerIndex],
-        ...customerData,
-      };
+    service.addCustomer = async (customerData: Omit<Customer, "id" | "createdAt" | "documentsSubmitted" | "documents">) => {
+      try {
+        await delay(500);
+        const newCustomer: Customer = {
+          ...customerData,
+          id: `CUST${String(mockCustomers.length + 1).padStart(3, '0')}`,
+          documentsSubmitted: false,
+          createdAt: new Date().toISOString(),
+          documents: []
+        };
 
-      return {
-        data: updatedCustomer,
-        status: 200,
-      };
-    } catch (error: any) {
-      console.error("Failed to update customer");
-      throw error;
-    }
-  };
+        // If using a real API:
+        // const response = await fetch("/api/customers", {
+        //   method: "POST",
+        //   headers: { "Content-Type": "application/json" },
+        //   body: JSON.stringify(newCustomer),
+        // });
+        // return await response.json();
 
-  service.updateDocumentStatus = async (
-    customerId: string,
-    documentId: string,
-    status: "approved" | "rejected" | "on_hold" | "pending",
-    remarks?: string
-  ) => {
-    try {
-      await delay(500);
-      const customer = mockCustomers.find(c => c.id === customerId);
-      if (!customer) throw new Error("Customer not found");
+        return {
+          data: newCustomer,
+          status: 201,
+        };
+      } catch (error: any) {
+        console.error("Failed to add customer");
+        throw error;
+      }
+    };
 
-      const document = customer.documents.find(d => d.id === documentId);
-      if (!document) throw new Error("Document not found");
+    service.updateCustomer = async (id: string, customerData: Partial<Customer>) => {
+      try {
+        await delay(500);
+        const customerIndex = mockCustomers.findIndex(c => c.id === id);
+        if (customerIndex === -1) throw new Error("Customer not found");
 
-      const updatedDocument = {
-        ...document,
-        status,
-        remarks: status === "pending" ? undefined : remarks,
-        reviewedAt: status === "pending" ? undefined : new Date().toISOString(),
-      };
+        const updatedCustomer = {
+          ...mockCustomers[customerIndex],
+          ...customerData,
+        };
 
-      return {
-        data: updatedDocument,
-        status: 200,
-      };
-    } catch (error: any) {
-      console.error("Failed to update document status");
-      throw error;
-    }
-  };
+        return {
+          data: updatedCustomer,
+          status: 200,
+        };
+      } catch (error: any) {
+        console.error("Failed to update customer");
+        throw error;
+      }
+    };
 
-  service.getCustomerDocuments = async (customerId: string) => {
-    try {
-      await delay(300);
-      const customer = mockCustomers.find(c => c.id === customerId);
-      if (!customer) throw new Error("Customer not found");
+    service.updateDocumentStatus = async (
+      customerId: string,
+      documentId: string,
+      status: "approved" | "rejected" | "on_hold" | "pending",
+      remarks?: string
+    ) => {
+      try {
+        await delay(500);
+        const customer = mockCustomers.find(c => c.id === customerId);
+        if (!customer) throw new Error("Customer not found");
 
-      return {
-        data: customer.documents,
-        status: 200,
-      };
-    } catch (error: any) {
-      console.error("Failed to fetch customer documents");
-      throw error;
-    }
-  };
+        const document = customer.documents.find(d => d.id === documentId);
+        if (!document) throw new Error("Document not found");
 
-  service.generateUploadLink = async (customerId: string, documentId?: string, remarks?: string) => {
-    try {
-      await delay(300);
-      const customer = mockCustomers.find(c => c.id === customerId);
-      if (!customer) throw new Error("Customer not found");
+        const updatedDocument = {
+          ...document,
+          status,
+          remarks: status === "pending" ? undefined : remarks,
+          reviewedAt: status === "pending" ? undefined : new Date().toISOString(),
+        };
 
-      const baseUrl = window.location.origin;
-      const uploadLink = documentId
-        ? `${baseUrl}/customer/reupload?customerId=${customerId}&documentId=${documentId}&remarks=${encodeURIComponent(remarks || '')}`
-        : `${baseUrl}/customer?userId=${customerId}`;
+        return {
+          data: updatedDocument,
+          status: 200,
+        };
+      } catch (error: any) {
+        console.error("Failed to update document status");
+        throw error;
+      }
+    };
 
-      return {
-        data: { uploadLink },
-        status: 200,
-      };
-    } catch (error: any) {
-      console.error("Failed to generate upload link");
-      throw error;
-    }
-  };
+    service.getCustomerDocuments = async (customerId: string) => {
+      try {
+        await delay(300);
+        const customer = mockCustomers.find(c => c.id === customerId);
+        if (!customer) throw new Error("Customer not found");
 
-  return service;
-}
+        return {
+          data: customer.documents,
+          status: 200,
+        };
+      } catch (error: any) {
+        console.error("Failed to fetch customer documents");
+        throw error;
+      }
+    };
+
+    service.generateUploadLink = async (customerId: string, documentId?: string, remarks?: string) => {
+      try {
+        await delay(300);
+        const customer = mockCustomers.find(c => c.id === customerId);
+        if (!customer) throw new Error("Customer not found");
+
+        const baseUrl = window.location.origin;
+        const uploadLink = documentId
+          ? `${baseUrl}/customer/reupload?customerId=${customerId}&documentId=${documentId}&remarks=${encodeURIComponent(remarks || '')}`
+          : `${baseUrl}/customer?userId=${customerId}`;
+
+        return {
+          data: { uploadLink },
+          status: 200,
+        };
+      } catch (error: any) {
+        console.error("Failed to generate upload link");
+        throw error;
+      }
+    };
+
+    return service;
+  }
