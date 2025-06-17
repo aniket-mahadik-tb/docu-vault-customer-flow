@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import MainLayout from "@/layouts/MainLayout";
@@ -24,12 +24,21 @@ const CustomerEntry = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const customerService = useCustomerService();
   const UserService = useUserService();
-  const { getValueFromLocalStorage,setValueToLocalStorage } = useLocalStorage();
+  const { getValueFromLocalStorage, setValueToLocalStorage } = useLocalStorage();
+
+
+   useEffect(
+      () => {
+        setUserId("ABCDE1234F"); // Simulated user ID
+        setRole("Customer");
+        navigate("/customer/dashboard");
+      }, [navigate, getValueFromLocalStorage]
+    )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    
+
     // try {
     //   const response = await customerService.getCustomerByPanCard(panNumber)
     //   setUserId(panNumber);
@@ -44,6 +53,8 @@ const CustomerEntry = () => {
     //     variant: "destructive",
     //   });
     // }
+
+   
 
 
 
@@ -65,7 +76,7 @@ const CustomerEntry = () => {
       navigate("/customer/dashboard");
       setIsSubmitting(false);
     }, 500);
-    setValueToLocalStorage("role","Customer");
+    setValueToLocalStorage("role", "Customer");
   };
 
   return (

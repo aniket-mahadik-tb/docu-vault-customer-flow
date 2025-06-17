@@ -57,10 +57,14 @@ type CustomerFormValues = z.infer<typeof customerSchema>;
 
 const NewCustomer = () => {
   const navigate = useNavigate();
-  const { addCustomer } = useCustomers();
+  // const { addCustomer } = useCustomers();
+  const { addCustomer } = useCustomerService();
   const { toast } = useToast();
   const customerService = useCustomerService();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // State for customer type selection
+  const [customerType, setCustomerType] = useState<'individual' | 'organization'>('individual');
 
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
@@ -155,6 +159,33 @@ const NewCustomer = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <CardContent className="space-y-6">
                 {/* Customer Type Selection */}
+                <FormItem>
+                  <FormLabel>Customer Type</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      value={customerType}
+                      onValueChange={(value: 'individual' | 'organization') => setCustomerType(value)}
+                      className="flex flex-row space-x-6"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="individual" id="individual" />
+                        <label htmlFor="individual" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Individual
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="organization" id="organization" />
+                        <label htmlFor="organization" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Organization
+                        </label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormDescription>
+                    Select whether this is an individual customer or an organization
+                  </FormDescription>
+                </FormItem>
+
                 <FormField
                   control={form.control}
                   name="clientType"

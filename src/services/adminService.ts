@@ -1,10 +1,13 @@
 import { z } from "zod";
+import axios from "axios";
+import { basePath } from "@/utils/globalConstants";
+
 
 // Define the admin schema for validation
 export const adminSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  userId: z.string().min(3, { message: "User ID must be at least 3 characters" }),
+  userName: z.string().min(2, { message: "userName must be at least 2 characters" }),
+  // email: z.string().email({ message: "Please enter a valid email address" }),
+  id: z.string().min(3, { message: "User ID must be at least 3 characters" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   role: z.enum(["Admin", "SuperAdmin"]),
 });
@@ -18,20 +21,20 @@ export type Admin = z.infer<typeof adminSchema> & {
 // Mock data
 const mockAdmins: Admin[] = [
   {
-    id: "ADM001",
-    name: "John Doe",
-    email: "john@example.com",
-    userId: "admin1",
+    // id: "ADM001",
+    // name: "John Doe",
+    // email: "john@example.com",
+    id: "admin1",
     password: "admin123", // In real app, this would be hashed
     role: "Admin",
     createdAt: new Date().toISOString(),
     lastLogin: new Date().toISOString(),
   },
   {
-    id: "ADM002",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    userId: "superadmin",
+    // id: "ADM002",
+    // name: "Jane Smith",
+    // email: "jane@example.com",
+    id: "superadmin",
     password: "super123", // In real app, this would be hashed
     role: "SuperAdmin",
     createdAt: new Date().toISOString(),
@@ -50,6 +53,7 @@ const mockApiCall = async <T>(data: T, status = 200, delayMs = 300): Promise<{ d
 
 export interface AdminService {
   getAllAdmins: () => Promise<{ data: Admin[]; status: number }>;
+  getAdminByUserNameAndPassword: (params: { username: String, password: String }) => Promise<true>;
   getAdminById: (id: string) => Promise<{ data: Admin; status: number }>;
   getAdminByUserId: (userId: string) => Promise<{ data: Admin; status: number }>;
   addAdmin: (adminData: Omit<Admin, "id" | "createdAt" | "lastLogin">) => Promise<{ data: Admin; status: number }>;
@@ -72,6 +76,24 @@ export function useAdminService(): AdminService {
       }
     },
 
+    getAdminByUserNameAndPassword: async (admin: { username: String, password: String }) => {
+      try {
+        const res = await axios.post(basePath + '/auth/login', admin);
+        
+        if (res.status !== 200) {
+          throw new Error("Invalid credentials");
+        }
+        
+        localStorage.setItem("authToken", res.data.token);
+        return true;
+      }
+      catch (error: any) {
+        console.error("Failed to fetch admin by username and password");
+        console.error(error);
+        throw error;
+      }
+    },
+
     getAdminById: async (id: string) => {
       try {
         const admin = mockAdmins.find(a => a.id === id);
@@ -88,7 +110,7 @@ export function useAdminService(): AdminService {
 
     getAdminByUserId: async (userId: string) => {
       try {
-        const admin = mockAdmins.find(a => a.userId === userId);
+        const admin = mockAdmins.find(a => a.id === userId);
         if (!admin) throw new Error("Admin not found");
         // In real API:
         // const response = await fetch(`${API_BASE_URL}/admins/user/${userId}`);
@@ -129,6 +151,7 @@ export function useAdminService(): AdminService {
         const updatedAdmin = {
           ...mockAdmins[adminIndex],
           ...adminData,
+          lastLogin: new Date().toISOString(),
         };
         // In real API:
         // const response = await fetch(`${API_BASE_URL}/admins/${id}`, {
@@ -162,7 +185,7 @@ export function useAdminService(): AdminService {
 
     validateAdmin: async (userId: string, password: string) => {
       try {
-        const admin = mockAdmins.find(a => a.userId === userId && a.password === password);
+        const admin = mockAdmins.find(a => a.id === userId && a.password === password);
         // In real API:
         // const response = await fetch(`${API_BASE_URL}/admins/validate`, {
         //   method: "POST",

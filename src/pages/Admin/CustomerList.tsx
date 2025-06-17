@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import MainLayout from "@/layouts/MainLayout";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -29,15 +29,37 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useCustomerService } from "@/services/customerService";
+import { ShimmerThumbnail } from "react-shimmer-effects";
 
 const CustomerList = () => {
-  const { customers, deleteCustomer } = useCustomers();
+  // const { customers, deleteCustomer } = useCustomers();
+  const customerService = useCustomerService();
+  const [customers, setCustomers, deleteCustomer] = [...useState<Customer[] | null>(null), customerService.deleteCustomer];
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [customerToDelete, setCustomerToDelete] = React.useState<Customer | null>(null);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await customerService.getAllCustomers();
+        if (response.status === 200) {
+          setCustomers(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch customers", error);
+        toast({
+          title: "Error",
+          description: "Failed to load customers. Please try again later.",
+          variant: "destructive",
+        });
+      }
+    };
+    fetchCustomers();
+  }, [customerService, toast]);
 
   const handleViewCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -97,7 +119,7 @@ const CustomerList = () => {
           <CardHeader>
             <CardTitle>Registered Customers</CardTitle>
             <CardDescription>
-              Total {customers.length} customers registered in the system
+              Total {(customers !== null) && customers.length} customers registered in the system
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -116,7 +138,7 @@ const CustomerList = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {customers.length > 0 ? (
+                  {customers !== null && customers.length > 0 ? (
                     customers.map((customer) => (
                       <TableRow key={customer.id}>
                         <TableCell>{customer.id}</TableCell>
@@ -157,12 +179,25 @@ const CustomerList = () => {
                         </TableCell>
                       </TableRow>
                     ))
-                  ) : (
+                  ) : (customers !== null) ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-4">
                         No customers found
                       </TableCell>
                     </TableRow>
+                  ) : (
+                    [1, 2, 3].map((customer) => (
+                      <TableRow key={customer}>
+                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                      </TableRow>
+                    ))
                   )}
                 </TableBody>
               </Table>
