@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
@@ -16,6 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Card,
   CardContent,
@@ -45,6 +46,9 @@ const NewCustomer = () => {
   const navigate = useNavigate();
   const { addCustomer } = useCustomers();
   const { toast } = useToast();
+  
+  // State for customer type selection
+  const [customerType, setCustomerType] = useState<'individual' | 'organization'>('individual');
 
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
@@ -59,7 +63,13 @@ const NewCustomer = () => {
 
   const onSubmit = async (data: CustomerFormValues) => {
     try {
-      addCustomer(data as Omit<Customer, 'id' | 'createdAt' | 'documentsSubmitted' | 'documents'>);
+      // Include customer type in the data
+      const customerData = {
+        ...data,
+        customerType,
+      } as Omit<Customer, 'id' | 'createdAt' | 'documentsSubmitted' | 'documents'>;
+      
+      addCustomer(customerData);
       
       toast({
         title: "Success",
@@ -98,17 +108,53 @@ const NewCustomer = () => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <CardContent className="space-y-4">
+                {/* Customer Type Selection */}
+                <FormItem>
+                  <FormLabel>Customer Type</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      value={customerType}
+                      onValueChange={(value: 'individual' | 'organization') => setCustomerType(value)}
+                      className="flex flex-row space-x-6"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="individual" id="individual" />
+                        <label htmlFor="individual" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Individual
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="organization" id="organization" />
+                        <label htmlFor="organization" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Organization
+                        </label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormDescription>
+                    Select whether this is an individual customer or an organization
+                  </FormDescription>
+                </FormItem>
+
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+                      <FormLabel>
+                        {customerType === 'individual' ? 'Full Name' : 'Organization Name'}
+                      </FormLabel>
                       <FormControl>
-                        <Input placeholder="John Smith" {...field} />
+                        <Input 
+                          placeholder={customerType === 'individual' ? 'John Smith' : 'ABC Corporation'} 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormDescription>
-                        Customer's full legal name
+                        {customerType === 'individual' 
+                          ? "Customer's full legal name" 
+                          : "Organization's legal name"
+                        }
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
