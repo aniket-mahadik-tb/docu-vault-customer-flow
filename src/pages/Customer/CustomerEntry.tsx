@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import MainLayout from "@/layouts/MainLayout";
 import { Input } from "@/components/ui/input";
@@ -25,15 +25,19 @@ const CustomerEntry = () => {
   const customerService = useCustomerService();
   const UserService = useUserService();
   const { getValueFromLocalStorage, setValueToLocalStorage } = useLocalStorage();
+  const [searchParams] = useSearchParams();
+  const userId = searchParams.get("userId");
 
 
-   useEffect(
-      () => {
-        setUserId("ABCDE1234F"); // Simulated user ID
-        setRole("Customer");
-        navigate("/customer/dashboard");
-      }, [navigate, getValueFromLocalStorage]
-    )
+  useEffect(
+    () => {
+      setValueToLocalStorage("userId", userId) // Store userId in local storage
+      setValueToLocalStorage("role", "Customer");
+      setUserId("ABCDE1234F"); // Simulated user ID
+      setRole("Customer");
+      navigate("/customer/upload");
+    }, [navigate, getValueFromLocalStorage]
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +58,7 @@ const CustomerEntry = () => {
     //   });
     // }
 
-   
+
 
 
 
