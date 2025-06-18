@@ -5,10 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useUser } from "@/contexts/UserContext";
 import MainLayout from "@/layouts/MainLayout";
 import { User, Users, FileText } from "lucide-react";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const Index = () => {
   const navigate = useNavigate();
   const { setRole } = useUser();
+  const{getValueFromLocalStorage,setValueToLocalStorage} = useLocalStorage();
 
   const portalCards = [
     {
@@ -39,6 +41,12 @@ const Index = () => {
 
   const handlePortalSelect = (path: string, role: "Customer" | "Admin" | "Bank") => {
     // setRole(role);
+    if (role === "Customer") {
+      setValueToLocalStorage("role", role);
+    } else if (role === "Admin") {
+      //change here as per the api 
+      setValueToLocalStorage("role", "SuperAdmin");
+    }
     navigate(path);
   };
 
