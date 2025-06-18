@@ -1,6 +1,7 @@
 import { z } from "zod";
 import axios from "axios";
 import { basePath } from "@/utils/globalConstants";
+import api from "@/instances/axios";
 
 
 // Define the admin schema for validation
@@ -78,12 +79,12 @@ export function useAdminService(): AdminService {
 
     getAdminByUserNameAndPassword: async (admin: { username: String, password: String }) => {
       try {
-        const res = await axios.post(basePath + '/auth/login', admin);
-        
+        const res = await api.post<{ token: string }>(`auth/login`, admin);
+
         if (res.status !== 200) {
           throw new Error("Invalid credentials");
         }
-        
+
         localStorage.setItem("authToken", res.data.token);
         return true;
       }

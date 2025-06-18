@@ -299,8 +299,8 @@ const CustomerDetail = () => {
   //   {}
   // );
 
-  const handleSendLink = (documentId?: string, remarks?: string) => {
-    const link = generateUploadLink(customer.id, documentId, remarks);
+  const handleSendLink = async (documentId?: string, remarks?: string) => {
+    const link = await customerService.generateUploadLink(customer.id, documentId, remarks);
     setReuploadLink(link);
     setLinkDialogOpen(true);
 
