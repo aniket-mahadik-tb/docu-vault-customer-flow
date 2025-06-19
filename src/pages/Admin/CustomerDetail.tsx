@@ -30,6 +30,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useCustomerService } from "@/services/customerService";
 import { ShimmerButton, ShimmerSectionHeader, ShimmerText, ShimmerThumbnail, ShimmerTitle } from "react-shimmer-effects";
 import { resolve } from "path";
+import { set } from "date-fns";
 
 // Document sections with their titles
 const documentSections = [
@@ -62,6 +63,7 @@ const CustomerDetail = () => {
   // const initialSyncDone = useRef(false);
   const [reuploadLink, setReuploadLink] = useState<string | null>(null);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [generatingLink, setGeneratingLink] = useState(false);
   // const [error, setError] = useState<boolean>(false);
   const documentSections = {
     section1: "KYC Documents",
@@ -300,21 +302,39 @@ const CustomerDetail = () => {
   // );
 
   const handleSendLink = async (documentId?: string, remarks?: string) => {
-    const link = await customerService.generateUploadLink(customer.id, documentId, remarks);
-    setReuploadLink(link);
-    setLinkDialogOpen(true);
+    setGeneratingLink(true);
 
-    if (documentId) {
+    try {
+      const link = await customerService.generateUploadLink(customer.id, documentId, remarks);
+      setReuploadLink(link);
+      setLinkDialogOpen(true);
+      setGeneratingLink(false);
+      if (documentId) {
+        toast({
+          title: "Document reupload link generated",
+          description: `Reupload link for specific document ready to share with ${customer.email}`,
+        });
+      } else {
+        toast({
+          title: "Upload link generated",
+          description: `Upload link ready to share with ${customer.email}`,
+        });
+      }
+
+
+    } catch (error) {
+      console.error("Error generating upload link:", error);
+
+      setGeneratingLink(false);
       toast({
-        title: "Document reupload link generated",
-        description: `Reupload link for specific document ready to share with ${customer.email}`,
+        title: "Error",
+        description: "Failed to generate upload link. Please try again.",
+        variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Upload link generated",
-        description: `Upload link ready to share with ${customer.email}`,
-      });
+
+
     }
+
   };
 
   const copyLinkToClipboard = () => {
@@ -369,7 +389,7 @@ const CustomerDetail = () => {
               <RefreshCw className="mr-2 h-4 w-4" /> Sync Documents
             </Button>
             <Button onClick={() => handleSendLink()}>
-              <Send className="mr-2 h-4 w-4" /> Send Upload Link
+              <Send className="mr-2 h-4 w-4" />{generatingLink ? "Generating Link" : "Send Upload Link"}
             </Button>
           </div>
         </div>

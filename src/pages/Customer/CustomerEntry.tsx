@@ -26,14 +26,15 @@ const CustomerEntry = () => {
   const UserService = useUserService();
   const { getValueFromLocalStorage, setValueToLocalStorage } = useLocalStorage();
   const [searchParams] = useSearchParams();
-  const userId = searchParams.get("userId");
+  const userId = searchParams.get("token");
 
 
   useEffect(
     () => {
-      setValueToLocalStorage("userId", userId) // Store userId in local storage
+      setValueToLocalStorage("token", userId) // Store userId in local storage
+      console.log("token from search params:", userId);
       setValueToLocalStorage("role", "Customer");
-      setUserId("ABCDE1234F"); // Simulated user ID
+      setUserId("bull"); // Simulated user ID
       setRole("Customer");
       navigate("/customer/upload");
     }, [navigate, getValueFromLocalStorage]
