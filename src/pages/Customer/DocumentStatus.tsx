@@ -5,8 +5,8 @@ import { useDocuments, DocumentFile } from "@/contexts/DocumentContext";
 import MainLayout from "@/layouts/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Clock, AlertCircle, FileText, Folder } from "lucide-react";
-import { useDocumentUploadService, DocumentMastersResponse, DocumentType } from "@/services/documentUploadService";
+import { CheckCircle, Clock, AlertCircle, FileText } from "lucide-react";
+import { useDocumentUploadService, DocumentType, DocumentCategory } from "@/services/documentUploadService";
 import {
   Table,
   TableBody,
@@ -23,7 +23,8 @@ const DocumentStatus = () => {
   const { getFolderDocuments, isFolderSubmitted } = useDocuments();
   const documentUploadService = useDocumentUploadService();
   
-  const [documentMasters, setDocumentMasters] = useState<DocumentMastersResponse | null>(null);
+  const [orgCategories, setOrgCategories] = useState<DocumentCategory[]>([]);
+  const [customerType, setCustomerType] = useState<"Individual" | "Organization">();
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, DocumentFile[]>>({});
 
   useEffect(() => {
@@ -36,39 +37,45 @@ const DocumentStatus = () => {
   useEffect(() => {
     const fetchDocumentMasters = async () => {
       try {
-        const response = await documentUploadService.getDocumentMasters("Individual");
-        setDocumentMasters(response.data);
+        const response = await documentUploadService.getDocumentMasters();
+        const org = response.data.find(
+          (item: any) => item.customerType?.toUpperCase() === "ORGANIZATION"
+        );
+        const individual = response.data.find(
+          (item: any) => item.customerType?.toUpperCase() === "INDIVIDUAL"
+        );
+        if (org) {
+          setCustomerType("Organization");
+          setOrgCategories(org.documentsByCategory);
+        } else if (individual) {
+          setCustomerType("Individual");
+          setOrgCategories(individual.documentsByCategory);
+        }
       } catch (error) {
         console.error("Error fetching document masters:", error);
       }
     };
-
     fetchDocumentMasters();
   }, [documentUploadService]);
 
   // Sync uploaded files state with document context
   useEffect(() => {
-    if (!userId || !documentMasters) return;
-
+    if (!userId || orgCategories.length === 0) return;
     const syncUploadedFiles = () => {
       const syncedFiles: Record<string, DocumentFile[]> = {};
-      
-      documentMasters.documentsByCategory.forEach(category => {
+      orgCategories.forEach(category => {
         category.documents.forEach(document => {
           const folderId = `documents_${document.id}`;
           const folderDocuments = getFolderDocuments(userId, folderId);
-          
           if (folderDocuments.length > 0) {
             syncedFiles[document.id] = folderDocuments;
           }
         });
       });
-      
       setUploadedFiles(syncedFiles);
     };
-
     syncUploadedFiles();
-  }, [userId, documentMasters, getFolderDocuments]);
+  }, [userId, orgCategories, getFolderDocuments]);
 
   const isDocumentSubmitted = (documentId: string): boolean => {
     if (!userId) return false;
@@ -79,7 +86,6 @@ const DocumentStatus = () => {
   const getDocumentStatus = (documentId: string) => {
     const isSubmitted = isDocumentSubmitted(documentId);
     const hasFiles = uploadedFiles[documentId] && uploadedFiles[documentId].length > 0;
-    
     if (!hasFiles) {
       return { 
         status: 'pending', 
@@ -87,7 +93,6 @@ const DocumentStatus = () => {
         label: 'Pending'
       };
     }
-    
     if (isSubmitted) {
       return { 
         status: 'submitted', 
@@ -111,7 +116,6 @@ const DocumentStatus = () => {
 
   const getStatusBadge = (documentId: string) => {
     const status = getDocumentStatus(documentId);
-    
     switch (status.status) {
       case 'submitted':
         return <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
@@ -127,7 +131,6 @@ const DocumentStatus = () => {
   const getLastUploadedDate = (documentId: string): string | null => {
     const files = uploadedFiles[documentId];
     if (!files || files.length === 0) return null;
-    
     const dates = files.map(file => new Date(file.uploaded));
     const lastDate = new Date(Math.max(...dates.map(d => d.getTime())));
     return lastDate.toLocaleDateString();
@@ -139,20 +142,17 @@ const DocumentStatus = () => {
 
   // Get all documents from all categories for the single table
   const getAllDocuments = (): Array<{ document: DocumentType; category: string }> => {
-    if (!documentMasters) return [];
-    
+    if (!orgCategories) return [];
     const allDocuments: Array<{ document: DocumentType; category: string }> = [];
-    
-    documentMasters.documentsByCategory.forEach(category => {
+    orgCategories.forEach(category => {
       category.documents.forEach(document => {
         allDocuments.push({ document, category: category.category });
       });
     });
-    
     return allDocuments;
   };
 
-  if (!documentMasters) {
+  if (!customerType) {
     return (
       <MainLayout showSidebar={true}>
         <div className="flex items-center justify-center min-h-screen">
@@ -202,7 +202,6 @@ const DocumentStatus = () => {
                       allDocuments.map(({ document, category }) => {
                         const fileCount = getFileCount(document.id);
                         const lastUpdated = getLastUploadedDate(document.id);
-                        
                         return (
                           <TableRow key={document.id}>
                             <TableCell className="font-medium">

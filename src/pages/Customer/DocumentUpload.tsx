@@ -7,9 +7,9 @@ import MainLayout from "@/layouts/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
-import { Upload, FileText, CheckCircle, AlertCircle, Trash2 } from "lucide-react";
+import { Upload, FileText, CheckCircle, AlertCircle, Trash2, Plus, Info } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useDocumentUploadService, DocumentMastersResponse, DocumentType, DocumentCategory } from "@/services/documentUploadService";
+import { useDocumentUploadService, DocumentType, DocumentCategory } from "@/services/documentUploadService";
 import {
   Table,
   TableBody,
@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const DocumentUpload = () => {
   const navigate = useNavigate();
@@ -27,7 +28,11 @@ const DocumentUpload = () => {
   const { syncCustomerDocuments } = useCustomers();
   const documentUploadService = useDocumentUploadService();
   
-  const [documentMasters, setDocumentMasters] = useState<DocumentMastersResponse | null>(null);
+  const [customerType, setCustomerType] = useState<'Individual' | 'Organization'>();
+  const [orgCategories, setOrgCategories] = useState<DocumentCategory[]>([]);
+  const [promoterCategories, setPromoterCategories] = useState<DocumentCategory[]>([]);
+  // Promoters state for Organization
+  const [promoters, setPromoters] = useState<{ id: number }[]>([]);
   const [uploadingDocuments, setUploadingDocuments] = useState<Record<string, boolean>>({});
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, DocumentFile[]>>({});
 
@@ -41,8 +46,27 @@ const DocumentUpload = () => {
   useEffect(() => {
     const fetchDocumentMasters = async () => {
       try {
-        const response = await documentUploadService.getDocumentMasters("Individual");
-        setDocumentMasters(response.data);
+        const response = await documentUploadService.getDocumentMasters();
+        // response.data is an array
+        const org = response.data.find(
+          (item: any) => item.customerType?.toUpperCase() === "ORGANIZATION"
+        );
+        const promoter = response.data.find(
+          (item: any) => item.customerType?.toUpperCase() === "PROMOTER"
+        );
+        const individual = response.data.find(
+          (item: any) => item.customerType?.toUpperCase() === "INDIVIDUAL"
+        );
+
+        if (org) {
+          setCustomerType("Organization");
+          setOrgCategories(org.documentsByCategory);
+          setPromoterCategories(promoter?.documentsByCategory || []);
+        } else if (individual) {
+          setCustomerType("Individual");
+          setOrgCategories(individual.documentsByCategory);
+          setPromoterCategories([]);
+        }
       } catch (error) {
         console.error("Error fetching document masters:", error);
       }
@@ -53,42 +77,51 @@ const DocumentUpload = () => {
 
   // Sync uploaded files state with document context
   useEffect(() => {
-    if (!userId || !documentMasters) return;
+    if (!userId || orgCategories.length === 0) return;
 
     const syncUploadedFiles = () => {
       const syncedFiles: Record<string, DocumentFile[]> = {};
-      
-      documentMasters.documentsByCategory.forEach(category => {
+
+      // Default table
+      orgCategories.forEach(category => {
         category.documents.forEach(document => {
           const folderId = `documents_${document.id}`;
           const folderDocuments = getFolderDocuments(userId, folderId);
-          
           if (folderDocuments.length > 0) {
             syncedFiles[document.id] = folderDocuments;
           }
         });
       });
-      
+
+      // Promoter tables
+      promoterCategories.forEach(category => {
+        category.documents.forEach(document => {
+          for (let i = 0; i < promoters.length; i++) {
+            const promoterDocId = `${document.id}_promoter${i}`;
+            const folderDocuments = getFolderDocuments(userId, promoterDocId);
+            if (folderDocuments.length > 0) {
+              syncedFiles[promoterDocId] = folderDocuments;
+            }
+          }
+        });
+      });
+
       setUploadedFiles(syncedFiles);
     };
 
     syncUploadedFiles();
-  }, [userId, documentMasters, getFolderDocuments]);
+  }, [userId, orgCategories, promoterCategories, getFolderDocuments, promoters.length]);
 
   const handleFileUpload = async (documentId: string, files: FileList) => {
     if (!userId) return;
-    
     try {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
-      
       const uploadedFilesList: DocumentFile[] = [];
       const documentsToUpload: any[] = [];
-      
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const folderId = `documents_${documentId}`;
         await addDocument(userId, folderId, file);
-        
         // Create a mock DocumentFile object for display
         const documentFile: DocumentFile = {
           id: `file_${Date.now()}_${i}`,
@@ -99,48 +132,38 @@ const DocumentUpload = () => {
           uploaded: new Date(),
           lastModified: 0
         };
-        
         uploadedFilesList.push(documentFile);
-        
         // Prepare document for API upload
         documentsToUpload.push({
           documentId: documentId,
-          documentType: documentMasters?.documentsByCategory
-            .flatMap(cat => cat.documents)
-            .find(doc => doc.id === documentId)?.documentType || "Unknown",
+          documentType: "Unknown",
           fileName: file.name,
           fileSize: file.size,
           fileType: file.type,
           uploadedAt: new Date().toISOString()
         });
       }
-      
       // Auto-submit the document when files are uploaded
       const folderId = `documents_${documentId}`;
       submitFolder(userId, folderId);
-      
       // Update uploaded files state
       setUploadedFiles(prev => ({
         ...prev,
         [documentId]: [...(prev[documentId] || []), ...uploadedFilesList]
       }));
-      
       // Call the upload API service
       if (documentsToUpload.length > 0) {
         const uploadRequest = {
           customerId: userId,
           documents: documentsToUpload
         };
-        
         const uploadResponse = await documentUploadService.uploadDocuments(uploadRequest);
         console.log("Document upload API response:", uploadResponse);
       }
-      
       toast({
         title: "Files uploaded",
         description: `${files.length} file(s) added and submitted successfully`,
       });
-      
     } catch (error) {
       console.error("Error uploading files:", error);
       toast({
@@ -155,23 +178,15 @@ const DocumentUpload = () => {
 
   const handleRemoveFile = (documentId: string, fileId: string) => {
     if (!userId) return;
-    
     const folderId = `documents_${documentId}`;
     removeDocument(userId, folderId, fileId);
-    
-    // Remove from uploaded files state
     setUploadedFiles(prev => {
       const updatedFiles = {
         ...prev,
         [documentId]: prev[documentId]?.filter(file => file.id !== fileId) || []
       };
-      
-      // If no files left, the document should be considered pending
-      // The status will automatically update to pending due to the updated getDocumentStatus logic
-      
       return updatedFiles;
     });
-    
     toast({
       title: "File removed",
       description: "Document has been removed",
@@ -187,12 +202,9 @@ const DocumentUpload = () => {
   const getDocumentStatus = (documentId: string) => {
     const isSubmitted = isDocumentSubmitted(documentId);
     const hasFiles = uploadedFiles[documentId] && uploadedFiles[documentId].length > 0;
-    
-    // If there are no files in local state, it should be pending regardless of submission status
     if (!hasFiles) {
       return { status: 'pending', icon: <AlertCircle className="h-4 w-4 text-yellow-600" />, label: 'Pending' };
     }
-    
     if (isSubmitted) {
       return { status: 'submitted', icon: <CheckCircle className="h-4 w-4 text-green-600" />, label: 'Submitted' };
     } else if (hasFiles) {
@@ -204,7 +216,6 @@ const DocumentUpload = () => {
 
   const getStatusBadge = (documentId: string) => {
     const status = getDocumentStatus(documentId);
-    
     switch (status.status) {
       case 'submitted':
         return <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
@@ -217,7 +228,16 @@ const DocumentUpload = () => {
     }
   };
 
-  if (!documentMasters) {
+  // Add promoter handler
+  const handleAddPromoter = () => {
+    setPromoters((prev) => [...prev, { id: Date.now() }]);
+  };
+  // Remove promoter handler
+  const handleRemovePromoter = (index: number) => {
+    setPromoters((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  if (!customerType) {
     return (
       <MainLayout showSidebar={true}>
         <div className="flex items-center justify-center min-h-screen">
@@ -241,7 +261,8 @@ const DocumentUpload = () => {
             </p>
           </div>
 
-          {documentMasters.documentsByCategory.map((category: DocumentCategory, categoryIndex: number) => (
+          {/* Always show the default table */}
+          {orgCategories.map((category, categoryIndex) => (
             <Card key={categoryIndex} className="mb-6">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold text-gray-800">
@@ -255,7 +276,7 @@ const DocumentUpload = () => {
                       <TableHead className="w-[40%]">Document Type</TableHead>
                       <TableHead className="w-[15%]">Status</TableHead>
                       <TableHead className="w-[20%]">Uploaded Files</TableHead>
-                      <TableHead className="w-[15%]">Mandatory</TableHead>
+                      <TableHead className="w-[15%] text-center">Mandatory</TableHead>
                       <TableHead className="w-[10%]">Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -263,7 +284,23 @@ const DocumentUpload = () => {
                     {category.documents.map((document: DocumentType) => (
                       <TableRow key={document.id}>
                         <TableCell className="font-medium">
-                          {document.documentType}
+                          <div className="flex items-center gap-2">
+                            {document.documentType}
+                            {document.isMultiple && (
+                              <TooltipProvider>
+                                <Tooltip delayDuration={0}>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer">
+                                      <Info className="h-4 w-4 text-blue-500" />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" align="center" className="max-w-xs whitespace-pre-line text-sm">
+                                    Multiple files required (e.g., front and back sides)
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           {getStatusBadge(document.id)}
@@ -287,11 +324,13 @@ const DocumentUpload = () => {
                                 </div>
                               ))}
                             </div>
+                          ) : document.isMultiple ? (
+                            <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
                           ) : (
                             <span className="text-gray-400 text-sm">No files uploaded</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">
                           {document.isMandatory ? (
                             <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
                           ) : (
@@ -313,16 +352,22 @@ const DocumentUpload = () => {
                                 variant="outline"
                                 size="sm"
                                 disabled={uploadingDocuments[document.id]}
-                                className="cursor-pointer"
+                                className="cursor-pointer min-w-[140px] flex items-center justify-center"
                                 asChild
                               >
                                 <span>
                                   {uploadingDocuments[document.id] ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                  ) : document.isMultiple && uploadedFiles[document.id] && uploadedFiles[document.id].length > 0 ? (
+                                    <Plus className="h-4 w-4" />
                                   ) : (
                                     <Upload className="h-4 w-4" />
                                   )}
-                                  <span className="ml-1">Upload</span>
+                                  <span className="ml-1 block truncate">
+                                    {document.isMultiple && uploadedFiles[document.id] && uploadedFiles[document.id].length > 0
+                                      ? "Add More Docs"
+                                      : "Upload Document"}
+                                  </span>
                                 </span>
                               </Button>
                             </label>
@@ -336,14 +381,163 @@ const DocumentUpload = () => {
             </Card>
           ))}
 
-          <div className="mt-6 flex justify-end">
-            <Button
-              onClick={() => navigate("/customer/dashboard")}
-              className="px-6"
-            >
-              Back to Dashboard
-            </Button>
-          </div>
+          {/* Organization: Promoter logic */}
+          {customerType === 'Organization' && (
+            <>
+              {/* Only render promoter tables if promoters.length > 0 */}
+              {promoters.length > 0 && promoters.map((promoter, promoterIndex) => (
+                <div key={promoter.id} className="mb-10">
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-lg font-semibold text-gray-800">Promoter {promoterIndex + 1}</h2>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePromoter(promoterIndex)}
+                      className="ml-2 flex items-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-900 px-4 py-2 border border-red-300 shadow transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-red-400 rounded-none"
+                      title="Remove Promoter"
+                      aria-label="Remove Promoter"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                      <span>Remove Promoter</span>
+                    </button>
+                  </div>
+                  {promoterCategories.map((category, categoryIndex) => (
+                    <Card key={categoryIndex} className="mb-6">
+                      <CardHeader>
+                        <CardTitle className="text-lg font-semibold text-gray-800">
+                          {category.category}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[40%]">Document Type</TableHead>
+                              <TableHead className="w-[15%]">Status</TableHead>
+                              <TableHead className="w-[20%]">Uploaded Files</TableHead>
+                              <TableHead className="w-[15%] text-center">Mandatory</TableHead>
+                              <TableHead className="w-[10%]">Action</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {category.documents.map((document: DocumentType) => {
+                              // Unique document id per promoter
+                              const promoterDocId = `${document.id}_promoter${promoterIndex}`;
+                              return (
+                                <TableRow key={promoterDocId}>
+                                  <TableCell className="font-medium">
+                                    <div className="flex items-center gap-2">
+                                      {document.documentType}
+                                      {document.isMultiple && (
+                                        <TooltipProvider>
+                                          <Tooltip delayDuration={0}>
+                                            <TooltipTrigger asChild>
+                                              <span className="cursor-pointer">
+                                                <Info className="h-4 w-4 text-blue-500" />
+                                              </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" align="center" className="max-w-xs whitespace-pre-line text-sm">
+                                              Multiple files required (e.g., front and back sides)
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    {getStatusBadge(promoterDocId)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {uploadedFiles[promoterDocId] && uploadedFiles[promoterDocId].length > 0 ? (
+                                      <div className="space-y-1">
+                                        {uploadedFiles[promoterDocId].map((file, fileIndex) => (
+                                          <div key={file.id} className="flex items-center justify-between text-sm">
+                                            <span className="truncate max-w-[150px]" title={file.name}>
+                                              {file.name}
+                                            </span>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => handleRemoveFile(promoterDocId, file.id)}
+                                              className="h-6 w-6 p-0 text-red-600 hover:text-red-800"
+                                            >
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : document.isMultiple ? (
+                                      <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
+                                    ) : (
+                                      <span className="text-gray-400 text-sm">No files uploaded</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {document.isMandatory ? (
+                                      <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center space-x-2">
+                                      <input
+                                        type="file"
+                                        id={`file-${promoterDocId}`}
+                                        multiple
+                                        onChange={(e) => e.target.files && handleFileUpload(promoterDocId, e.target.files)}
+                                        className="hidden"
+                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                      />
+                                      <label htmlFor={`file-${promoterDocId}`}>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          disabled={uploadingDocuments[promoterDocId]}
+                                          className="cursor-pointer min-w-[140px] flex items-center justify-center"
+                                          asChild
+                                        >
+                                          <span>
+                                            {uploadingDocuments[promoterDocId] ? (
+                                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                            ) : document.isMultiple && uploadedFiles[promoterDocId] && uploadedFiles[promoterDocId].length > 0 ? (
+                                              <Plus className="h-4 w-4" />
+                                            ) : (
+                                              <Upload className="h-4 w-4" />
+                                            )}
+                                            <span className="ml-1 block truncate">
+                                              {document.isMultiple && uploadedFiles[promoterDocId] && uploadedFiles[promoterDocId].length > 0
+                                                ? "Add More Docs"
+                                                : "Upload Document"}
+                                            </span>
+                                          </span>
+                                        </Button>
+                                      </label>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ))}
+              <div className="mt-8 flex justify-end">
+                <Button
+                  onClick={handleAddPromoter}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white border border-blue-700 shadow-lg flex items-center gap-2 text-base font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-none"
+                  variant="default"
+                  type="button"
+                  style={{ borderRadius: 0 }}
+                >
+                  <Plus className="h-5 w-5" />
+                  Add Promoter
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </MainLayout>
