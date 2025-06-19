@@ -73,7 +73,7 @@ const DocumentUpload = () => {
     };
 
     fetchDocumentMasters();
-  }, [documentUploadService]);
+  }, []);
 
   // Sync uploaded files state with document context
   useEffect(() => {
@@ -116,54 +116,39 @@ const DocumentUpload = () => {
     if (!userId) return;
     try {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
+      const formData = new FormData();
       const uploadedFilesList: DocumentFile[] = [];
-      const documentsToUpload: any[] = [];
+  
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const folderId = `documents_${documentId}`;
-        await addDocument(userId, folderId, file);
-        // Create a mock DocumentFile object for display
-        const documentFile: DocumentFile = {
+        formData.append(`documents[${i}].documentMasterId`, documentId);
+        formData.append(`documents[${i}].file`, file);
+  
+        // Just for UI display
+        uploadedFilesList.push({
           id: `file_${Date.now()}_${i}`,
           name: file.name,
           size: file.size,
           type: file.type,
           url: URL.createObjectURL(file),
           uploaded: new Date(),
-          lastModified: 0
-        };
-        uploadedFilesList.push(documentFile);
-        // Prepare document for API upload
-        documentsToUpload.push({
-          documentId: documentId,
-          documentType: "Unknown",
-          fileName: file.name,
-          fileSize: file.size,
-          fileType: file.type,
-          uploadedAt: new Date().toISOString()
+          lastModified: file.lastModified,
         });
       }
-      // Auto-submit the document when files are uploaded
+      formData.append("pan", "EMUPP6262H");
+      await documentUploadService.uploadDocuments(formData);
       const folderId = `documents_${documentId}`;
       submitFolder(userId, folderId);
-      // Update uploaded files state
       setUploadedFiles(prev => ({
         ...prev,
-        [documentId]: [...(prev[documentId] || []), ...uploadedFilesList]
+        [documentId]: [...(prev[documentId] || []), ...uploadedFilesList],
       }));
-      // Call the upload API service
-      if (documentsToUpload.length > 0) {
-        const uploadRequest = {
-          customerId: userId,
-          documents: documentsToUpload
-        };
-        const uploadResponse = await documentUploadService.uploadDocuments(uploadRequest);
-        console.log("Document upload API response:", uploadResponse);
-      }
+  
       toast({
         title: "Files uploaded",
-        description: `${files.length} file(s) added and submitted successfully`,
+        description: `${files.length} file(s) uploaded successfully`,
       });
+  
     } catch (error) {
       console.error("Error uploading files:", error);
       toast({
@@ -175,7 +160,7 @@ const DocumentUpload = () => {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: false }));
     }
   };
-
+  
   const handleRemoveFile = (documentId: string, fileId: string) => {
     if (!userId) return;
     const folderId = `documents_${documentId}`;

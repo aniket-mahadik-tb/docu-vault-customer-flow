@@ -60,20 +60,16 @@ export function useDocumentUploadService() {
     }
   };
 
-  service.uploadDocuments = async (request: DocumentUploadRequest): Promise<ApiResponse<DocumentUploadResponse>> => {
-    // Keep this as mock for now unless you have a real endpoint
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return {
-      status: 200,
-      message: "Mock upload successful",
-      data: {
-        uploadedCount: request.documents.length,
-        failedCount: 0,
-        uploadedDocuments: request.documents,
-        failedDocuments: []
-      },
-      timestamp: new Date().toISOString()
-    };
+  service.uploadDocuments = async (formData: FormData): Promise<ApiResponse<DocumentUploadResponse>> => {
+    try {
+      const response = await api.post("documents", formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("Failed to upload documents:", error);
+      throw error;
+    }
   };
 
   return service;
