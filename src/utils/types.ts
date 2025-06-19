@@ -1,11 +1,11 @@
 
 
-export interface Customer {
-    panCard: string;
+export interface CustomerType {
+    pan: string;
     name: string;
     email: string;
     phone: string;
-    customerType: "Individual" | "Organisation";
+    clientType: "Individual" | "Organisation";
     createdAt?: string;
     documentStatus?: DocumentStatusType;
     documents: CustomerDocument[];

@@ -37,18 +37,18 @@ const Login = () => {
   }, [navigate, setUserId]);
 
 
-  const validateUser = async (userId: string, password: string): Promise<boolean> => {
-    try {
-      const response = await userService.getUserById(userId);
-      if (response.status === 200 && response.data) {
-        return response.data === "Admin" || response.data === "SuperAdmin";
-      }
-      return false;
-    } catch (err) {
-      console.error("Validation error:", err);
-      return false;
-    }
-  };
+  // const validateUser = async (userId: string, password: string): Promise<boolean> => {
+  //   try {
+  //     const response = await userService.getUserById(userId);
+  //     if (response.status === 200 && response.data) {
+  //       return response.data === "Admin" || response.data === "SuperAdmin";
+  //     }
+  //     return false;
+  //   } catch (err) {
+  //     console.error("Validation error:", err);
+  //     return false;
+  //   }
+  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
