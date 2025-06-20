@@ -1,13 +1,13 @@
 // No need to import useAxios anymore
 import { Customer } from "../contexts/CustomerContext";
 import { CustomerType } from "@/utils/types";
-import { initialCustomers } from "@/utils/globalConstants";
+import { constants, initialCustomers } from "@/utils/globalConstants";
 import api from "../instances/axios";
 import axios from "axios";
 
 // Types for API requests and responses
 export interface ClientCreateRequest {
-  clientType: "Individual" | "Organisation";
+  clientType: "INDIVIDUAL" | "ORGANISATION";
   name: string;
   pan: string;
   email: string;
@@ -45,6 +45,8 @@ export interface GenericApiResponse<T> {
   message: string;
 }
 
+let customers: CustomerType[];
+
 // Simulated data
 const mockCustomers: Customer[] = initialCustomers;
 
@@ -72,17 +74,26 @@ export function useCustomerService() {
       const res = await api.get<GenericApiResponse<CustomerType[]>>('/clients');
       // console.log("Fetched customers:", res.data.data);
       // console.log("Fetched customers:", res.data);
-      return res.data;
+      customers = res.data.map((customer: CustomerType) => {
+        return {
+          ...customer,
+          documents: constants.mockFile
+        }
+      }
+      );
+      return customers;
+
+      // return res.data;
     } catch (error: any) {
       console.error("Failed to fetch customers");
       throw error;
     }
   };
 
-  service.getCustomerById = async (id: string) => {
+  service.getCustomerById = async (pan: string) => {
     try {
       await delay(300);
-      const customer = mockCustomers.find(c => c.id === id);
+      const customer = customers.find(c => c.pan === pan);
       if (!customer) throw new Error("Customer not found");
       return {
         data: customer,

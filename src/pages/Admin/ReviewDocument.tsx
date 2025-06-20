@@ -305,7 +305,7 @@ const ReviewDocument = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Current Status</p>
                   <p className="font-medium capitalize">
-                    {document.status.replace("_", " ")}
+                    {document?.status?.replace("_", " ")}
                   </p>
                 </div>
                 <div>
