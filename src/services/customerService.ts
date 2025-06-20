@@ -7,7 +7,7 @@ import axios from "axios";
 
 // Types for API requests and responses
 export interface ClientCreateRequest {
-  clientType: "INDIVIDUAL" | "ORGANISATION";
+  clientType: "INDIVIDUAL" | "ORGANIZATION";
   name: string;
   pan: string;
   email: string;
