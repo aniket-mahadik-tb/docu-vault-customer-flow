@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
@@ -28,7 +27,6 @@ const CustomerEntry = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
 
-
   useEffect(
     () => {
       setValueToLocalStorage("token", token)
@@ -39,7 +37,7 @@ const CustomerEntry = () => {
     }, [navigate, getValueFromLocalStorage]
   )
 
-  
+  return null;
 };
 
 export default CustomerEntry;

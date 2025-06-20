@@ -112,17 +112,20 @@ const DocumentUpload = () => {
 
   const handleFileUpload = async (documentId: string, files: FileList) => {
     if (!token) return;
+  
     try {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
-      const formData = new FormData();
       const uploadedFilesList: DocumentFile[] = [];
-
+  
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        formData.append(`documents[${i}].documentMasterId`, documentId);
-        formData.append(`documents[${i}].file`, file);
-
-        // Just for UI display
+        const formData = new FormData();
+        formData.append("documentMasterId", documentId);
+        formData.append("file", file);
+  
+        // API call
+        await documentUploadService.uploadDocuments(formData);
+  
         uploadedFilesList.push({
           id: `file_${Date.now()}_${i}`,
           name: file.name,
@@ -133,20 +136,20 @@ const DocumentUpload = () => {
           lastModified: file.lastModified,
         });
       }
-      formData.append("pan", "EMUPP6262H");
-      await documentUploadService.uploadDocuments(formData);
+  
       const folderId = `documents_${documentId}`;
       submitFolder(token, folderId);
+  
       setUploadedFiles(prev => ({
         ...prev,
         [documentId]: [...(prev[documentId] || []), ...uploadedFilesList],
       }));
-
+  
       toast({
         title: "Files uploaded",
         description: `${files.length} file(s) uploaded successfully`,
       });
-
+  
     } catch (error) {
       console.error("Error uploading files:", error);
       toast({
@@ -158,6 +161,7 @@ const DocumentUpload = () => {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: false }));
     }
   };
+  
 
   const handleRemoveFile = (documentId: string, fileId: string) => {
     if (!token) return;
