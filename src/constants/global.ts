@@ -18,7 +18,7 @@ export const USER_ROLES: Record<string, UserRole> = {
 export const STORAGE_KEYS = {
   ROLE: "role",
   USER_ID: "userId",
-  AUTH_TOKEN: "authToken"
+  AUTH_TOKEN: "token"
 } as const;
 
 // API Endpoints
