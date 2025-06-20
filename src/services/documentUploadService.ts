@@ -72,5 +72,15 @@ export function useDocumentUploadService() {
     }
   };
 
+  service.getUploadedDocuments = async (): Promise<any> => {
+    try {
+      const response = await api.get("documents/client");
+      return response.data;
+    } catch (error: any) {
+      console.error("Failed to fetch uploaded documents:", error);
+      throw error;
+    }
+  };
+
   return service;
 } 

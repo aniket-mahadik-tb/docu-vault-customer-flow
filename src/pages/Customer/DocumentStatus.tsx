@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import api from "@/instances/axios";
 
 const DocumentStatus = () => {
   const navigate = useNavigate();
@@ -23,9 +24,8 @@ const DocumentStatus = () => {
   const { getFolderDocuments, isFolderSubmitted } = useDocuments();
   const documentUploadService = useDocumentUploadService();
   
-  const [orgCategories, setOrgCategories] = useState<DocumentCategory[]>([]);
-  const [customerType, setCustomerType] = useState<"Individual" | "Organization">();
-  const [uploadedFiles, setUploadedFiles] = useState<Record<string, DocumentFile[]>>({});
+  const [documentsByCategory, setDocumentsByCategory] = useState<any[]>([]);
+  const [customerType, setCustomerType] = useState<string>("");
 
   useEffect(() => {
     if (!userId) {
@@ -33,49 +33,18 @@ const DocumentStatus = () => {
     }
   }, [userId, navigate]);
 
-  // Call document masters API on page render
   useEffect(() => {
-    const fetchDocumentMasters = async () => {
+    const fetchUploadedDocuments = async () => {
       try {
-        const response = await documentUploadService.getDocumentMasters();
-        const org = response.data.find(
-          (item: any) => item.customerType?.toUpperCase() === "ORGANIZATION"
-        );
-        const individual = response.data.find(
-          (item: any) => item.customerType?.toUpperCase() === "INDIVIDUAL"
-        );
-        if (org) {
-          setCustomerType("Organization");
-          setOrgCategories(org.documentsByCategory);
-        } else if (individual) {
-          setCustomerType("Individual");
-          setOrgCategories(individual.documentsByCategory);
-        }
+        const response = await documentUploadService.getUploadedDocuments();
+        setCustomerType(response.customerType);
+        setDocumentsByCategory(response.documentsByCategory || []);
       } catch (error) {
-        console.error("Error fetching document masters:", error);
+        console.error("Error fetching uploaded documents:", error);
       }
     };
-    fetchDocumentMasters();
-  }, [documentUploadService]);
-
-  // Sync uploaded files state with document context
-  useEffect(() => {
-    if (!userId || orgCategories.length === 0) return;
-    const syncUploadedFiles = () => {
-      const syncedFiles: Record<string, DocumentFile[]> = {};
-      orgCategories.forEach(category => {
-        category.documents.forEach(document => {
-          const folderId = `documents_${document.id}`;
-          const folderDocuments = getFolderDocuments(userId, folderId);
-          if (folderDocuments.length > 0) {
-            syncedFiles[document.id] = folderDocuments;
-          }
-        });
-      });
-      setUploadedFiles(syncedFiles);
-    };
-    syncUploadedFiles();
-  }, [userId, orgCategories, getFolderDocuments]);
+    fetchUploadedDocuments();
+  }, []);
 
   const isDocumentSubmitted = (documentId: string): boolean => {
     if (!userId) return false;
@@ -85,7 +54,7 @@ const DocumentStatus = () => {
 
   const getDocumentStatus = (documentId: string) => {
     const isSubmitted = isDocumentSubmitted(documentId);
-    const hasFiles = uploadedFiles[documentId] && uploadedFiles[documentId].length > 0;
+    const hasFiles = documentsByCategory.some(cat => cat.documents && cat.documents.some(doc => doc.id === documentId));
     if (!hasFiles) {
       return { 
         status: 'pending', 
@@ -129,7 +98,7 @@ const DocumentStatus = () => {
   };
 
   const getLastUploadedDate = (documentId: string): string | null => {
-    const files = uploadedFiles[documentId];
+    const files = documentsByCategory.flatMap(cat => cat.documents).find(doc => doc.id === documentId)?.files;
     if (!files || files.length === 0) return null;
     const dates = files.map(file => new Date(file.uploaded));
     const lastDate = new Date(Math.max(...dates.map(d => d.getTime())));
@@ -137,19 +106,8 @@ const DocumentStatus = () => {
   };
 
   const getFileCount = (documentId: string): number => {
-    return uploadedFiles[documentId]?.length || 0;
-  };
-
-  // Get all documents from all categories for the single table
-  const getAllDocuments = (): Array<{ document: DocumentType; category: string }> => {
-    if (!orgCategories) return [];
-    const allDocuments: Array<{ document: DocumentType; category: string }> = [];
-    orgCategories.forEach(category => {
-      category.documents.forEach(document => {
-        allDocuments.push({ document, category: category.category });
-      });
-    });
-    return allDocuments;
+    const files = documentsByCategory.flatMap(cat => cat.documents).find(doc => doc.id === documentId)?.files;
+    return files?.length || 0;
   };
 
   if (!customerType) {
@@ -165,7 +123,10 @@ const DocumentStatus = () => {
     );
   }
 
-  const allDocuments = getAllDocuments();
+  // Flatten all documents for the table
+  const allDocuments = documentsByCategory.flatMap((cat: any) =>
+    (cat.documents || []).map((doc: any) => ({ ...doc, category: cat.category }))
+  );
 
   return (
     <MainLayout showSidebar={true}>
@@ -177,7 +138,6 @@ const DocumentStatus = () => {
               Track the status of your uploaded documents
             </p>
           </div>
-
           <Card>
             <CardHeader>
               <CardTitle>Submitted Documents</CardTitle>
@@ -194,36 +154,36 @@ const DocumentStatus = () => {
                       <TableHead className="w-[20%] px-4">Category</TableHead>
                       <TableHead className="w-[15%] px-4">Status</TableHead>
                       <TableHead className="w-[15%] px-4">Files Count</TableHead>
-                      <TableHead className="w-[15%] px-4">Uploaded</TableHead>
+                      <TableHead className="w-[15%] px-4">Files</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {allDocuments.length > 0 ? (
-                      allDocuments.map(({ document, category }) => {
-                        const fileCount = getFileCount(document.id);
-                        const lastUpdated = getLastUploadedDate(document.id);
-                        return (
-                          <TableRow key={document.id}>
-                            <TableCell className="font-medium pl-6">{document.documentType}</TableCell>
-                            <TableCell className="px-4"><span className="text-sm text-gray-600">{category}</span></TableCell>
-                            <TableCell className="px-4">{getStatusBadge(document.id)}</TableCell>
-                            <TableCell className="px-4">
-                              <div className="flex items-center gap-2">
-                                <FileText className="h-4 w-4 text-gray-500" />
-                                <span className="font-medium">{fileCount}</span>
-                                <span className="text-sm text-gray-500">{fileCount === 1 ? 'file' : 'files'}</span>
+                      allDocuments.map((doc: any) => (
+                        <TableRow key={doc.id}>
+                          <TableCell className="font-medium pl-6">{doc.documentType}</TableCell>
+                          <TableCell className="px-4">{doc.category}</TableCell>
+                          <TableCell className="px-4">
+                            {doc.files && doc.files.length > 0 ? (
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="px-4">{doc.files ? doc.files.length : 0}</TableCell>
+                          <TableCell className="px-4">
+                            {doc.files && doc.files.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {doc.files.map((file: string, idx: number) => (
+                                  <span key={idx} className="inline-block bg-gray-100 rounded px-2 py-1 text-xs text-gray-700">{file}</span>
+                                ))}
                               </div>
-                            </TableCell>
-                            <TableCell className="px-4">
-                              {lastUpdated ? (
-                                <span className="text-sm font-medium">{lastUpdated}</span>
-                              ) : (
-                                <span className="text-sm text-gray-400">Not uploaded</span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
+                            ) : (
+                              <span className="text-sm text-gray-400">No files</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-4 px-4">
@@ -236,7 +196,6 @@ const DocumentStatus = () => {
               </div>
             </CardContent>
           </Card>
-
           <div className="mt-6 flex justify-end">
             <Button
               onClick={() => navigate("/customer/dashboard")}
