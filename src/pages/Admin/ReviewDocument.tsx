@@ -263,7 +263,7 @@ const ReviewDocument = () => {
       });
     }
 
-    navigate(`/admin/customers/${customer.id}`);
+    navigate(`/admin/customers/details`);
   };
 
   return (
@@ -272,7 +272,7 @@ const ReviewDocument = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate(`/admin/customers/${customer.id}`)}
+          onClick={() => navigate(`/admin/customers/details`)}
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customer

@@ -66,14 +66,14 @@ const CustomerList = () => {
     // setViewDialogOpen(true);
     // setSelectedCustomer(customer);
     setTempCustomer(customer);
-    navigate(`/admin/customers/${customer.pan}`);
+    navigate(`/admin/customers/details`);
   };
 
   //UNCOMMENT THIS WHEN YOU WANT TO FETCH CUSTOMERS FROM THE SERVER
   // useEffect(() => {
   //   const fetchCustomers = async () => {
   //     const response = await useCustomerService()?.getAllCustomers();
-  //     console.log("response",response);
+
   //   }
   //   fetchCustomers();
   // }, []);

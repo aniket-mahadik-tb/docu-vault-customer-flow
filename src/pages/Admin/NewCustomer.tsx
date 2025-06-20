@@ -96,12 +96,12 @@ const NewCustomer = () => {
         promoters: (data.promoters || []).filter(p => p.name && p.email && p.phone && p.pan) as { name: string; pan: string; email: string; phone: string; }[]
       };
 
-      console.log('API Payload:', payload);
+   
 
       // Make the API call
       const response = await customerService.createClient(payload);
 
-      console.log('API Response:', response.data);
+ 
 
       toast({
         title: "Success",

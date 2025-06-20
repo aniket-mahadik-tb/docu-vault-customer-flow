@@ -58,7 +58,7 @@ const getStatusBadge = (status: string) => {
 };
 
 const CustomerDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  // const { id } = useParams<{ id: string }>();
   const { getCustomer, generateUploadLink, syncCustomerDocuments } = useCustomers();
   const navigate = useNavigate();
   const customerService = useCustomerService();
@@ -86,10 +86,8 @@ const CustomerDetail = () => {
   useEffect(() => {
     (async function fetchCustomer() {
       try {
-        if (id) {
-          // await delay(2000);
-          // const res = await customerService.getCustomerById(id);
-          // console.log("Fetched customer response:", tempCustomer);
+        if (true) {
+          
           if (/*res.status == 200 &&*/ tempCustomer) {
             setCustomer(tempCustomer);
           } else {
@@ -101,7 +99,7 @@ const CustomerDetail = () => {
             });
             // navigate("/admin/customers");
           }
-          // console.log("Fetched customer:", customer);
+       
         }
       } catch (error) {
         console.error("Error fetching customer:", error);
@@ -133,7 +131,7 @@ const CustomerDetail = () => {
 
   // }, [customer?.id]); // Only re-run if customer ID changes, not on every render
 
-  // console.log("Customer Detail Rendered", customer);
+ 
   if (!customer) {
     return (
       <MainLayout showSidebar={true}>
@@ -353,7 +351,7 @@ const CustomerDetail = () => {
 
   const handleSyncDocuments = async () => {
     if (customer) {
-      const res = await customerService.getCustomerById(id);
+      const res = await customerService.getCustomerById("hiii");
       if (res.status == 200) {
         setCustomer(res.data);
       } else {

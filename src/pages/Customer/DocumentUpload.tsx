@@ -20,14 +20,16 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const DocumentUpload = () => {
   const navigate = useNavigate();
-  const { userId } = useUser();
+  const { getValueFromLocalStorage } = useLocalStorage();//useUser();
+  const token = getValueFromLocalStorage("token");
   const { addDocument, removeDocument, submitFolder, getFolderDocuments, isFolderSubmitted } = useDocuments();
   const { syncCustomerDocuments } = useCustomers();
   const documentUploadService = useDocumentUploadService();
-  
+
   const [customerType, setCustomerType] = useState<'Individual' | 'Organization'>();
   const [orgCategories, setOrgCategories] = useState<DocumentCategory[]>([]);
   const [promoterCategories, setPromoterCategories] = useState<DocumentCategory[]>([]);
@@ -36,11 +38,7 @@ const DocumentUpload = () => {
   const [uploadingDocuments, setUploadingDocuments] = useState<Record<string, boolean>>({});
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, DocumentFile[]>>({});
 
-  useEffect(() => {
-    if (!userId) {
-      navigate("/customer");
-    }
-  }, [userId, navigate]);
+
 
   // Call document masters API on page render
   useEffect(() => {
@@ -77,7 +75,7 @@ const DocumentUpload = () => {
 
   // Sync uploaded files state with document context
   useEffect(() => {
-    if (!userId || orgCategories.length === 0) return;
+    if (!token || orgCategories.length === 0) return;
 
     const syncUploadedFiles = () => {
       const syncedFiles: Record<string, DocumentFile[]> = {};
@@ -86,7 +84,7 @@ const DocumentUpload = () => {
       orgCategories.forEach(category => {
         category.documents.forEach(document => {
           const folderId = `documents_${document.id}`;
-          const folderDocuments = getFolderDocuments(userId, folderId);
+          const folderDocuments = getFolderDocuments(token, folderId);
           if (folderDocuments.length > 0) {
             syncedFiles[document.id] = folderDocuments;
           }
@@ -98,7 +96,7 @@ const DocumentUpload = () => {
         category.documents.forEach(document => {
           for (let i = 0; i < promoters.length; i++) {
             const promoterDocId = `${document.id}_promoter${i}`;
-            const folderDocuments = getFolderDocuments(userId, promoterDocId);
+            const folderDocuments = getFolderDocuments(token, promoterDocId);
             if (folderDocuments.length > 0) {
               syncedFiles[promoterDocId] = folderDocuments;
             }
@@ -110,20 +108,20 @@ const DocumentUpload = () => {
     };
 
     syncUploadedFiles();
-  }, [userId, orgCategories, promoterCategories, getFolderDocuments, promoters.length]);
+  }, [token, orgCategories, promoterCategories, getFolderDocuments, promoters.length]);
 
   const handleFileUpload = async (documentId: string, files: FileList) => {
-    if (!userId) return;
+    if (!token) return;
     try {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
       const formData = new FormData();
       const uploadedFilesList: DocumentFile[] = [];
-  
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         formData.append(`documents[${i}].documentMasterId`, documentId);
         formData.append(`documents[${i}].file`, file);
-  
+
         // Just for UI display
         uploadedFilesList.push({
           id: `file_${Date.now()}_${i}`,
@@ -138,17 +136,17 @@ const DocumentUpload = () => {
       formData.append("pan", "EMUPP6262H");
       await documentUploadService.uploadDocuments(formData);
       const folderId = `documents_${documentId}`;
-      submitFolder(userId, folderId);
+      submitFolder(token, folderId);
       setUploadedFiles(prev => ({
         ...prev,
         [documentId]: [...(prev[documentId] || []), ...uploadedFilesList],
       }));
-  
+
       toast({
         title: "Files uploaded",
         description: `${files.length} file(s) uploaded successfully`,
       });
-  
+
     } catch (error) {
       console.error("Error uploading files:", error);
       toast({
@@ -160,11 +158,11 @@ const DocumentUpload = () => {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: false }));
     }
   };
-  
+
   const handleRemoveFile = (documentId: string, fileId: string) => {
-    if (!userId) return;
+    if (!token) return;
     const folderId = `documents_${documentId}`;
-    removeDocument(userId, folderId, fileId);
+    removeDocument(token, folderId, fileId);
     setUploadedFiles(prev => {
       const updatedFiles = {
         ...prev,
@@ -179,9 +177,9 @@ const DocumentUpload = () => {
   };
 
   const isDocumentSubmitted = (documentId: string): boolean => {
-    if (!userId) return false;
+    if (!token) return false;
     const folderId = `documents_${documentId}`;
-    return isFolderSubmitted(userId, folderId);
+    return isFolderSubmitted(token, folderId);
   };
 
   const getDocumentStatus = (documentId: string) => {
