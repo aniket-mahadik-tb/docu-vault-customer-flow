@@ -23,10 +23,10 @@ const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) => {
         <header className="sticky top-0 z-50 w-full h-16 bg-white border-b border-gray-200">
           <Header />
         </header>
-        
+
         <div className="flex flex-1">
-          {displaySidebar && role && (
-            <div 
+          {displaySidebar && (
+            <div
               className="fixed z-40"
               style={{
                 top: "64px", // Exactly 64px from top (header height)
@@ -38,10 +38,10 @@ const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) => {
               <AppSidebar />
             </div>
           )}
-          <main 
-            className="flex-1 overflow-y-auto p-4 md:p-6" 
-            style={{ 
-              marginLeft: displaySidebar && role ? "240px" : "0",
+          <main
+            className="flex-1 overflow-y-auto p-4 md:p-6"
+            style={{
+              marginLeft: displaySidebar ? "240px" : "0",
               marginTop: "0px" // Ensure content starts right after header
             }}
           >
