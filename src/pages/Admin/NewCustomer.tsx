@@ -111,11 +111,11 @@ const NewCustomer = () => {
       navigate("/admin/customers");
     } catch (error: any) {
       console.error('API Error:', error);
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to create customer. Please try again.",
-        variant: "destructive",
-      });
+      // toast({
+      //   title: "Error",
+      //   description: error.response?.data?.message || "Failed to create customer. Please try again.",
+      //   variant: "destructive",
+      // });
     } finally {
       setIsLoading(false);
     }

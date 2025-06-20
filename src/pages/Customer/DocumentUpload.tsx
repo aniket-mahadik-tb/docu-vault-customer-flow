@@ -292,18 +292,40 @@ const DocumentUpload = () => {
                           {uploadedFiles[document.id] && uploadedFiles[document.id].length > 0 ? (
                             <div className="space-y-1">
                               {uploadedFiles[document.id].map((file, fileIndex) => (
-                                <div key={file.id} className="flex items-center justify-between text-sm">
-                                  <span className="truncate max-w-[150px]" title={file.name}>
-                                    {file.name}
-                                  </span>
+                                <div key={file.id} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleRemoveFile(document.id, file.id)}
-                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-800"
+                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-800 mr-1"
+                                    aria-label="Delete file"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
+                                  <span className="truncate max-w-[120px]" title={file.name} style={{ marginRight: document.isMultiple ? '0.5rem' : 0 }}>
+                                    {file.name}
+                                  </span>
+                                  {document.isMultiple && (
+                                    <>
+                                      <input
+                                        type="file"
+                                        id={`file-plus-${document.id}`}
+                                        multiple
+                                        onChange={(e) => e.target.files && handleFileUpload(document.id, e.target.files)}
+                                        className="hidden"
+                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                      />
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50"
+                                        aria-label="Add more files"
+                                        onClick={() => window.document.getElementById(`file-plus-${document.id}`)?.click()}
+                                      >
+                                        <Plus className="h-4 w-4" />
+                                      </Button>
+                                    </>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -341,15 +363,11 @@ const DocumentUpload = () => {
                                 <span>
                                   {uploadingDocuments[document.id] ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                                  ) : document.isMultiple && uploadedFiles[document.id] && uploadedFiles[document.id].length > 0 ? (
-                                    <Plus className="h-4 w-4" />
                                   ) : (
                                     <Upload className="h-4 w-4" />
                                   )}
                                   <span className="ml-1 block truncate">
-                                    {document.isMultiple && uploadedFiles[document.id] && uploadedFiles[document.id].length > 0
-                                      ? "Add More Docs"
-                                      : "Upload Document"}
+                                    Upload Document
                                   </span>
                                 </span>
                               </Button>
@@ -433,18 +451,40 @@ const DocumentUpload = () => {
                                     {uploadedFiles[promoterDocId] && uploadedFiles[promoterDocId].length > 0 ? (
                                       <div className="space-y-1">
                                         {uploadedFiles[promoterDocId].map((file, fileIndex) => (
-                                          <div key={file.id} className="flex items-center justify-between text-sm">
-                                            <span className="truncate max-w-[150px]" title={file.name}>
-                                              {file.name}
-                                            </span>
+                                          <div key={file.id} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
                                             <Button
                                               variant="ghost"
                                               size="sm"
                                               onClick={() => handleRemoveFile(promoterDocId, file.id)}
-                                              className="h-6 w-6 p-0 text-red-600 hover:text-red-800"
+                                              className="h-6 w-6 p-0 text-red-600 hover:text-red-800 mr-1"
+                                              aria-label="Delete file"
                                             >
                                               <Trash2 className="h-4 w-4" />
                                             </Button>
+                                            <span className="truncate max-w-[120px]" title={file.name} style={{ marginRight: document.isMultiple ? '0.5rem' : 0 }}>
+                                              {file.name}
+                                            </span>
+                                            {document.isMultiple && (
+                                              <>
+                                                <input
+                                                  type="file"
+                                                  id={`file-plus-${promoterDocId}`}
+                                                  multiple
+                                                  onChange={(e) => e.target.files && handleFileUpload(promoterDocId, e.target.files)}
+                                                  className="hidden"
+                                                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                                />
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50"
+                                                  aria-label="Add more files"
+                                                  onClick={() => window.document.getElementById(`file-plus-${promoterDocId}`)?.click()}
+                                                >
+                                                  <Plus className="h-4 w-4" />
+                                                </Button>
+                                              </>
+                                            )}
                                           </div>
                                         ))}
                                       </div>
@@ -482,15 +522,11 @@ const DocumentUpload = () => {
                                           <span>
                                             {uploadingDocuments[promoterDocId] ? (
                                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                                            ) : document.isMultiple && uploadedFiles[promoterDocId] && uploadedFiles[promoterDocId].length > 0 ? (
-                                              <Plus className="h-4 w-4" />
                                             ) : (
                                               <Upload className="h-4 w-4" />
                                             )}
                                             <span className="ml-1 block truncate">
-                                              {document.isMultiple && uploadedFiles[promoterDocId] && uploadedFiles[promoterDocId].length > 0
-                                                ? "Add More Docs"
-                                                : "Upload Document"}
+                                              Upload Document
                                             </span>
                                           </span>
                                         </Button>

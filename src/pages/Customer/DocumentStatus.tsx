@@ -190,11 +190,11 @@ const DocumentStatus = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[35%]">Document Type</TableHead>
-                      <TableHead className="w-[20%]">Category</TableHead>
-                      <TableHead className="w-[15%]">Status</TableHead>
-                      <TableHead className="w-[15%]">Files Count</TableHead>
-                      <TableHead className="w-[15%]">Uploaded</TableHead>
+                      <TableHead className="w-[35%] pl-6">Document Type</TableHead>
+                      <TableHead className="w-[20%] px-4">Category</TableHead>
+                      <TableHead className="w-[15%] px-4">Status</TableHead>
+                      <TableHead className="w-[15%] px-4">Files Count</TableHead>
+                      <TableHead className="w-[15%] px-4">Uploaded</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -204,25 +204,17 @@ const DocumentStatus = () => {
                         const lastUpdated = getLastUploadedDate(document.id);
                         return (
                           <TableRow key={document.id}>
-                            <TableCell className="font-medium">
-                              {document.documentType}
-                            </TableCell>
-                            <TableCell>
-                              <span className="text-sm text-gray-600">{category}</span>
-                            </TableCell>
-                            <TableCell>
-                              {getStatusBadge(document.id)}
-                            </TableCell>
-                            <TableCell>
+                            <TableCell className="font-medium pl-6">{document.documentType}</TableCell>
+                            <TableCell className="px-4"><span className="text-sm text-gray-600">{category}</span></TableCell>
+                            <TableCell className="px-4">{getStatusBadge(document.id)}</TableCell>
+                            <TableCell className="px-4">
                               <div className="flex items-center gap-2">
                                 <FileText className="h-4 w-4 text-gray-500" />
                                 <span className="font-medium">{fileCount}</span>
-                                <span className="text-sm text-gray-500">
-                                  {fileCount === 1 ? 'file' : 'files'}
-                                </span>
+                                <span className="text-sm text-gray-500">{fileCount === 1 ? 'file' : 'files'}</span>
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="px-4">
                               {lastUpdated ? (
                                 <span className="text-sm font-medium">{lastUpdated}</span>
                               ) : (
@@ -234,7 +226,7 @@ const DocumentStatus = () => {
                       })
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4">
+                        <TableCell colSpan={5} className="text-center py-4 px-4">
                           No documents found
                         </TableCell>
                       </TableRow>
