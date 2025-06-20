@@ -85,7 +85,7 @@ export function useAdminService(): AdminService {
           throw new Error("Invalid credentials");
         }
 
-        localStorage.setItem("authToken", res.data.token);
+        localStorage.setItem("token", res.data.token);
         return true;
       }
       catch (error: any) {

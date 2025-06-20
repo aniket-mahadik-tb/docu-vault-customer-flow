@@ -22,15 +22,14 @@ const Login = () => {
     username: "",
     password: "",
   });
-  const { setValueToLocalStorage } = useLocalStorage();
+  // const { setValueToLocalStorage } = useLocalStorage();
 
   // useEffect(() => {
   //   localStorage.removeItem("role");
   // }, [])
   useEffect(() => {
     if (userId && role === "Admin") {
-      console.log("Admin already logged in:", userId);
-      console.log(role)
+    
       navigate("/admin/dashboard");
       return;
     }

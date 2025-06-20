@@ -33,7 +33,7 @@ const CustomerEntry = () => {
     () => {
       setValueToLocalStorage("token", token)
       setValueToLocalStorage("role", "Customer");
-      setUserId("bull"); // Simulated user ID
+
       setRole("Customer");
       navigate("/customer/upload");
     }, [navigate, getValueFromLocalStorage]

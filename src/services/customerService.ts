@@ -59,7 +59,7 @@ export function useCustomerService() {
   service.createClient = async (data: ClientCreateRequest): Promise<any> => {
     try {
       const response = await api.post<GenericApiResponse<ClientCreateResponse>>('/clients', data);
-      console.log("Client created successfully:", response.data);
+ 
       const pan: String = response.data.data.clientPan;
       await service.generateUploadLink(pan);
       return response;
@@ -72,8 +72,7 @@ export function useCustomerService() {
   service.getAllCustomers = async () => {
     try {
       const res = await api.get<GenericApiResponse<CustomerType[]>>('/clients');
-      // console.log("Fetched customers:", res.data.data);
-      // console.log("Fetched customers:", res.data);
+
       customers = res.data.map((customer: CustomerType) => {
         return {
           ...customer,
