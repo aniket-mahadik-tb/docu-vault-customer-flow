@@ -223,12 +223,11 @@ const BankDocuments = () => {
       ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension) ? 'image' : 
       'other';
     
-    console.log(`Opening preview for document: ${doc.name}, type: ${fileType}`);
+   
     
     // Use sample preview
     const sampleUrl = getSamplePreviewUrl(doc.name, fileType);
-    console.log(`Sample preview URL: ${sampleUrl}`);
-    
+
     setPreviewDoc({
       id: doc.id,
       name: doc.name,
@@ -248,7 +247,7 @@ const BankDocuments = () => {
       setLoadingProgress(10);
       setErrorMessage(""); // Clear previous errors
       
-      console.log(`Loading PDF document from URL: ${url}`);
+
       
       const loadingTask = pdfjs.getDocument({
         url: url,
@@ -263,7 +262,6 @@ const BankDocuments = () => {
       
       try {
         const pdf = await loadingTask.promise;
-        console.log(`PDF loaded successfully with ${pdf.numPages} pages`);
         setLoadingProgress(100);
         setPdfDoc(pdf);
         setNumPages(pdf.numPages);

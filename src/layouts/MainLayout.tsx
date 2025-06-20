@@ -11,10 +11,10 @@ interface MainLayoutProps {
 }
 
 const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) => {
-  const { role, userId } = useUser();
+  const { role } = useUser();
 
   // Only show sidebar if user is authenticated (has userId) AND showSidebar is true
-  const displaySidebar = showSidebar && userId;
+  const displaySidebar = showSidebar;
 
   return (
     <SidebarProvider defaultOpen={true}>

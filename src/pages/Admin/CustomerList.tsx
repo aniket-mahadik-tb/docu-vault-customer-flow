@@ -30,25 +30,26 @@ import {
 } from "@/components/ui/dialog";
 import { useCustomerService } from "@/services/customerService";
 import { ShimmerThumbnail } from "react-shimmer-effects";
+import { CustomerType } from "@/utils/types";
+import { useTempCustomer } from "@/utils/TempContext";
 
 const CustomerList = () => {
   // const { customers, deleteCustomer } = useCustomers();
   const customerService = useCustomerService();
-  const [customers, setCustomers, deleteCustomer] = [...useState<Customer[] | null>(null), customerService.deleteCustomer];
+  const [customers, setCustomers, deleteCustomer] = [...useState<CustomerType[] | null>(null), customerService.deleteCustomer];
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = React.useState<CustomerType | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [customerToDelete, setCustomerToDelete] = React.useState<Customer | null>(null);
+  const [customerToDelete, setCustomerToDelete] = React.useState<CustomerType | null>(null);
+  const { setTempCustomer } = useTempCustomer();
 
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
         const response = await customerService.getAllCustomers();
-        if (response.status === 200) {
-          setCustomers(response.data);
-        }
+        setCustomers(response);
       } catch (error) {
         console.error("Failed to fetch customers", error);
         toast({
@@ -59,23 +60,25 @@ const CustomerList = () => {
       }
     };
     fetchCustomers();
-  }, [customerService, toast]);
+  }, []);
 
-  const handleViewCustomer = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    navigate(`/admin/customers/${customer.id}`);
+  const handleViewCustomer = (customer: CustomerType) => {
+    // setViewDialogOpen(true);
+    // setSelectedCustomer(customer);
+    setTempCustomer(customer);
+    navigate(`/admin/customers/details`);
   };
 
   //UNCOMMENT THIS WHEN YOU WANT TO FETCH CUSTOMERS FROM THE SERVER
   // useEffect(() => {
   //   const fetchCustomers = async () => {
   //     const response = await useCustomerService()?.getAllCustomers();
-  //     console.log("response",response);
+
   //   }
   //   fetchCustomers();
   // }, []);
 
-  const handleDeleteClick = (customer: Customer) => {
+  const handleDeleteClick = (customer: CustomerType) => {
     setCustomerToDelete(customer);
     setDeleteDialogOpen(true);
   };
@@ -83,7 +86,7 @@ const CustomerList = () => {
   const handleDeleteConfirm = () => {
     if (customerToDelete) {
       try {
-        deleteCustomer(customerToDelete.id);
+        deleteCustomer(customerToDelete.pan);
         toast({
           title: "Success",
           description: "Customer has been removed from the system.",
@@ -127,12 +130,12 @@ const CustomerList = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Customer ID</TableHead>
+                    {/* <TableHead>Customer ID</TableHead> */}
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>PAN Card</TableHead>
-                    <TableHead>Business</TableHead>
+                    <TableHead>Customer Type</TableHead>
                     <TableHead>Documents</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -140,17 +143,17 @@ const CustomerList = () => {
                 <TableBody>
                   {customers !== null && customers.length > 0 ? (
                     customers.map((customer) => (
-                      <TableRow key={customer.id}>
-                        <TableCell>{customer.id}</TableCell>
+                      <TableRow key={customer.pan}>
+                        {/* <TableCell>{customer.id}</TableCell> */}
                         <TableCell className="font-medium">{customer.name}</TableCell>
                         <TableCell>{customer.email}</TableCell>
                         <TableCell>{customer.phone}</TableCell>
-                        <TableCell>{customer.panCard}</TableCell>
-                        <TableCell>{customer.businessName || "-"}</TableCell>
+                        <TableCell>{customer.pan}</TableCell>
+                        <TableCell className="ps-6">{customer.clientType }</TableCell>
                         <TableCell>
-                          {customer.documentsSubmitted ? (
+                          {true ? (
                             <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                              Submitted ({customer.documents.length})
+                              Submitted ({customer.documents?.length})
                             </span>
                           ) : (
                             <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
@@ -216,10 +219,10 @@ const CustomerList = () => {
             </DialogHeader>
             {selectedCustomer && (
               <div className="space-y-4">
-                <div>
+                {/* <div>
                   <p className="text-sm text-muted-foreground">Customer ID</p>
                   <p className="font-medium">{selectedCustomer.id}</p>
-                </div>
+                </div> */}
                 <div>
                   <p className="text-sm text-muted-foreground">Name</p>
                   <p className="font-medium">{selectedCustomer.name}</p>
@@ -234,14 +237,14 @@ const CustomerList = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">PAN Card</p>
-                  <p className="font-medium">{selectedCustomer.panCard}</p>
+                  <p className="font-medium">{selectedCustomer.pan}</p>
                 </div>
-                {selectedCustomer.businessName && (
+                {/* {false && (
                   <div>
                     <p className="text-sm text-muted-foreground">Business Name</p>
-                    <p className="font-medium">{selectedCustomer.businessName}</p>
+                    <p className="font-medium">{"hii"}</p>
                   </div>
-                )}
+                )} */}
                 <div>
                   <p className="text-sm text-muted-foreground">Registration Date</p>
                   <p className="font-medium">
@@ -251,8 +254,8 @@ const CustomerList = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Documents Status</p>
                   <p className="font-medium">
-                    {selectedCustomer.documentsSubmitted
-                      ? `Submitted (${selectedCustomer.documents.length} documents)`
+                    {true
+                      ? `Submitted (${selectedCustomer.documents?.length} documents)`
                       : "No documents submitted"}
                   </p>
                 </div>

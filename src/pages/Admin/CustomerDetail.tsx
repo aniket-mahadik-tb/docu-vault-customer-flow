@@ -30,6 +30,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useCustomerService } from "@/services/customerService";
 import { ShimmerButton, ShimmerSectionHeader, ShimmerText, ShimmerThumbnail, ShimmerTitle } from "react-shimmer-effects";
 import { resolve } from "path";
+import { set } from "date-fns";
+import { useTempCustomer } from "@/utils/TempContext";
+import { CustomerType } from "@/utils/types";
 
 // Document sections with their titles
 const documentSections = [
@@ -55,13 +58,14 @@ const getStatusBadge = (status: string) => {
 };
 
 const CustomerDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  // const { id } = useParams<{ id: string }>();
   const { getCustomer, generateUploadLink, syncCustomerDocuments } = useCustomers();
   const navigate = useNavigate();
   const customerService = useCustomerService();
   // const initialSyncDone = useRef(false);
   const [reuploadLink, setReuploadLink] = useState<string | null>(null);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [generatingLink, setGeneratingLink] = useState(false);
   // const [error, setError] = useState<boolean>(false);
   const documentSections = {
     section1: "KYC Documents",
@@ -72,7 +76,8 @@ const CustomerDetail = () => {
     section6: "Business Documents"
   }
 
-  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [customer, setCustomer] = useState<CustomerType | null>(null);
+  const { tempCustomer } = useTempCustomer();
 
   // let customer;//= getCustomer(id || "");
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -81,11 +86,10 @@ const CustomerDetail = () => {
   useEffect(() => {
     (async function fetchCustomer() {
       try {
-        if (id) {
-          await delay(2000);
-          const res = await customerService.getCustomerById(id);
-          if (res.status == 200) {
-            setCustomer(res.data);
+        if (true) {
+          
+          if (/*res.status == 200 &&*/ tempCustomer) {
+            setCustomer(tempCustomer);
           } else {
             // If customer not found, redirect to customer list
             toast({
@@ -93,9 +97,9 @@ const CustomerDetail = () => {
               description: "Something went wrong please try again",
               variant: "destructive",
             });
-            navigate("/admin/customers");
+            // navigate("/admin/customers");
           }
-          console.log("Fetched customer:", customer);
+       
         }
       } catch (error) {
         console.error("Error fetching customer:", error);
@@ -104,7 +108,7 @@ const CustomerDetail = () => {
           description: "Failed to fetch customer details. Please try again.",
           variant: "destructive",
         });
-        navigate("/admin/customers");
+        // navigate("/admin/customers");
       }
     }
     )();
@@ -127,7 +131,7 @@ const CustomerDetail = () => {
 
   // }, [customer?.id]); // Only re-run if customer ID changes, not on every render
 
-  console.log("Customer Detail Rendered", customer);
+ 
   if (!customer) {
     return (
       <MainLayout showSidebar={true}>
@@ -286,7 +290,7 @@ const CustomerDetail = () => {
       </MainLayout>
     );
   }
-  console.log("Customer Detail Rendered 2", customer);
+
 
   // const groupedDocuments = customer.documents.reduce<Record<string, CustomerDocument[]>>(
   //   (groups, document) => {
@@ -300,21 +304,39 @@ const CustomerDetail = () => {
   // );
 
   const handleSendLink = async (documentId?: string, remarks?: string) => {
-    const link = await customerService.generateUploadLink(customer.id, documentId, remarks);
-    setReuploadLink(link);
-    setLinkDialogOpen(true);
+    if (generatingLink) return;
+    setGeneratingLink(true);
+    try {
+      const link = await customerService.generateUploadLink(customer.pan, documentId, remarks);
+      setReuploadLink(link);
+      setLinkDialogOpen(true);
+      setGeneratingLink(false);
+      if (documentId) {
+        toast({
+          title: "Document reupload link generated",
+          description: `Reupload link for specific document ready to share with ${customer.email}`,
+        });
+      } else {
+        toast({
+          title: "Upload link generated",
+          description: `Upload link ready to share with ${customer.email}`,
+        });
+      }
 
-    if (documentId) {
+
+    } catch (error) {
+      console.error("Error generating upload link:", error);
+
+      setGeneratingLink(false);
       toast({
-        title: "Document reupload link generated",
-        description: `Reupload link for specific document ready to share with ${customer.email}`,
+        title: "Error",
+        description: "Failed to generate upload link. Please try again.",
+        variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Upload link generated",
-        description: `Upload link ready to share with ${customer.email}`,
-      });
+
+
     }
+
   };
 
   const copyLinkToClipboard = () => {
@@ -329,7 +351,7 @@ const CustomerDetail = () => {
 
   const handleSyncDocuments = async () => {
     if (customer) {
-      const res = await customerService.getCustomerById(id);
+      const res = await customerService.getCustomerById("hiii");
       if (res.status == 200) {
         setCustomer(res.data);
       } else {
@@ -369,7 +391,7 @@ const CustomerDetail = () => {
               <RefreshCw className="mr-2 h-4 w-4" /> Sync Documents
             </Button>
             <Button onClick={() => handleSendLink()}>
-              <Send className="mr-2 h-4 w-4" /> Send Upload Link
+              <Send className="mr-2 h-4 w-4" />{generatingLink ? "Generating Link" : "Send Upload Link"}
             </Button>
           </div>
         </div>
@@ -380,9 +402,13 @@ const CustomerDetail = () => {
               <CardTitle>Customer Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
+              {/* <div>
                 <p className="text-sm text-muted-foreground">Customer ID</p>
                 <p className="font-medium">{customer.id}</p>
+              </div> */}
+              <div>
+                <p className="text-sm text-muted-foreground">PAN Card</p>
+                <p className="font-medium">{customer.pan}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Name</p>
@@ -396,22 +422,19 @@ const CustomerDetail = () => {
                 <p className="text-sm text-muted-foreground">Phone</p>
                 <p className="font-medium">{customer.phone}</p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">PAN Card</p>
-                <p className="font-medium">{customer.panCard}</p>
-              </div>
-              {customer.businessName && (
+
+              {/* {customer.customerType == "Organisation" && (
                 <div>
                   <p className="text-sm text-muted-foreground">Business Name</p>
                   <p className="font-medium">{customer.businessName}</p>
                 </div>
-              )}
-              <div>
+              )} */}
+              {customer.createdAt && <div>
                 <p className="text-sm text-muted-foreground">Registration Date</p>
                 <p className="font-medium">
-                  {new Date(customer.createdAt).toLocaleDateString()}
+                  {new Date(customer?.createdAt).toLocaleDateString()}
                 </p>
-              </div>
+              </div>}
             </CardContent>
           </Card>
 
@@ -419,13 +442,13 @@ const CustomerDetail = () => {
             <CardHeader>
               <CardTitle>Submitted Documents</CardTitle>
               <CardDescription>
-                {customer.documents.length > 0
-                  ? `${customer.documents.length} documents submitted`
+                {customer?.documents?.length > 0
+                  ? `${customer?.documents.length} documents submitted`
                   : "No documents submitted yet"}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {customer.documents.length > 0 ? (
+              {customer?.documents?.length > 0 ? (
                 <div className="space-y-6">
 
 
@@ -442,7 +465,7 @@ const CustomerDetail = () => {
                       </TableHeader>
                       <TableBody>
                         {
-                          customer.documents.map((doc) => (
+                          customer?.documents.map((doc) => (
                             <TableRow key={`${doc.id}-${doc.id}`}>
                               <TableCell>
                                 <div className="flex items-center gap-2">
@@ -470,7 +493,7 @@ const CustomerDetail = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => navigate(`/admin/review/${customer.id}/${doc.id}`)}
+                                  onClick={() => navigate(`/admin/review/${customer.pan}/${doc.id}`)}
                                 >
                                   <Eye className="h-4 w-4 mr-1" /> Review
                                 </Button>

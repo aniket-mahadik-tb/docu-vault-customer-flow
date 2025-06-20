@@ -42,7 +42,7 @@ const promoterSchema = z.object({
 
 // Create a schema for form validation
 const customerSchema = z.object({
-  clientType: z.enum(["Individual", "Organization"]),
+  clientType: z.enum(["INDIVIDUAL", "ORGANIZATION"]),
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   phone: z.string()
@@ -63,10 +63,11 @@ const NewCustomer = () => {
   const customerService = useCustomerService();
   const [isLoading, setIsLoading] = useState(false);
 
+
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
-      clientType: "Individual",
+      clientType: "INDIVIDUAL",
       name: "",
       email: "",
       phone: "",
@@ -87,7 +88,7 @@ const NewCustomer = () => {
     try {
       // Create the API payload with correct field names and casing
       const payload: ClientCreateRequest = {
-        clientType: data.clientType === "Individual" ? "Individual" : "Organisation",
+        clientType: data.clientType === "INDIVIDUAL" ? "INDIVIDUAL" : "ORGANIZATION",
         name: data.name,
         pan: data.pan,
         email: data.email,
@@ -95,18 +96,18 @@ const NewCustomer = () => {
         promoters: (data.promoters || []).filter(p => p.name && p.email && p.phone && p.pan) as { name: string; pan: string; email: string; phone: string; }[]
       };
 
-      console.log('API Payload:', payload);
-      
+   
+
       // Make the API call
       const response = await customerService.createClient(payload);
-      
-      console.log('API Response:', response.data);
-      
+
+ 
+
       toast({
         title: "Success",
         description: "New customer has been created successfully.",
       });
-      
+
       navigate("/admin/customers");
     } catch (error: any) {
       console.error('API Error:', error);
@@ -169,13 +170,13 @@ const NewCustomer = () => {
                           className="flex flex-row space-x-6"
                         >
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="Individual" id="individual" />
+                            <RadioGroupItem value="INDIVIDUAL" id="individual" />
                             <label htmlFor="individual" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                               Individual
                             </label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="Organization" id="organization" />
+                            <RadioGroupItem value="ORGANIZATION" id="organization" />
                             <label htmlFor="organization" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                               Organization
                             </label>
@@ -198,17 +199,17 @@ const NewCustomer = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          {clientType === 'Individual' ? 'Full Name' : 'Organization Name'}
+                          {clientType === 'INDIVIDUAL' ? 'Full Name' : 'Organization Name'}
                         </FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder={clientType === 'Individual' ? 'John Smith' : 'ABC Corporation'} 
-                            {...field} 
+                          <Input
+                            placeholder={clientType === 'INDIVIDUAL' ? 'John Smith' : 'ABC Corporation'}
+                            {...field}
                           />
                         </FormControl>
                         <FormDescription>
-                          {clientType === 'Individual' 
-                            ? "Customer's full legal name" 
+                          {clientType === 'INDIVIDUAL'
+                            ? "Customer's full legal name"
                             : "Organization's legal name"
                           }
                         </FormDescription>
@@ -241,8 +242,8 @@ const NewCustomer = () => {
                       <FormItem>
                         <FormLabel>Phone Number</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="9876543210" 
+                          <Input
+                            placeholder="9876543210"
                             {...field}
                             maxLength={10}
                             onChange={(e) => {
@@ -266,8 +267,8 @@ const NewCustomer = () => {
                       <FormItem>
                         <FormLabel>PAN Card Number</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="ABCDE1234F" 
+                          <Input
+                            placeholder="ABCDE1234F"
                             {...field}
                             onChange={(e) => {
                               const value = e.target.value.toUpperCase();
@@ -285,12 +286,12 @@ const NewCustomer = () => {
                 </div>
 
                 {/* Promoters Section - Only for Organization */}
-                {clientType === "Organization" && (
+                {clientType === "ORGANIZATION" && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold">Promoters</h3>
                     </div>
-                    
+
                     <div className="space-y-4 max-h-96 overflow-y-auto">
                       {promoterFields.map((field, index) => (
                         <Card key={field.id} className="relative">
@@ -345,8 +346,8 @@ const NewCustomer = () => {
                                   <FormItem>
                                     <FormLabel>Phone Number</FormLabel>
                                     <FormControl>
-                                      <Input 
-                                        placeholder="9876543210" 
+                                      <Input
+                                        placeholder="9876543210"
                                         {...field}
                                         maxLength={10}
                                         onChange={(e) => {
@@ -367,8 +368,8 @@ const NewCustomer = () => {
                                   <FormItem>
                                     <FormLabel>PAN Card Number</FormLabel>
                                     <FormControl>
-                                      <Input 
-                                        placeholder="ABCDE1234F" 
+                                      <Input
+                                        placeholder="ABCDE1234F"
                                         {...field}
                                         onChange={(e) => {
                                           const value = e.target.value.toUpperCase();

@@ -1,11 +1,13 @@
 // No need to import useAxios anymore
 import { Customer } from "../contexts/CustomerContext";
-import { initialCustomers } from "@/utils/globalConstants";
+import { CustomerType } from "@/utils/types";
+import { constants, initialCustomers } from "@/utils/globalConstants";
 import api from "../instances/axios";
+import axios from "axios";
 
 // Types for API requests and responses
 export interface ClientCreateRequest {
-  clientType: "Individual" | "Organisation";
+  clientType: "INDIVIDUAL" | "ORGANIZATION";
   name: string;
   pan: string;
   email: string;
@@ -19,20 +21,22 @@ export interface ClientCreateRequest {
 }
 
 export interface ClientCreateResponse {
-  id: string;
-  clientType: "Individual" | "Organisation";
-  name: string;
-  pan: string;
-  email: string;
-  phone: string;
-  promoters: Array<{
-    id: string;
-    name: string;
-    pan: string;
-    email: string;
-    phone: string;
-  }>;
-  createdAt: string;
+  clientPan: string;
+  status: String
+  // id: string;
+  // clientType: "Individual" | "Organisation";
+  // name: string;
+  // pan: string;
+  // email: string;
+  // phone: string;
+  // promoters: Array<{
+  //   id: string;
+  //   name: string;
+  //   pan: string;
+  //   email: string;
+  //   phone: string;
+  // }>;
+  // createdAt: string;
 }
 
 export interface GenericApiResponse<T> {
@@ -40,6 +44,8 @@ export interface GenericApiResponse<T> {
   data: T;
   message: string;
 }
+
+let customers: CustomerType[];
 
 // Simulated data
 const mockCustomers: Customer[] = initialCustomers;
@@ -53,8 +59,9 @@ export function useCustomerService() {
   service.createClient = async (data: ClientCreateRequest): Promise<any> => {
     try {
       const response = await api.post<GenericApiResponse<ClientCreateResponse>>('/clients', data);
-      const userId: String = response.data.data.id;
-      await this.generateUploadLink(userId);
+      console.log("Client created successfully:", response.data);
+      const pan: String = response.data.data.clientPan;
+      await service.generateUploadLink(pan);
       return response;
     } catch (error: any) {
       console.error("Failed to create client:", error);
@@ -64,21 +71,29 @@ export function useCustomerService() {
 
   service.getAllCustomers = async () => {
     try {
-      await delay(500);
-      return {
-        data: mockCustomers,
-        status: 200,
-      };
+      const res = await api.get<GenericApiResponse<CustomerType[]>>('/clients');
+      // console.log("Fetched customers:", res.data.data);
+      // console.log("Fetched customers:", res.data);
+      customers = res.data.map((customer: CustomerType) => {
+        return {
+          ...customer,
+          documents: constants.mockFile
+        }
+      }
+      );
+      return customers;
+
+      // return res.data;
     } catch (error: any) {
       console.error("Failed to fetch customers");
       throw error;
     }
   };
 
-  service.getCustomerById = async (id: string) => {
+  service.getCustomerById = async (pan: string) => {
     try {
       await delay(300);
-      const customer = mockCustomers.find(c => c.id === id);
+      const customer = customers.find(c => c.pan === pan);
       if (!customer) throw new Error("Customer not found");
       return {
         data: customer,
@@ -204,14 +219,14 @@ export function useCustomerService() {
     }
   };
 
-  service.generateUploadLink = async (customerId: string, documentId?: string, remarks?: string) => {
+  service.generateUploadLink = async (panCard: string, documentId?: string, remarks?: string) => {
     try {
-      const param: String = `${customerId} ${documentId ? '&documentId' + documentId : ''} ${remarks ? '&remarks' + remarks : ''}`;
-      const res = await api.post<GenericApiResponse<{ uploadLink: string[] }>>(`clients/${param}/send-upload-link`, {});
+
+      const res = await api.post<GenericApiResponse<{ uploadLink: string[] }>>(`clients/${panCard}/send-upload-link`, {});
       if (res.status !== 200) {
         throw new Error("Failed to generate upload link");
       }
-      return res.data;
+      return res.data.data;
 
 
       // Simulate generating an upload link

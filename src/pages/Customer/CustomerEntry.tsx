@@ -26,100 +26,20 @@ const CustomerEntry = () => {
   const UserService = useUserService();
   const { getValueFromLocalStorage, setValueToLocalStorage } = useLocalStorage();
   const [searchParams] = useSearchParams();
-  const userId = searchParams.get("userId");
+  const token = searchParams.get("token");
 
 
   useEffect(
     () => {
-      setValueToLocalStorage("userId", userId) // Store userId in local storage
+      setValueToLocalStorage("token", token)
       setValueToLocalStorage("role", "Customer");
-      setUserId("ABCDE1234F"); // Simulated user ID
+      setUserId("bull"); // Simulated user ID
       setRole("Customer");
       navigate("/customer/upload");
     }, [navigate, getValueFromLocalStorage]
   )
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-
-    // try {
-    //   const response = await customerService.getCustomerByPanCard(panNumber)
-    //   setUserId(panNumber);
-    //   setRole("Customer");
-    //   navigate("/customer/dashboard");
-    //   setIsSubmitting(false);
-    // } catch (err: any) {
-    //   console.error("Failed to fetch customers:", err);
-    //   toast({
-    //     title: "Error",
-    //     description: "Failed to load customers. Please try again.",
-    //     variant: "destructive",
-    //   });
-    // }
-
-
-
-
-
-    if (!validatePAN(panNumber)) {
-      toast({
-        title: "Invalid PAN",
-        description: "Please enter a valid PAN card number (format: AAAAA1234A)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    // Simulate API call delay
-    setTimeout(() => {
-      setUserId(panNumber);
-      setRole("Customer");
-      navigate("/customer/dashboard");
-      setIsSubmitting(false);
-    }, 500);
-    setValueToLocalStorage("role", "Customer");
-  };
-
-  return (
-    <MainLayout showSidebar={false}>
-      <div className="flex items-center justify-center min-h-[80vh]">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Customer Portal</CardTitle>
-            <CardDescription>Enter your PAN card number to continue</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent>
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <label htmlFor="pan" className="text-sm font-medium">
-                    PAN Card Number
-                  </label>
-                  <Input
-                    id="pan"
-                    placeholder="AAAAA1234A"
-                    value={panNumber}
-                    onChange={(e) => setPanNumber(e.target.value.toUpperCase())}
-                    maxLength={10}
-                    className="uppercase"
-                    required
-                  />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Verifying..." : "Continue"}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
-    </MainLayout>
-  );
+  
 };
 
 export default CustomerEntry;
