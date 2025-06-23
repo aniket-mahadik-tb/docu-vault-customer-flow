@@ -115,35 +115,31 @@ const DocumentUpload = () => {
   
     try {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
-      const uploadedFilesList: DocumentFile[] = [];
+      const folderId = `documents_${documentId}`;
   
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        
+        // Add to local context for UI display (this was the original behavior)
+        await addDocument(token, folderId, file);
+        
+        // Also make API call
         const formData = new FormData();
         formData.append("documentMasterId", documentId);
         formData.append("file", file);
-  
-        // API call
         await documentUploadService.uploadDocuments(formData);
-  
-        uploadedFilesList.push({
-          id: `file_${Date.now()}_${i}`,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          url: URL.createObjectURL(file),
-          uploaded: new Date(),
-          lastModified: file.lastModified,
-        });
       }
   
-      const folderId = `documents_${documentId}`;
+      // Submit folder after all files are processed
       submitFolder(token, folderId);
-  
-      setUploadedFiles(prev => ({
-        ...prev,
-        [documentId]: [...(prev[documentId] || []), ...uploadedFilesList],
-      }));
+      
+      // Sync the uploaded files state to reflect changes
+      const syncedFiles: Record<string, DocumentFile[]> = {};
+      const folderDocuments = getFolderDocuments(token, folderId);
+      if (folderDocuments.length > 0) {
+        syncedFiles[documentId] = folderDocuments;
+      }
+      setUploadedFiles(prev => ({ ...prev, ...syncedFiles }));
   
       toast({
         title: "Files uploaded",
@@ -167,13 +163,14 @@ const DocumentUpload = () => {
     if (!token) return;
     const folderId = `documents_${documentId}`;
     removeDocument(token, folderId, fileId);
-    setUploadedFiles(prev => {
-      const updatedFiles = {
-        ...prev,
-        [documentId]: prev[documentId]?.filter(file => file.id !== fileId) || []
-      };
-      return updatedFiles;
-    });
+    
+    // Sync the uploaded files state to reflect changes
+    const folderDocuments = getFolderDocuments(token, folderId);
+    setUploadedFiles(prev => ({
+      ...prev,
+      [documentId]: folderDocuments
+    }));
+    
     toast({
       title: "File removed",
       description: "Document has been removed",
