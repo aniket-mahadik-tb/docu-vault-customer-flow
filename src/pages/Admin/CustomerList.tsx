@@ -134,13 +134,13 @@ const CustomerList = () => {
                 <TableHeader>
                   <TableRow>
                     {/* <TableHead>Customer ID</TableHead> */}
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>PAN Card</TableHead>
-                    <TableHead>Customer Type</TableHead>
-                    <TableHead>Documents</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="text-center">Name</TableHead>
+                    <TableHead className="text-center">Email</TableHead>
+                    <TableHead className="text-center">Phone</TableHead>
+                    <TableHead className="text-center">PAN Card</TableHead>
+                    <TableHead className="text-center">Customer Type</TableHead>
+                    <TableHead className="text-center">Documents</TableHead>
+                    <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -148,12 +148,12 @@ const CustomerList = () => {
                     customers.map((customer) => (
                       <TableRow key={customer.pan}>
                         {/* <TableCell>{customer.id}</TableCell> */}
-                        <TableCell className="font-medium">{customer.name}</TableCell>
-                        <TableCell>{customer.email}</TableCell>
-                        <TableCell>{customer.phone}</TableCell>
-                        <TableCell>{customer.pan}</TableCell>
-                        <TableCell className="ps-6">{customer.clientType}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-center font-medium">{customer.name}</TableCell>
+                        <TableCell className="text-center">{customer.email}</TableCell>
+                        <TableCell className="text-center">{customer.phone}</TableCell>
+                        <TableCell className="text-center">{customer.pan}</TableCell>
+                        <TableCell className="text-center">{customer.clientType}</TableCell>
+                        <TableCell className="text-center">
                           {true ? (
                             <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                               Submitted ({customer.documents?.documentsByCategory[0].documents.length})
@@ -164,8 +164,8 @@ const CustomerList = () => {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
+                        <TableCell className="text-center">
+                          <div className="flex gap-2 justify-center">
                             <Button
                               variant="outline"
                               size="sm"
@@ -194,14 +194,14 @@ const CustomerList = () => {
                   ) : (
                     [1, 2, 3].map((customer) => (
                       <TableRow key={customer}>
-                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
-                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
-                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
-                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
-                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
-                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
-                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
-                        <TableCell><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell className="text-center"><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell className="text-center"><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell className="text-center"><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell className="text-center"><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell className="text-center"><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell className="text-center"><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell className="text-center"><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
+                        <TableCell className="text-center"><p className="mt-3 mb-0"><ShimmerThumbnail height={20} /></p></TableCell>
                       </TableRow>
                     ))
                   )}
