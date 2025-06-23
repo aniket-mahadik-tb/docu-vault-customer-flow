@@ -16,6 +16,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { setUserId, setRole, userId, role } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { setValueToLocalStorage } = useLocalStorage();
   const adminService = useAdminService();
   const userService = useUserService();
   const [formData, setFormData] = useState({
@@ -29,7 +30,7 @@ const Login = () => {
   // }, [])
   useEffect(() => {
     if (userId && role === "Admin") {
-    
+
       navigate("/admin/dashboard");
       return;
     }
@@ -63,7 +64,7 @@ const Login = () => {
         })
         return
       }
-      setValueToLocalStorage("role", role);
+      setValueToLocalStorage("role", "SuperAdmin");
       setIsSubmitting(true);
 
       // Simulate API call delay
@@ -199,7 +200,6 @@ const Login = () => {
 };
 
 export default Login;
-function setValueToLocalStorage(arg0: string, role: boolean) {
-  throw new Error("Function not implemented.");
-}
+
+
 
