@@ -18,6 +18,7 @@ import CustomerDashboard from "./pages/Customer/CustomerDashboard";
 import DocumentUpload from "./pages/Customer/DocumentUpload";
 import DocumentStatus from "./pages/Customer/DocumentStatus";
 import DocumentReupload from "./pages/Customer/DocumentReupload";
+import AddPromoter from "./pages/Customer/AddPromoter";
 
 // Admin pages
 import AdminEntry from "./pages/Admin/Login";
@@ -66,6 +67,7 @@ const App = () => (
                       <Route path="/customer/upload" element={<DocumentUpload />} />
                       <Route path="/customer/status" element={<DocumentStatus />} />
                       <Route path="/customer/reupload" element={<DocumentReupload />} />
+                      <Route path="/customer/addPromoter" element={<AddPromoter />} />
 
                       {/* Admin routes */}
                       <Route path="/admin" element={<AdminEntry />} />

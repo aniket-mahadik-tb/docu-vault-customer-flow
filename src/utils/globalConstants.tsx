@@ -97,7 +97,7 @@ export const CustomerLinks: SidebarLinkProps[] = [
     { to: "/customer/dashboard", icon: Home, label: "Dashboard" },
     { to: "/customer/upload", icon: Upload, label: "Upload Documents" },
     { to: "/customer/status", icon: ClipboardList, label: "View Status" },
-    { to: "/customer/addPromoter", icon: ClipboardList, label: "View Status" },
+    { to: "/customer/addPromoter", icon: Users, label: "Add new Promoters" },
 ];
 
 export const AdminLinks: SidebarLinkProps[] = [
