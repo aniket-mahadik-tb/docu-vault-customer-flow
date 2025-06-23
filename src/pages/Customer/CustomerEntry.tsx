@@ -1,13 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
-import MainLayout from "@/layouts/MainLayout";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
+
 import { useUserService } from "@/services/userService";
-import { useCustomerService } from "@/services/customerService";
+
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const validatePAN = (pan: string): boolean => {
@@ -18,10 +14,7 @@ const validatePAN = (pan: string): boolean => {
 
 const CustomerEntry = () => {
   const navigate = useNavigate();
-  const { setUserId, setRole } = useUser();
-  const [panNumber, setPanNumber] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const customerService = useCustomerService();
+  const { setRole } = useUser();
   const UserService = useUserService();
   const { getValueFromLocalStorage, setValueToLocalStorage } = useLocalStorage();
   const [searchParams] = useSearchParams();
@@ -31,7 +24,6 @@ const CustomerEntry = () => {
     () => {
       setValueToLocalStorage("token", token)
       setValueToLocalStorage("role", "Customer");
-
       setRole("Customer");
       navigate("/customer/upload");
     }, [navigate, getValueFromLocalStorage]

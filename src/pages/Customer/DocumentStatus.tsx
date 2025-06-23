@@ -27,11 +27,7 @@ const DocumentStatus = () => {
   const [documentsByCategory, setDocumentsByCategory] = useState<any[]>([]);
   const [customerType, setCustomerType] = useState<string>("");
 
-  useEffect(() => {
-    if (!userId) {
-      navigate("/customer");
-    }
-  }, [userId, navigate]);
+
 
   useEffect(() => {
     const fetchUploadedDocuments = async () => {

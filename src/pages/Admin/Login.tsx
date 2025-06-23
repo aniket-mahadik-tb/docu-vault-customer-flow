@@ -63,13 +63,14 @@ const Login = () => {
         })
         return
       }
-      // setValueToLocalStorage("role", role);
+      setValueToLocalStorage("role", role);
       setIsSubmitting(true);
 
       // Simulate API call delay
       setTimeout(() => {
         setUserId("admin123"); // Simulated user ID
         setRole("Admin");
+
         navigate("/admin/dashboard");
         setIsSubmitting(false);
       }, 500);
@@ -198,3 +199,7 @@ const Login = () => {
 };
 
 export default Login;
+function setValueToLocalStorage(arg0: string, role: boolean) {
+  throw new Error("Function not implemented.");
+}
+

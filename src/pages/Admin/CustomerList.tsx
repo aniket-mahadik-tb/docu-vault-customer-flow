@@ -156,7 +156,7 @@ const CustomerList = () => {
                         <TableCell>
                           {true ? (
                             <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                              Submitted ({customer.documents?.length})
+                              Submitted ({customer.documents?.documentsByCategory[0].documents.length})
                             </span>
                           ) : (
                             <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
@@ -258,7 +258,7 @@ const CustomerList = () => {
                   <p className="text-sm text-muted-foreground">Documents Status</p>
                   <p className="font-medium">
                     {true
-                      ? `Submitted (${selectedCustomer.documents?.length} documents)`
+                      ? `Submitted (${selectedCustomer.documents?.documentsByCategory[0].documents.length} documents)`
                       : "No documents submitted"}
                   </p>
                 </div>
