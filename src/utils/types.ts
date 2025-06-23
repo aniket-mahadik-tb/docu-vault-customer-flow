@@ -8,7 +8,7 @@ export interface CustomerType {
     clientType: "Individual" | "Organisation";
     createdAt?: string;
     documentStatus?: DocumentStatusType;
-    documents: CustomerDocument[];
+    documents: GetDocumentByPanCardResponseType;
 }
 
 
@@ -23,14 +23,24 @@ export interface DocumentStatusType {
 }
 
 
-export interface CustomerDocument {
-    id: string;
-    name: string;
-    sectionId: string;
-    documentTypeId: string;
-    status: "pending" | "approved" | "rejected" | "on_hold";
-    remarks?: string;
-    uploadedAt: string;
-    reviewedAt?: string;
-    fileUrl: string;
+export interface GetDocumentByPanCardResponseType {
+    customerType: String,
+    documentsByCategory: DocumentsByCategoryType[]
 }
+
+
+export interface DocumentsByCategoryType {
+    category: String,
+    documents: DocumentResponseType[]
+}
+
+export interface DocumentResponseType {
+    id: String,
+    documentType: String,
+    isMandatory: boolean,
+    isMultiple: boolean,
+    files: FileResponseType[],
+}
+
+
+export type FileResponseType = string;
