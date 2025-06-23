@@ -27,7 +27,7 @@ import {
   Shield
 } from "lucide-react";
 
-import {CustomerLinks,AdminLinks,SuperAdminLinks,BankLinks} from "@/utils/globalConstants";
+import { CustomerLinks, AdminLinks, SuperAdminLinks, BankLinks } from "@/utils/globalConstants";
 
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 interface SidebarLinkProps {
@@ -40,14 +40,14 @@ const AppSidebar = () => {
   // const { role } = useUser();
   const { state: sidebarState } = useSidebar();
   const location = useLocation();
-  const[Role,SetRole] = useState<string>("");
+  const [Role, SetRole] = useState<string>("");
   const { getValueFromLocalStorage } = useLocalStorage();
 
-  useEffect(()=>{
+  useEffect(() => {
     const roleFromStorage = getValueFromLocalStorage("role");
     SetRole(roleFromStorage);
-  
-  },[]);
+
+  }, []);
 
   const isActive = (path: string) => location.pathname === path;
   const getNavClass = ({ isActive }: { isActive: boolean }) =>

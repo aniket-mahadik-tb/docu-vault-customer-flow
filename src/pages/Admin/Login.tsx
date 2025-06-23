@@ -16,21 +16,21 @@ const Login = () => {
   const navigate = useNavigate();
   const { setUserId, setRole, userId, role } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { setValueToLocalStorage } = useLocalStorage();
   const adminService = useAdminService();
   const userService = useUserService();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
-  const { setValueToLocalStorage } = useLocalStorage();
+  // const { setValueToLocalStorage } = useLocalStorage();
 
   // useEffect(() => {
   //   localStorage.removeItem("role");
   // }, [])
   useEffect(() => {
     if (userId && role === "Admin") {
-      console.log("Admin already logged in:", userId);
-      console.log(role)
+
       navigate("/admin/dashboard");
       return;
     }
@@ -64,13 +64,14 @@ const Login = () => {
         })
         return
       }
-      // setValueToLocalStorage("role", role);
+      setValueToLocalStorage("role", "SuperAdmin");
       setIsSubmitting(true);
 
       // Simulate API call delay
       setTimeout(() => {
         setUserId("admin123"); // Simulated user ID
         setRole("Admin");
+
         navigate("/admin/dashboard");
         setIsSubmitting(false);
       }, 500);
@@ -199,3 +200,6 @@ const Login = () => {
 };
 
 export default Login;
+
+
+

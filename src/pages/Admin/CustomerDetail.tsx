@@ -87,7 +87,7 @@ const CustomerDetail = () => {
     (async function fetchCustomer() {
       try {
         if (true) {
-          
+
           if (/*res.status == 200 &&*/ tempCustomer) {
             setCustomer(tempCustomer);
           } else {
@@ -99,7 +99,7 @@ const CustomerDetail = () => {
             });
             // navigate("/admin/customers");
           }
-       
+
         }
       } catch (error) {
         console.error("Error fetching customer:", error);
@@ -131,7 +131,7 @@ const CustomerDetail = () => {
 
   // }, [customer?.id]); // Only re-run if customer ID changes, not on every render
 
- 
+
   if (!customer) {
     return (
       <MainLayout showSidebar={true}>
@@ -465,41 +465,48 @@ const CustomerDetail = () => {
                       </TableHeader>
                       <TableBody>
                         {
-                          customer?.documents.map((doc) => (
-                            <TableRow key={`${doc.id}-${doc.id}`}>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Folder className="h-4 w-4" />
-                                  {documentSections[doc.sectionId] || "Unknown TYpe"}
-                                </div>
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                  <FileText className="h-4 w-4" />
-                                  {doc.name}
-                                </div>
-                              </TableCell>
-                              {/* <TableCell>
+                          customer?.documents?.documentsByCategory.map((document) => {
+                            return document.documents?.map((doc) => (
+                              <TableRow key={`${doc.id}-${doc.id}`}>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Folder className="h-4 w-4" />
+                                    {doc.documentType/*documentSections[doc.sectionId]*/ || "Unknown TYpe"}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="font-medium">
+
+                                  {doc.files.map((name) => (
+                                    <div className="flex items-center gap-2">
+                                      <FileText className="h-4 w-4" />
+                                      
+                                    </div>
+                                  ))}
+
+                                </TableCell>
+                                {/* <TableCell>
                                 <div className="flex items-center gap-2">
                                   <User className="h-4 w-4" />
                                   {doc.customerName}
                                 </div>
                               </TableCell> */}
-                              <TableCell>
-                                {new Date(doc.uploadedAt).toLocaleDateString()}
-                              </TableCell>
-                              <TableCell>{getStatusBadge(doc.status)}</TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => navigate(`/admin/review/${customer.pan}/${doc.id}`)}
-                                >
-                                  <Eye className="h-4 w-4 mr-1" /> Review
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))
+                                <TableCell>
+                                  {new Date(doc.uploadedAt).toLocaleDateString()}
+                                </TableCell>
+                                <TableCell>{getStatusBadge(doc.status)}</TableCell>
+                                <TableCell>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => navigate(`/admin/review/${customer.pan}/${doc.id}`)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" /> Review
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          })
+
                         }
                       </TableBody>
                     </Table>

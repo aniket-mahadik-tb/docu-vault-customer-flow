@@ -4,6 +4,7 @@ import { CustomerType } from "@/utils/types";
 import { constants, initialCustomers } from "@/utils/globalConstants";
 import api from "../instances/axios";
 import axios from "axios";
+import { GetDocumentByPanCardResponse } from "@/utils/globalConstants";
 
 // Types for API requests and responses
 export interface ClientCreateRequest {
@@ -59,7 +60,7 @@ export function useCustomerService() {
   service.createClient = async (data: ClientCreateRequest): Promise<any> => {
     try {
       const response = await api.post<GenericApiResponse<ClientCreateResponse>>('/clients', data);
-      console.log("Client created successfully:", response.data);
+
       const pan: String = response.data.data.clientPan;
       await service.generateUploadLink(pan);
       return response;
@@ -72,18 +73,17 @@ export function useCustomerService() {
   service.getAllCustomers = async () => {
     try {
       const res = await api.get<GenericApiResponse<CustomerType[]>>('/clients');
-      // console.log("Fetched customers:", res.data.data);
-      // console.log("Fetched customers:", res.data);
-      customers = res.data.map((customer: CustomerType) => {
-        return {
-          ...customer,
-          documents: constants.mockFile
-        }
-      }
-      );
-      return customers;
 
-      // return res.data;
+      // customers = res.data.map((customer: CustomerType) => {
+      //   return {
+      //     ...customer,
+      //     documents: constants.mockFile
+      //   }
+      // }
+      // );
+      // return customers;
+
+      return res.data;
     } catch (error: any) {
       console.error("Failed to fetch customers");
       throw error;
@@ -203,16 +203,20 @@ export function useCustomerService() {
     }
   };
 
-  service.getCustomerDocuments = async (customerId: string) => {
+  service.getCustomerDocuments = async (panCard: string) => {
     try {
       await delay(300);
-      const customer = mockCustomers.find(c => c.id === customerId);
-      if (!customer) throw new Error("Customer not found");
+      const response = GetDocumentByPanCardResponse //await api.get<GenericApiResponse<GetDocumentByPanCardResponseType>>("/documents/client");
 
-      return {
-        data: customer.documents,
-        status: 200,
-      };
+      // const customer = mockCustomers.find(c => c.id === customerId);
+      // if (!customer) throw new Error("Customer not found");
+
+      // return {
+      //   data: customer.documents,
+      //   status: 200,
+      // };
+      // if(! response.status==200) throw new Error("Some went wrong")
+      return response
     } catch (error: any) {
       console.error("Failed to fetch customer documents");
       throw error;
