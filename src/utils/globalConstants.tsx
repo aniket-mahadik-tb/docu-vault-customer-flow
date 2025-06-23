@@ -462,50 +462,59 @@ export const documentSections = [
 
 
 export const GetDocumentByPanCardResponse: GetDocumentByPanCardResponseType = {
-  "customerType": "INDIVIDUAL",
-  "documentsByCategory": [
-    {
-      "category": "All Documents",
-      "documents": [
+    "customerType": "INDIVIDUAL",
+    "documentsByCategory": [
         {
-          "id": "90a0f933-36f9-47a9-b800-c09d6eba7a4a",
-          "documentType": "Latest 2 years Audited balance Sheet",
-          "isMandatory": true,
-          "isMultiple": true,
-          "files": [
-            "gst1.pdf"
-          ]
+            "category": "ALL EXISTING FACILITIES LOAN DETAILS (ANNEXURE B)",
+            "documents": [
+                {
+                    "id": "bfb63dea-6ad9-4553-9c13-fcc429b9e9b0",
+                    "documentType": "ANNEXURE B",
+                    "isMandatory": true,
+                    "isMultiple": true,
+                    "files": [
+                        "gst1.pdf"
+                    ],
+                    "status": "SUBMITTED"
+                }
+            ]
         },
         {
-          "id": "f1d8e02a-49cc-4092-8ec4-9f8522a0a750",
-          "documentType": "Latest Electricity Bill and Live rent agreement",
-          "isMandatory": false,
-          "isMultiple": false,
-          "files": [
-            "address1.pdf"
-          ]
-        },
-        {
-          "id": "2138aa5a-d57c-40c1-8dbd-89ea97c36596",
-          "documentType": "Aadhaar (both sides)",
-          "isMandatory": true,
-          "isMultiple": true,
-          "files": [
-            "aadhaar1.pdf"
-          ]
-        },
-        {
-          "id": "1f0b18ab-1cab-4865-be3b-dc7bd96b2eae",
-          "documentType": "PAN",
-          "isMandatory": true,
-          "isMultiple": true,
-          "files": [
-            "pan1.pdf"
-          ]
+            "category": "KYC",
+            "documents": [
+                {
+                    "id": "f9838a54-8e57-4576-8ce7-d9629f2b6f53",
+                    "documentType": "Latest Electricity Bill copy/Address proof",
+                    "isMandatory": true,
+                    "isMultiple": true,
+                    "files": [
+                        "address1.pdf"
+                    ],
+                    "status": "SUBMITTED"
+                },
+                {
+                    "id": "d2723c23-fd00-446f-9e25-6a4251ff23a8",
+                    "documentType": "PAN",
+                    "isMandatory": true,
+                    "isMultiple": true,
+                    "files": [
+                        "pan1.pdf"
+                    ],
+                    "status": "SUBMITTED"
+                },
+                {
+                    "id": "d968ac8e-4224-4330-a55a-9aa48626c81f",
+                    "documentType": "Aadhaar (both sides)",
+                    "isMandatory": true,
+                    "isMultiple": true,
+                    "files": [
+                        "aadhaar1.pdf"
+                    ],
+                    "status": "SUBMITTED"
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }
 
 

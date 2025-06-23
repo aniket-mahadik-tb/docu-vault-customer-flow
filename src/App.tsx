@@ -73,7 +73,7 @@ const App = () => (
                       <Route path="/admin/customers" element={<CustomerList />} />
                       <Route path="/admin/customers/details" element={<CustomerDetail />} />
                       {/*<Route path="/admin/review" element={<ReviewDocuments />} />*/}
-                      <Route path="/admin/review/:customerId/:documentId" element={<ReviewDocument />} />
+                      <Route path="/admin/customers/details/review/:documentId" element={<ReviewDocument />} />
                       <Route path="/admin/new-customer" element={<NewCustomer />} />
                       <Route path="/admin/share" element={<ShareWithBank />} />
                       <Route path="/admin/admins" element={<AdminsList />} />

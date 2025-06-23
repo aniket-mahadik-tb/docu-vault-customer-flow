@@ -1,6 +1,6 @@
 // No need to import useAxios anymore
 import { Customer } from "../contexts/CustomerContext";
-import { CustomerType } from "@/utils/types";
+import { CustomerType, GetDocumentByPanCardResponseType } from "@/utils/types";
 import { constants, initialCustomers } from "@/utils/globalConstants";
 import api from "../instances/axios";
 import axios from "axios";
@@ -173,30 +173,17 @@ export function useCustomerService() {
   };
 
   service.updateDocumentStatus = async (
-    customerId: string,
+    pan: string,
     documentId: string,
-    status: "approved" | "rejected" | "on_hold" | "pending",
+    status: "APPROVED" | "REJECTED" | "UPLOADED" | "PENDING",
     remarks?: string
   ) => {
     try {
-      await delay(500);
-      const customer = mockCustomers.find(c => c.id === customerId);
-      if (!customer) throw new Error("Customer not found");
-
-      const document = customer.documents.find(d => d.id === documentId);
-      if (!document) throw new Error("Document not found");
-
-      const updatedDocument = {
-        ...document,
-        status,
-        remarks: status === "pending" ? undefined : remarks,
-        reviewedAt: status === "pending" ? undefined : new Date().toISOString(),
-      };
-
-      return {
-        data: updatedDocument,
-        status: 200,
-      };
+      type ExtendedGenericResponse = GenericApiResponse<null> & { timestamp: String }
+      const param = "35c278d9-d228-4257-acc6-03feb657003d" //documentId
+      const response = await api.put<ExtendedGenericResponse>(`documents/${param}/status`, { note: remarks, status: status });
+      console.log(response)
+      return response;
     } catch (error: any) {
       console.error("Failed to update document status");
       throw error;
@@ -205,18 +192,8 @@ export function useCustomerService() {
 
   service.getCustomerDocuments = async (panCard: string) => {
     try {
-      await delay(300);
-      const response = GetDocumentByPanCardResponse //await api.get<GenericApiResponse<GetDocumentByPanCardResponseType>>("/documents/client");
-
-      // const customer = mockCustomers.find(c => c.id === customerId);
-      // if (!customer) throw new Error("Customer not found");
-
-      // return {
-      //   data: customer.documents,
-      //   status: 200,
-      // };
-      // if(! response.status==200) throw new Error("Some went wrong")
-      return response
+      const response = await api.get<GenericApiResponse<GetDocumentByPanCardResponseType>>(`/documents/client?pan=${panCard}`);
+      return response.data
     } catch (error: any) {
       console.error("Failed to fetch customer documents");
       throw error;

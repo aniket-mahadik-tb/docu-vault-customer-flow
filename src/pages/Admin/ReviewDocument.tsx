@@ -18,6 +18,8 @@ import {
 import * as pdfjs from "pdfjs-dist";
 import { getSamplePreviewUrl, isPdfPreview, usingSamplePreviews } from "@/lib/previewUtils";
 import { useCustomerService } from "@/services/customerService";
+import { CustomerType, DocumentResponseType } from "@/utils/types";
+import { useTempCustomer } from "@/utils/TempContext";
 
 // Updated PDF.js worker with a direct path (using cdnjs instead of unpkg)
 const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -50,7 +52,7 @@ const dataURLtoBlob = (dataURL: string): Blob | null => {
 };
 
 const ReviewDocument = () => {
-  const { customerId, documentId } = useParams<{ customerId: string; documentId: string }>();
+  const { documentId } = useParams<{ documentId: string }>();
   const { getCustomer, updateDocumentStatus, generateUploadLink } = useCustomers();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -63,14 +65,17 @@ const ReviewDocument = () => {
   const [error, setError] = useState<string | null>(null);
   const [documentBlobUrl, setDocumentBlobUrl] = useState<string | null>(null);
 
-  const [customer, setCustomer] = useState<Customer | null>(null);// getCustomer(customerId || "");
-  const document = customer?.documents.find((doc) => doc.id === documentId);
+  const [customer, setCustomer] = useState<CustomerType | null>(null);// getCustomer(customerId || "");
+  // const document = customer?.documents.find((doc) => doc.id === documentId);
+  // const [customer, setCustomer] = useState<CustomerType | null>(null);
+  const { tempCustomer } = useTempCustomer();
+  const [document, setDocument] = useState<DocumentResponseType | null>(null);
   const customerService = useCustomerService();
   useEffect(() => {
     if (document) {
       if (usingSamplePreviews()) {
         // Use sample preview based on document name
-        const sampleUrl = getSamplePreviewUrl(document.name, document.fileUrl?.split(';')[0]);
+        const sampleUrl = getSamplePreviewUrl(document.files[0], document.documentType);
 
         if (isPdfPreview(sampleUrl)) {
           loadPdf(sampleUrl);
@@ -80,21 +85,22 @@ const ReviewDocument = () => {
         }
       } else {
         // If the fileUrl is a data URL, convert it to a Blob URL
-        if (document.fileUrl.startsWith('data:')) {
-          const blob = dataURLtoBlob(document.fileUrl);
-          if (blob) {
-            const blobUrl = URL.createObjectURL(blob);
-            setDocumentBlobUrl(blobUrl);
+        // if (document.fileUrl.startsWith('data:')) {
+        //   const blob = dataURLtoBlob(document.fileUrl);
+        //   if (blob) {
+        //     const blobUrl = URL.createObjectURL(blob);
+        //     setDocumentBlobUrl(blobUrl);
 
-            if (document.fileUrl.toLowerCase().includes('application/pdf') ||
-              document.name.toLowerCase().endsWith('.pdf')) {
-              loadPdf(blobUrl);
-            }
-          } else {
-            setError("Failed to convert document data to viewable format");
-          }
-        } else if (document.fileUrl.toLowerCase().endsWith('.pdf')) {
-          loadPdf(document.fileUrl);
+        //     if (document.fileUrl.toLowerCase().includes('application/pdf') ||
+        //       document.name.toLowerCase().endsWith('.pdf')) {
+        //       loadPdf(blobUrl);
+        //     }
+        //   } else {
+        //     setError("Failed to convert document data to viewable format");
+        //   }
+        // } else
+        if (document.files[0]?.toLowerCase().endsWith('.pdf')) {
+          loadPdf("/placeholder.svg");
         }
       }
     }
@@ -102,19 +108,37 @@ const ReviewDocument = () => {
 
   // Clean up created Blob URL on unmount
   useEffect(() => {
-    (async () => {
-      if (customerId && documentId) {
-        try {
-          const res = await customerService.getCustomerById(customerId);
-          setCustomer(res.data || null);
-        } catch (error) {
-          console.error("Failed to fetch customer", error);
-          setCustomer(null);
+    (async function fetchCustomer() {
+      try {
+        if (true) {
+
+          if (tempCustomer) {
+            setCustomer(tempCustomer);
+            const documents: DocumentResponseType = tempCustomer.documents.documentsByCategory.flatMap((cat: any) =>
+              (cat.documents || []).map((doc: any) => ({ ...doc, category: cat.category }))
+            ).find((doc: any) => doc.id === documentId);
+            setDocument(documents);
+          } else {
+            toast({
+              title: `failed to fetch customer details`,
+              description: "Something went wrong please try again",
+              variant: "destructive",
+            });
+            navigate("/admin/customers");
+          }
+
         }
-      } else {
-        setCustomer(null);
+      } catch (error) {
+        console.error("Error fetching customer:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch customer details. Please try again.",
+          variant: "destructive",
+        });
+        navigate("/admin/customers");
       }
-    })();
+    }
+    )();
 
     return () => {
       if (documentBlobUrl) {
@@ -193,15 +217,15 @@ const ReviewDocument = () => {
     }
   };
 
-  const isPdf = document?.name.toLowerCase().endsWith('.pdf') ||
-    getSamplePreviewUrl(document?.name || '').toLowerCase().endsWith('.pdf');
-  const isImage = document?.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/);
+  const isPdf = document?.files[0].toLowerCase().endsWith('.pdf') ||
+    getSamplePreviewUrl(document?.files[0] || '').toLowerCase().endsWith('.pdf');
+  const isImage = document?.files[0].toLowerCase().match(/\.(jpeg|jpg|gif|png)$/);
 
   // Get a usable document URL or fallback
   const getDocumentUrl = () => {
     // If we're using sample previews, return the appropriate sample
     if (usingSamplePreviews() && document) {
-      return getSamplePreviewUrl(document.name);
+      return getSamplePreviewUrl(document.files[0]);
     }
 
     // First try the blob URL if we created one
@@ -210,12 +234,12 @@ const ReviewDocument = () => {
     }
 
     // If document has a data URL, use it directly
-    if (document?.fileUrl && document.fileUrl.startsWith('data:')) {
-      return document.fileUrl;
-    }
+    // if (document?.fileUrl && document.fileUrl.startsWith('data:')) {
+    //   return document.fileUrl;
+    // }
 
     // Use the original URL or fallback
-    if (!document?.fileUrl || document.fileUrl === "/placeholder.svg") {
+    if (/*!document?.fileUrl || document.fileUrl*/ "/placeholder.svg" === "/placeholder.svg") {
       // Return appropriate fallback based on document type
       if (isPdf) {
         return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
@@ -224,7 +248,8 @@ const ReviewDocument = () => {
       }
       return "/placeholder.svg";
     }
-    return document.fileUrl;
+    return "/placeholder.svg";
+    // return document.fileUrl;
   };
 
   if (!customer || !document) {
@@ -240,30 +265,32 @@ const ReviewDocument = () => {
     );
   }
 
-  const handleUpdateStatus = async (status: "approved" | "rejected" | "on_hold") => {
-    // updateDocumentStatus(customer.id, document.id, status, remarks);
-    await customerService.updateDocumentStatus(customer.id, document.id, status, remarks)
+  const handleUpdateStatus = async (status: "APPROVED" | "REJECTED" | "UPLOADED") => {
+    try {
+      // updateDocumentStatus(customer.id, document.id, status, remarks);
+      await customerService.updateDocumentStatus(customer.pan, document.id, status, remarks)
 
-    const statusMessage =
-      status === "approved" ? "Document approved successfully" :
-        status === "rejected" ? "Document rejected - customer notified" :
-          "Document put on hold";
+      const statusMessage =
+        status === "APPROVED" ? "Document approved successfully" :
+          status === "REJECTED" ? "Document rejected - customer notified" :
+            "Document put on hold";
 
-    toast({
-      title: statusMessage,
-      description: remarks ? `Remarks: ${remarks}` : undefined,
-    });
-
-    if (status === "rejected") {
-      const link = generateUploadLink(customer.id, document.id, remarks);
-      // In a real app, this would send an email with the link
       toast({
-        title: "Reupload link generated",
-        description: `Link for document reupload sent to ${customer.email}`,
+        title: statusMessage,
+        description: remarks ? `Remarks: ${remarks}` : undefined,
       });
+      navigate(`/admin/customers/details`);
+    }
+    catch (e: any) {
+      console.log(e)
+      toast({
+        title: "Failed to update status",
+        description: remarks ? `Remarks: ${remarks}` : undefined,
+        variant: "destructive"
+      });
+
     }
 
-    navigate(`/admin/customers/details`);
   };
 
   return (
@@ -294,12 +321,12 @@ const ReviewDocument = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Document Name</p>
-                  <p className="font-medium">{document.name}</p>
+                  <p className="font-medium">{document.files[0]}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Uploaded On</p>
                   <p className="font-medium">
-                    {new Date(document.uploadedAt).toLocaleDateString()}
+                    {/* {new Date(document.uploadedAt).toLocaleDateString()} */}
                   </p>
                 </div>
                 <div>
@@ -326,19 +353,20 @@ const ReviewDocument = () => {
               <div className="grid grid-cols-3 gap-4 w-full">
                 <Button
                   className="bg-green-600 hover:bg-green-700"
-                  onClick={() => handleUpdateStatus("approved")}
+
+                  onClick={() => handleUpdateStatus("APPROVED")}
                 >
                   <Check className="mr-2 h-4 w-4" /> Approve
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={() => handleUpdateStatus("rejected")}
+                  onClick={() => handleUpdateStatus("REJECTED")}
                 >
                   <X className="mr-2 h-4 w-4" /> Reject
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => handleUpdateStatus("on_hold")}
+                  onClick={() => handleUpdateStatus("UPLOADED")}
                 >
                   <Clock className="mr-2 h-4 w-4" /> On Hold
                 </Button>
@@ -391,7 +419,7 @@ const ReviewDocument = () => {
                 <div className="text-center">
                   <img
                     src={getDocumentUrl()}
-                    alt={document.name}
+                    alt={document.files[0]}
                     className="max-w-full max-h-[350px] object-contain mx-auto"
                     style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center' }}
                     onError={(e) => {

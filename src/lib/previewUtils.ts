@@ -46,7 +46,7 @@ const documentPreviewMap: Record<string, string> = {
  * @param fileType MIME type or extension of the document
  * @returns URL to sample document image/PDF
  */
-export const getSamplePreviewUrl = (fileName: string, fileType?: string): string => {
+export const getSamplePreviewUrl = (fileName: string, fileType?: String): string => {
   // Convert to lowercase for matching
   const nameLower = fileName.toLowerCase();
   

@@ -40,6 +40,8 @@ export interface DocumentResponseType {
     isMandatory: boolean,
     isMultiple: boolean,
     files: FileResponseType[],
+    status: String
+    category?: String
 }
 
 
