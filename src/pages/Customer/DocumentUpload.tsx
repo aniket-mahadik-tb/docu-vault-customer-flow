@@ -306,7 +306,7 @@ const DocumentUpload = () => {
                                   <span className="truncate max-w-[120px]" title={file.name} style={{ marginRight: document.isMultiple ? '0.5rem' : 0 }}>
                                     {file.name}
                                   </span>
-                                  {document.isMultiple && (
+                                  {document.isMultiple && fileIndex === uploadedFiles[document.id].length - 1 && (
                                     <>
                                       <input
                                         type="file"
@@ -465,7 +465,7 @@ const DocumentUpload = () => {
                                             <span className="truncate max-w-[120px]" title={file.name} style={{ marginRight: document.isMultiple ? '0.5rem' : 0 }}>
                                               {file.name}
                                             </span>
-                                            {document.isMultiple && (
+                                            {document.isMultiple && fileIndex === uploadedFiles[promoterDocId].length - 1 && (
                                               <>
                                                 <input
                                                   type="file"

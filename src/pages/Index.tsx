@@ -13,14 +13,14 @@ const Index = () => {
   const{getValueFromLocalStorage,setValueToLocalStorage} = useLocalStorage();
 
   const portalCards = [
-    {
-      title: "Customer Portal",
-      description: "Upload documents and track your submission status",
-      icon: <User className="h-12 w-12 text-primary" />,
-      path: "/customer",
-      role: "Customer" as const,
-      color: "bg-primary/5 hover:bg-primary/10 border-primary/20",
-    },
+    // {
+    //   title: "Customer Portal",
+    //   description: "Upload documents and track your submission status",
+    //   icon: <User className="h-12 w-12 text-primary" />,
+    //   path: "/customer",
+    //   role: "Customer" as const,
+    //   color: "bg-primary/5 hover:bg-primary/10 border-primary/20",
+    // },
     {
       title: "Admin Portal",
       description: "Manage users and document submissions",
