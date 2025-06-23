@@ -1,12 +1,10 @@
-
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
-import MainLayout from "@/layouts/MainLayout";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
+
+import { useUserService } from "@/services/userService";
+
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const validatePAN = (pan: string): boolean => {
   // Basic PAN card validation: 5 letters, 4 numbers, 1 letter (AAAAA1234A format)
@@ -16,70 +14,22 @@ const validatePAN = (pan: string): boolean => {
 
 const CustomerEntry = () => {
   const navigate = useNavigate();
-  const { setUserId, setRole } = useUser();
-  const [panNumber, setPanNumber] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { setRole } = useUser();
+  const UserService = useUserService();
+  const { getValueFromLocalStorage, setValueToLocalStorage } = useLocalStorage();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validatePAN(panNumber)) {
-      toast({
-        title: "Invalid PAN",
-        description: "Please enter a valid PAN card number (format: AAAAA1234A)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      setUserId(panNumber);
+  useEffect(
+    () => {
+      setValueToLocalStorage("token", token)
+      setValueToLocalStorage("role", "Customer");
       setRole("Customer");
-      navigate("/customer/dashboard");
-      setIsSubmitting(false);
-    }, 500);
-  };
+      navigate("/customer/upload");
+    }, [navigate, getValueFromLocalStorage]
+  )
 
-  return (
-    <MainLayout showSidebar={false}>
-      <div className="flex items-center justify-center min-h-[80vh]">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Customer Portal</CardTitle>
-            <CardDescription>Enter your PAN card number to continue</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent>
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <label htmlFor="pan" className="text-sm font-medium">
-                    PAN Card Number
-                  </label>
-                  <Input
-                    id="pan"
-                    placeholder="AAAAA1234A"
-                    value={panNumber}
-                    onChange={(e) => setPanNumber(e.target.value.toUpperCase())}
-                    maxLength={10}
-                    className="uppercase"
-                    required
-                  />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Verifying..." : "Continue"}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
-    </MainLayout>
-  );
+  return null;
 };
 
 export default CustomerEntry;

@@ -24,6 +24,11 @@ export interface DocumentRoot {
   folders: Record<string, DocumentFolder>;
 }
 
+export interface ModifiedDocumentRoot {
+  userId: string;
+  folders: Record<string, DocumentFolder[]>;
+}
+
 interface DocumentContextType {
   documents: Record<string, DocumentRoot>;
   addDocument: (userId: string, folder: string, file: File) => Promise<DocumentFile>;
@@ -51,19 +56,19 @@ const dataURLtoBlob = (dataURL: string): Blob | null => {
     // Convert base64/URL data to blob
     const arr = dataURL.split(',');
     if (arr.length < 2) return null;
-    
+
     const mimeMatch = arr[0].match(/:(.*?);/);
     if (!mimeMatch) return null;
-    
+
     const mime = mimeMatch[1];
     const bstr = atob(arr[1]);
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
-    
+
     while (n--) {
       u8arr[n] = bstr.charCodeAt(n);
     }
-    
+
     return new Blob([u8arr], { type: mime });
   } catch (error) {
     console.error("Error converting data URL to blob:", error);
@@ -95,7 +100,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Only store the metadata (not the actual file contents)
       localStorage.setItem(STORAGE_META_KEY, JSON.stringify(documents));
-      
+
       // Update storage usage estimate
       calculateStorageUsage();
     } catch (error) {
@@ -114,9 +119,9 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       const metaSize = localStorage.getItem(STORAGE_META_KEY)?.length || 0;
       const dataSize = localStorage.getItem(STORAGE_KEY)?.length || 0;
       const totalSize = metaSize + dataSize;
-      
+
       setStorageUsage(totalSize);
-      
+
       // Warn if storage is getting full
       if (totalSize > MAX_TOTAL_STORAGE * 0.8) {
         toast({
@@ -125,7 +130,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
           variant: "default",
         });
       }
-      
+
       return totalSize;
     } catch (error) {
       console.error("Error calculating storage usage:", error);
@@ -138,7 +143,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     try {
       const storageData = localStorage.getItem(STORAGE_KEY);
       if (!storageData) return null;
-      
+
       const fileStorage = JSON.parse(storageData);
       return fileStorage[fileId] || null;
     } catch (error) {
@@ -153,17 +158,17 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       // Get current storage
       const storageData = localStorage.getItem(STORAGE_KEY);
       let fileStorage: Record<string, string> = {};
-      
+
       if (storageData) {
         fileStorage = JSON.parse(storageData);
       }
-      
+
       // Add new file
       fileStorage[fileId] = dataUrl;
-      
+
       // Save back to storage
       localStorage.setItem(STORAGE_KEY, JSON.stringify(fileStorage));
-      
+
       return true;
     } catch (error) {
       console.error("Failed to save file data:", error);
@@ -176,13 +181,13 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     try {
       const storageData = localStorage.getItem(STORAGE_KEY);
       if (!storageData) return true;
-      
+
       const fileStorage = JSON.parse(storageData);
       if (fileStorage[fileId]) {
         delete fileStorage[fileId];
         localStorage.setItem(STORAGE_KEY, JSON.stringify(fileStorage));
       }
-      
+
       return true;
     } catch (error) {
       console.error("Failed to remove file data:", error);
@@ -202,13 +207,13 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         reject(new Error("File too large"));
         return;
       }
-      
+
       const fileReader = new FileReader();
-      
+
       fileReader.onload = (e) => {
         const fileId = `${Date.now()}-${file.name}`;
         const fileDataUrl = e.target?.result as string;
-        
+
         try {
           // First attempt to save the file data
           const savedSuccessfully = saveFileData(fileId, fileDataUrl);
@@ -216,7 +221,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
             reject(new Error("Failed to save file data. Storage might be full."));
             return;
           }
-          
+
           const newFile: DocumentFile = {
             id: fileId,
             name: file.name,
@@ -226,41 +231,41 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
             lastModified: file.lastModified,
             uploaded: new Date(),
           };
-          
+
           setDocuments(prev => {
             const updatedDocs = { ...prev };
-            
+
             // Create user root folder if it doesn't exist
             if (!updatedDocs[userId]) {
               updatedDocs[userId] = { userId, folders: {} };
             }
-            
+
             // Create document folder if it doesn't exist
             if (!updatedDocs[userId].folders[folder]) {
-              updatedDocs[userId].folders[folder] = { 
-                name: folder, 
-                files: [], 
-                submitted: false 
+              updatedDocs[userId].folders[folder] = {
+                name: folder,
+                files: [],
+                submitted: false
               };
             }
-            
+
             // Add file to folder
             updatedDocs[userId].folders[folder].files.push(newFile);
-            
+
             return updatedDocs;
           });
-          
+
           resolve(newFile);
         } catch (error) {
           console.error("Error saving document:", error);
           reject(error);
         }
       };
-      
+
       fileReader.onerror = () => {
         reject(new Error("Failed to read file"));
       };
-      
+
       fileReader.readAsDataURL(file);
     });
   };
@@ -268,16 +273,16 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
   const removeDocument = (userId: string, folder: string, fileId: string) => {
     // First remove the file data from storage
     removeFileData(fileId);
-    
+
     // Then update the document list
     setDocuments(prev => {
       const updatedDocs = { ...prev };
-      
+
       if (updatedDocs[userId] && updatedDocs[userId].folders[folder]) {
-        updatedDocs[userId].folders[folder].files = 
+        updatedDocs[userId].folders[folder].files =
           updatedDocs[userId].folders[folder].files.filter(file => file.id !== fileId);
       }
-      
+
       return updatedDocs;
     });
   };
@@ -285,11 +290,11 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
   const submitFolder = (userId: string, folder: string) => {
     setDocuments(prev => {
       const updatedDocs = { ...prev };
-      
+
       if (updatedDocs[userId] && updatedDocs[userId].folders[folder]) {
         updatedDocs[userId].folders[folder].submitted = true;
       }
-      
+
       return updatedDocs;
     });
   };
@@ -304,7 +309,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
           createdBlobUrls.delete(file.url);
         }
       });
-      
+
       // For each document, if it's just an ID reference, get the actual file data
       return documents[userId].folders[folder].files.map(file => {
         // If the URL is just an ID (not a data URL or blob URL), replace with the actual data
@@ -345,7 +350,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
         });
       });
     }
-    
+
     // Remove user from documents
     setDocuments(prev => {
       const updatedDocs = { ...prev };
@@ -357,18 +362,18 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
   const clearFolderDocuments = (userId: string, folder: string) => {
     setDocuments(prev => {
       const updatedDocs = { ...prev };
-      
+
       if (updatedDocs[userId] && updatedDocs[userId].folders[folder]) {
         // Remove all file data from storage for this folder
         updatedDocs[userId].folders[folder].files.forEach(file => {
           removeFileData(file.id);
         });
-        
+
         // Clear files array and reset submitted status
         updatedDocs[userId].folders[folder].files = [];
         updatedDocs[userId].folders[folder].submitted = false;
       }
-      
+
       return updatedDocs;
     });
   };
@@ -384,16 +389,16 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <DocumentContext.Provider 
-      value={{ 
-        documents, 
-        addDocument, 
-        removeDocument, 
-        submitFolder, 
-        getFolderDocuments, 
-        isFolderSubmitted, 
+    <DocumentContext.Provider
+      value={{
+        documents,
+        addDocument,
+        removeDocument,
+        submitFolder,
+        getFolderDocuments,
+        isFolderSubmitted,
         clearUserDocuments,
-        clearFolderDocuments 
+        clearFolderDocuments
       }}
     >
       {children}

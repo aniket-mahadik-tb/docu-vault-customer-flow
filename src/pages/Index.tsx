@@ -5,20 +5,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useUser } from "@/contexts/UserContext";
 import MainLayout from "@/layouts/MainLayout";
 import { User, Users, FileText } from "lucide-react";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const Index = () => {
   const navigate = useNavigate();
   const { setRole } = useUser();
+  const{getValueFromLocalStorage,setValueToLocalStorage} = useLocalStorage();
 
   const portalCards = [
-    {
-      title: "Customer Portal",
-      description: "Upload documents and track your submission status",
-      icon: <User className="h-12 w-12 text-primary" />,
-      path: "/customer",
-      role: "Customer" as const,
-      color: "bg-primary/5 hover:bg-primary/10 border-primary/20",
-    },
+    // {
+    //   title: "Customer Portal",
+    //   description: "Upload documents and track your submission status",
+    //   icon: <User className="h-12 w-12 text-primary" />,
+    //   path: "/customer",
+    //   role: "Customer" as const,
+    //   color: "bg-primary/5 hover:bg-primary/10 border-primary/20",
+    // },
     {
       title: "Admin Portal",
       description: "Manage users and document submissions",
@@ -38,7 +40,13 @@ const Index = () => {
   ];
 
   const handlePortalSelect = (path: string, role: "Customer" | "Admin" | "Bank") => {
-    setRole(role);
+    // setRole(role);
+    if (role === "Customer") {
+      setValueToLocalStorage("role", role);
+    } else if (role === "Admin") {
+      //change here as per the api 
+      setValueToLocalStorage("role", "SuperAdmin");
+    }
     navigate(path);
   };
 

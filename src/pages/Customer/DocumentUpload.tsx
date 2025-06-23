@@ -4,285 +4,148 @@ import { useUser } from "@/contexts/UserContext";
 import { useCustomers } from "@/contexts/CustomerContext";
 import { useDocuments, DocumentFile } from "@/contexts/DocumentContext";
 import MainLayout from "@/layouts/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { FileText, X, ChevronDown, ChevronUp, Upload, CheckCircle, Circle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Upload, FileText, CheckCircle, AlertCircle, Trash2, Plus, Info } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-
-const documentSections = [
-  {
-    id: 'section1',
-    title: 'KYC Documents',
-    description: 'Identity and address verification documents',
-    documentTypes: [
-      {
-        id: 'kyc1',
-        name: 'PAN Card',
-        description: 'Permanent Account Number card issued by Income Tax Department',
-        required: true,
-      },
-      {
-        id: 'kyc2',
-        name: 'Aadhaar Card',
-        description: 'Unique Identification Authority of India (UIDAI) issued Aadhaar card',
-        required: true,
-      },
-      {
-        id: 'kyc3',
-        name: 'Certificate of Incorporation',
-        description: 'For registered businesses and companies',
-        required: false,
-      },
-      {
-        id: 'kyc4',
-        name: 'GST Registration',
-        description: 'Goods and Services Tax registration certificate',
-        required: false,
-      }
-    ]
-  },
-  {
-    id: 'section2',
-    title: 'Bank Statements',
-    description: 'Banking transaction documents',
-    documentTypes: [
-      {
-        id: 'bank1',
-        name: 'Current Account Statements',
-        description: 'Last 6 months statements of primary business account',
-        required: true,
-      },
-      {
-        id: 'bank2',
-        name: 'Savings Account Statements',
-        description: 'Last 6 months statements of proprietor/director accounts',
-        required: false,
-      },
-      {
-        id: 'bank3',
-        name: 'Bank Account Opening Letter',
-        description: 'Document confirming account details and signatories',
-        required: false,
-      }
-    ]
-  },
-  {
-    id: 'section3',
-    title: 'Loan Statements',
-    description: 'Existing loan and credit documentation',
-    documentTypes: [
-      {
-        id: 'loan1',
-        name: 'Existing Loan Statements',
-        description: 'Last 12 months statements of existing business loans',
-        required: true,
-      },
-      {
-        id: 'loan2',
-        name: 'Credit Card Statements',
-        description: 'Last 6 months statements of business credit cards',
-        required: false,
-      },
-      {
-        id: 'loan3',
-        name: 'Loan Sanction Letters',
-        description: 'Approval documents for existing loans',
-        required: false,
-      },
-      {
-        id: 'loan4',
-        name: 'Repayment Track Record',
-        description: 'Proof of timely repayment of previous loans',
-        required: false,
-      }
-    ]
-  },
-  {
-    id: 'section4',
-    title: 'Financial Documents',
-    description: 'Business financial records and statements',
-    documentTypes: [
-      {
-        id: 'fin1',
-        name: 'Income Tax Returns',
-        description: 'Last 3 years ITR filings with computation sheet',
-        required: true,
-      },
-      {
-        id: 'fin2',
-        name: 'Balance Sheet',
-        description: 'Audited balance sheets for previous 3 financial years',
-        required: false,
-      },
-      {
-        id: 'fin3',
-        name: 'Profit & Loss Statement',
-        description: 'P&L statements for previous 3 financial years',
-        required: false,
-      },
-      {
-        id: 'fin4',
-        name: 'Cash Flow Statement',
-        description: 'Statement of cash flows for the business',
-        required: false,
-      },
-      {
-        id: 'fin5',
-        name: 'Sales Tax Returns',
-        description: 'GST/VAT returns for the last year',
-        required: false,
-      }
-    ]
-  },
-  {
-    id: 'section5',
-    title: 'Property Documents',
-    description: 'Business premises and collateral documentation',
-    documentTypes: [
-      {
-        id: 'prop1',
-        name: 'Property Ownership Deed',
-        description: 'Legal document proving ownership of property offered as collateral',
-        required: false,
-      },
-      {
-        id: 'prop2',
-        name: 'Rent Agreement',
-        description: 'Rental agreement for business premises if not owned',
-        required: false,
-      },
-      {
-        id: 'prop3',
-        name: 'Property Tax Receipts',
-        description: 'Last 3 years property tax payment receipts',
-        required: false,
-      },
-      {
-        id: 'prop4',
-        name: 'Property Valuation Report',
-        description: 'Recent valuation of property by authorized valuer',
-        required: false,
-      },
-      {
-        id: 'prop5',
-        name: 'Property Insurance',
-        description: 'Insurance documents for the property offered as security',
-        required: false,
-      }
-    ]
-  },
-  {
-    id: 'section6',
-    title: 'Business Documents',
-    description: 'Business registration and operational documents',
-    documentTypes: [
-      {
-        id: 'biz1',
-        name: 'Business Plan',
-        description: 'Detailed business plan including projections',
-        required: false,
-      },
-      {
-        id: 'biz2',
-        name: 'Trade License',
-        description: 'Valid trade license issued by local municipality',
-        required: false,
-      },
-      {
-        id: 'biz3',
-        name: 'MSME Registration',
-        description: 'Micro, Small, Medium Enterprise registration certificate',
-        required: false,
-      },
-      {
-        id: 'biz4',
-        name: 'Partnership Deed',
-        description: 'For partnership firms',
-        required: false,
-      }
-    ]
-  }
-];
-
-interface SubDocumentState {
-  [key: string]: {
-    open: boolean;
-    submitting: boolean;
-  }
-}
+import { useDocumentUploadService, DocumentType, DocumentCategory } from "@/services/documentUploadService";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const DocumentUpload = () => {
   const navigate = useNavigate();
-  const { userId } = useUser();
+  const { getValueFromLocalStorage } = useLocalStorage();//useUser();
+  const token = getValueFromLocalStorage("token");
   const { addDocument, removeDocument, submitFolder, getFolderDocuments, isFolderSubmitted } = useDocuments();
   const { syncCustomerDocuments } = useCustomers();
-  
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
-  const [subDocumentStates, setSubDocumentStates] = useState<SubDocumentState>({});
-  
+  const documentUploadService = useDocumentUploadService();
+
+  const [customerType, setCustomerType] = useState<'Individual' | 'Organization'>();
+  const [orgCategories, setOrgCategories] = useState<DocumentCategory[]>([]);
+  const [promoterCategories, setPromoterCategories] = useState<DocumentCategory[]>([]);
+  // Promoters state for Organization
+  const [promoters, setPromoters] = useState<{ id: number }[]>([]);
+  const [uploadingDocuments, setUploadingDocuments] = useState<Record<string, boolean>>({});
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, DocumentFile[]>>({});
+
+
+
+  // Call document masters API on page render
   useEffect(() => {
-    if (!userId) {
-      navigate("/customer");
-    }
+    const fetchDocumentMasters = async () => {
+      try {
+        const response = await documentUploadService.getDocumentMasters();
+        // response.data is an array
+        const org = response.data.find(
+          (item: any) => item.customerType?.toUpperCase() === "ORGANIZATION"
+        );
+        const promoter = response.data.find(
+          (item: any) => item.customerType?.toUpperCase() === "PROMOTER"
+        );
+        const individual = response.data.find(
+          (item: any) => item.customerType?.toUpperCase() === "INDIVIDUAL"
+        );
 
-    // Initialize states for sub-documents
-    const initialSubDocumentStates: SubDocumentState = {};
-    documentSections.forEach(section => {
-      section.documentTypes.forEach(docType => {
-        initialSubDocumentStates[docType.id] = {
-          open: false,
-          submitting: false
-        };
-      });
-    });
-    setSubDocumentStates(initialSubDocumentStates);
-  }, [userId, navigate]);
-
-  const toggleSection = (sectionId: string) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [sectionId]: !prev[sectionId]
-    }));
-  };
-
-  const handleFileUpload = async (sectionId: string, docId: string, files: FileList) => {
-    if (!userId) return;
-    
-    try {
-      setSubDocumentStates(prev => ({
-        ...prev,
-        [docId]: {
-          ...prev[docId],
-          submitting: true
+        if (org) {
+          setCustomerType("Organization");
+          setOrgCategories(org.documentsByCategory);
+          setPromoterCategories(promoter?.documentsByCategory || []);
+        } else if (individual) {
+          setCustomerType("Individual");
+          setOrgCategories(individual.documentsByCategory);
+          setPromoterCategories([]);
         }
-      }));
-      
+      } catch (error) {
+        console.error("Error fetching document masters:", error);
+      }
+    };
+
+    fetchDocumentMasters();
+  }, []);
+
+  // Sync uploaded files state with document context
+  useEffect(() => {
+    if (!token || orgCategories.length === 0) return;
+
+    const syncUploadedFiles = () => {
+      const syncedFiles: Record<string, DocumentFile[]> = {};
+
+      // Default table
+      orgCategories.forEach(category => {
+        category.documents.forEach(document => {
+          const folderId = `documents_${document.id}`;
+          const folderDocuments = getFolderDocuments(token, folderId);
+          if (folderDocuments.length > 0) {
+            syncedFiles[document.id] = folderDocuments;
+          }
+        });
+      });
+
+      // Promoter tables
+      promoterCategories.forEach(category => {
+        category.documents.forEach(document => {
+          for (let i = 0; i < promoters.length; i++) {
+            const promoterDocId = `${document.id}_promoter${i}`;
+            const folderDocuments = getFolderDocuments(token, promoterDocId);
+            if (folderDocuments.length > 0) {
+              syncedFiles[promoterDocId] = folderDocuments;
+            }
+          }
+        });
+      });
+
+      setUploadedFiles(syncedFiles);
+    };
+
+    syncUploadedFiles();
+  }, [token, orgCategories, promoterCategories, getFolderDocuments, promoters.length]);
+
+  const handleFileUpload = async (documentId: string, files: FileList) => {
+    if (!token) return;
+  
+    try {
+      setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
+      const folderId = `documents_${documentId}`;
+  
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const fullFolderId = `${sectionId}_${docId}`;
-        await addDocument(userId, fullFolderId, file);
+        
+        // Add to local context for UI display (this was the original behavior)
+        await addDocument(token, folderId, file);
+        
+        // Also make API call
+        const formData = new FormData();
+        formData.append("documentMasterId", documentId);
+        formData.append("file", file);
+        await documentUploadService.uploadDocuments(formData);
       }
+  
+      // Submit folder after all files are processed
+      submitFolder(token, folderId);
       
-      // Auto-submit the document when files are uploaded
-      const fullFolderId = `${sectionId}_${docId}`;
-      submitFolder(userId, fullFolderId);
-      
+      // Sync the uploaded files state to reflect changes
+      const syncedFiles: Record<string, DocumentFile[]> = {};
+      const folderDocuments = getFolderDocuments(token, folderId);
+      if (folderDocuments.length > 0) {
+        syncedFiles[documentId] = folderDocuments;
+      }
+      setUploadedFiles(prev => ({ ...prev, ...syncedFiles }));
+  
       toast({
         title: "Files uploaded",
-        description: `${files.length} file(s) added and submitted successfully`,
+        description: `${files.length} file(s) uploaded successfully`,
       });
-      
-      setSubDocumentStates(prev => ({
-        ...prev,
-        [docId]: {
-          ...prev[docId],
-          submitting: false
-        }
-      }));
+  
     } catch (error) {
       console.error("Error uploading files:", error);
       toast({
@@ -290,22 +153,23 @@ const DocumentUpload = () => {
         description: "There was an error uploading your files",
         variant: "destructive",
       });
-      
-      setSubDocumentStates(prev => ({
-        ...prev,
-        [docId]: {
-          ...prev[docId],
-          submitting: false
-        }
-      }));
+    } finally {
+      setUploadingDocuments(prev => ({ ...prev, [documentId]: false }));
     }
   };
+  
 
-  const handleRemoveFile = (sectionId: string, docId: string, fileId: string) => {
-    if (!userId) return;
+  const handleRemoveFile = (documentId: string, fileId: string) => {
+    if (!token) return;
+    const folderId = `documents_${documentId}`;
+    removeDocument(token, folderId, fileId);
     
-    const fullFolderId = `${sectionId}_${docId}`;
-    removeDocument(userId, fullFolderId, fileId);
+    // Sync the uploaded files state to reflect changes
+    const folderDocuments = getFolderDocuments(token, folderId);
+    setUploadedFiles(prev => ({
+      ...prev,
+      [documentId]: folderDocuments
+    }));
     
     toast({
       title: "File removed",
@@ -313,363 +177,387 @@ const DocumentUpload = () => {
     });
   };
 
-  const isSectionSubmitted = (sectionId: string): boolean => {
-    if (!userId) return false;
-    
-    // Find all document types in this section
-    const section = documentSections.find(s => s.id === sectionId);
-    if (!section) return false;
-    
-    // Check if all required documents in the section are submitted
-    const requiredDocs = section.documentTypes.filter(doc => doc.required);
-    
-    for (const doc of requiredDocs) {
-      const fullFolderId = `${sectionId}_${doc.id}`;
-      if (!isFolderSubmitted(userId, fullFolderId)) {
-        return false;
-      }
+  const isDocumentSubmitted = (documentId: string): boolean => {
+    if (!token) return false;
+    const folderId = `documents_${documentId}`;
+    return isFolderSubmitted(token, folderId);
+  };
+
+  const getDocumentStatus = (documentId: string) => {
+    const isSubmitted = isDocumentSubmitted(documentId);
+    const hasFiles = uploadedFiles[documentId] && uploadedFiles[documentId].length > 0;
+    if (!hasFiles) {
+      return { status: 'pending', icon: <AlertCircle className="h-4 w-4 text-yellow-600" />, label: 'Pending' };
     }
-    
-    return requiredDocs.length > 0;
-  };
-
-  // Calculate progress percentage for a section
-  const calculateSectionProgress = (sectionId: string): number => {
-    if (!userId) return 0;
-    
-    // Find section
-    const section = documentSections.find(s => s.id === sectionId);
-    if (!section) return 0;
-    
-    // Count required documents and submitted required documents
-    const requiredDocs = section.documentTypes.filter(doc => doc.required);
-    if (requiredDocs.length === 0) return 100; // If no required docs, progress is 100%
-    
-    let submittedCount = 0;
-    for (const doc of requiredDocs) {
-      const fullFolderId = `${sectionId}_${doc.id}`;
-      if (isFolderSubmitted(userId, fullFolderId)) {
-        submittedCount++;
-      }
+    if (isSubmitted) {
+      return { status: 'submitted', icon: <CheckCircle className="h-4 w-4 text-green-600" />, label: 'Submitted' };
+    } else if (hasFiles) {
+      return { status: 'uploaded', icon: <FileText className="h-4 w-4 text-blue-600" />, label: 'Uploaded' };
+    } else {
+      return { status: 'pending', icon: <AlertCircle className="h-4 w-4 text-yellow-600" />, label: 'Pending' };
     }
-    
-    // Calculate percentage
-    return Math.round((submittedCount / requiredDocs.length) * 100);
   };
 
-  // Get the count of required documents in a section
-  const getRequiredDocCount = (sectionId: string): number => {
-    const section = documentSections.find(s => s.id === sectionId);
-    if (!section) return 0;
-    return section.documentTypes.filter(doc => doc.required).length;
-  };
-
-  // Get the count of submitted required documents
-  const getSubmittedRequiredDocCount = (sectionId: string): number => {
-    if (!userId) return 0;
-    const section = documentSections.find(s => s.id === sectionId);
-    if (!section) return 0;
-    
-    const requiredDocs = section.documentTypes.filter(doc => doc.required);
-    let submittedCount = 0;
-    
-    for (const doc of requiredDocs) {
-      const fullFolderId = `${sectionId}_${doc.id}`;
-      if (isFolderSubmitted(userId, fullFolderId)) {
-        submittedCount++;
-      }
+  const getStatusBadge = (documentId: string) => {
+    const status = getDocumentStatus(documentId);
+    switch (status.status) {
+      case 'submitted':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
+      case 'uploaded':
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>;
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      default:
+        return <Badge variant="outline">Pending</Badge>;
     }
-    
-    return submittedCount;
   };
 
-  // Calculate overall progress
-  const calculateOverallProgress = (): number => {
-    if (!userId) return 0;
-    
-    let totalRequiredDocs = 0;
-    let totalSubmittedDocs = 0;
-    
-    documentSections.forEach(section => {
-      const requiredDocs = section.documentTypes.filter(doc => doc.required);
-      totalRequiredDocs += requiredDocs.length;
-      
-      requiredDocs.forEach(doc => {
-        const fullFolderId = `${section.id}_${doc.id}`;
-        if (isFolderSubmitted(userId, fullFolderId)) {
-          totalSubmittedDocs++;
-        }
-      });
-    });
-    
-    if (totalRequiredDocs === 0) return 100;
-    return Math.round((totalSubmittedDocs / totalRequiredDocs) * 100);
+  // Add promoter handler
+  const handleAddPromoter = () => {
+    setPromoters((prev) => [...prev, { id: Date.now() }]);
+  };
+  // Remove promoter handler
+  const handleRemovePromoter = (index: number) => {
+    setPromoters((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Check if at least one document is uploaded
-  const hasAnyDocumentsUploaded = (): boolean => {
-    if (!userId) return false;
-    
-    let hasDocuments = false;
-    
-    for (const section of documentSections) {
-      for (const doc of section.documentTypes) {
-        const fullFolderId = `${section.id}_${doc.id}`;
-        const documents = getFolderDocuments(userId, fullFolderId);
-        if (documents.length > 0) {
-          hasDocuments = true;
-          break;
-        }
-      }
-      if (hasDocuments) break;
-    }
-    
-    return hasDocuments;
-  };
-
-  // Check if all required documents are uploaded
-  const areAllRequiredDocsSubmitted = (): boolean => {
-    if (!userId) return false;
-    
-    for (const section of documentSections) {
-      const requiredDocs = section.documentTypes.filter(doc => doc.required);
-      for (const doc of requiredDocs) {
-        const fullFolderId = `${section.id}_${doc.id}`;
-        if (!isFolderSubmitted(userId, fullFolderId)) {
-          return false;
-        }
-      }
-    }
-    
-    return true;
-  };
-
-  // Handle submit all documents
-  const handleSubmitAllDocuments = () => {
-    if (!userId) return;
-    
-    // Submit all folders that have documents but aren't submitted yet
-    for (const section of documentSections) {
-      for (const doc of section.documentTypes) {
-        const fullFolderId = `${section.id}_${doc.id}`;
-        const documents = getFolderDocuments(userId, fullFolderId);
-        // Only submit folders that have documents and aren't already submitted
-        if (documents.length > 0 && !isFolderSubmitted(userId, fullFolderId)) {
-          submitFolder(userId, fullFolderId);
-        }
-      }
-    }
-    
-    // Sync documents with customer context
-    syncCustomerDocuments(userId);
-    
-    toast({
-      title: "Documents Submitted",
-      description: "Your documents have been successfully submitted for review.",
-    });
-    
-    // Navigate to document status page
-    navigate("/customer/status");
-  };
-
-  if (!userId) {
-    return null; // Will redirect in useEffect
+  if (!customerType) {
+    return (
+      <MainLayout showSidebar={true}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading document requirements...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
   }
 
   return (
-    <MainLayout>
+    <MainLayout showSidebar={true}>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Document Upload</h1>
-        
-        <div className="space-y-6">
-          {documentSections.map(section => {
-            const isOpen = openSections[section.id] || false;
-            const isSubmitted = isSectionSubmitted(section.id);
-            const progressPercentage = calculateSectionProgress(section.id);
-            
-            return (
-              <Card key={section.id} className={isSubmitted ? "border-green-200 bg-green-50" : ""}>
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-center">
-                    {!isOpen && (
-                      <div className="flex items-center gap-2">
-                        <CardTitle>{section.title}</CardTitle>
-                        {isSubmitted && (
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                        )}
-                      </div>
-                    )}
-                    <Collapsible open={isOpen} onOpenChange={(value) => setOpenSections(prev => ({ ...prev, [section.id]: value }))}>
-                      <CollapsibleTrigger 
-                        className="rounded-full p-1 hover:bg-accent"
-                      >
-                        {isOpen ? (
-                          <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                        )}
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <CardContent>
-                          <h3 className="text-lg font-medium mb-1">{section.title}</h3>
-                          {section.documentTypes.filter(doc => doc.required).length > 0 && (
-                            <div className="mb-4">
-                              <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                                <span>Upload progress</span>
-                                <span>{progressPercentage}%</span>
-                              </div>
-                              <Progress value={progressPercentage} className="h-2" />
-                            </div>
-                          )}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {section.documentTypes.map(docType => {
-                              const fullFolderId = `${section.id}_${docType.id}`;
-                              const docFiles = userId ? getFolderDocuments(userId, fullFolderId) : [];
-                              const isDocSubmitted = userId ? isFolderSubmitted(userId, fullFolderId) : false;
-                              const docState = subDocumentStates[docType.id] || { open: false, submitting: false };
-                              
-                              return (
-                                <Card key={docType.id} className={`border ${isDocSubmitted ? "border-green-200 bg-green-50" : ""}`}>
-                                  <CardHeader className="p-4">
-                                    <div className="flex flex-col gap-1">
-                                      <div className="flex items-center gap-2">
-                                        <CardTitle className="text-base">{docType.name}</CardTitle>
-                                        {docType.required && (
-                                          <Badge variant="destructive" className="text-xs">Required</Badge>
-                                        )}
-                                        {isDocSubmitted && (
-                                          <CheckCircle className="h-4 w-4 text-green-500" />
-                                        )}
-                                      </div>
-                                      <CardDescription className="text-xs mt-1">{docType.description}</CardDescription>
-                                      <div className="text-xs text-muted-foreground mt-2">
-                                        <span>Max size: 2MB • Accepted: Images, PDF</span>
-                                      </div>
-                                    </div>
-                                  </CardHeader>
-                                  <CardContent className="p-4 pt-0">
-                                    {!isDocSubmitted && (
-                                      <label
-                                        htmlFor={`file-upload-${fullFolderId}`}
-                                        className="flex justify-center items-center border-2 border-dashed rounded-lg py-4 px-4 cursor-pointer hover:bg-accent/10"
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Document Upload</h1>
+            <p className="text-gray-600 mt-1">
+              Please upload the required documents for your application
+            </p>
+          </div>
+
+          {/* Always show the default table */}
+          {orgCategories.map((category, categoryIndex) => (
+            <Card key={categoryIndex} className="mb-6">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gray-800">
+                  {category.category}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[40%]">Document Type</TableHead>
+                      <TableHead className="w-[15%]">Status</TableHead>
+                      <TableHead className="w-[20%]">Uploaded Files</TableHead>
+                      <TableHead className="w-[15%] text-center">Mandatory</TableHead>
+                      <TableHead className="w-[10%]">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {category.documents.map((document: DocumentType) => (
+                      <TableRow key={document.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {document.documentType}
+                            {document.isMultiple && (
+                              <TooltipProvider>
+                                <Tooltip delayDuration={0}>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-pointer">
+                                      <Info className="h-4 w-4 text-blue-500" />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" align="center" className="max-w-xs whitespace-pre-line text-sm">
+                                    Multiple files required (e.g., front and back sides)
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(document.id)}
+                        </TableCell>
+                        <TableCell>
+                          {uploadedFiles[document.id] && uploadedFiles[document.id].length > 0 ? (
+                            <div className="space-y-1">
+                              {uploadedFiles[document.id].map((file, fileIndex) => (
+                                <div key={file.id} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleRemoveFile(document.id, file.id)}
+                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-800 mr-1"
+                                    aria-label="Delete file"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                  <span className="truncate max-w-[120px]" title={file.name} style={{ marginRight: document.isMultiple ? '0.5rem' : 0 }}>
+                                    {file.name}
+                                  </span>
+                                  {document.isMultiple && fileIndex === uploadedFiles[document.id].length - 1 && (
+                                    <>
+                                      <input
+                                        type="file"
+                                        id={`file-plus-${document.id}`}
+                                        multiple
+                                        onChange={(e) => e.target.files && handleFileUpload(document.id, e.target.files)}
+                                        className="hidden"
+                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                      />
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50"
+                                        aria-label="Add more files"
+                                        onClick={() => window.document.getElementById(`file-plus-${document.id}`)?.click()}
                                       >
-                                        <div className="text-center">
-                                          <Upload className="mx-auto h-6 w-6 text-muted-foreground mb-1" />
-                                          <p className="text-sm font-medium">Upload Document</p>
-                                          <p className="text-xs text-muted-foreground mt-1">
-                                            Click to upload or drag and drop
-                                          </p>
-                                        </div>
-                                        <input
-                                          id={`file-upload-${fullFolderId}`}
-                                          type="file"
-                                          multiple
-                                          accept=".pdf,.jpg,.jpeg,.png"
-                                          className="hidden"
-                                          disabled={docState.submitting}
-                                          onChange={(e) => e.target.files && handleFileUpload(section.id, docType.id, e.target.files)}
-                                        />
-                                      </label>
-                                    )}
-                                    
-                                    {docFiles.length > 0 && (
-                                      <div className="mt-4">
-                                        <h4 className="text-sm font-medium mb-3">Uploaded Files</h4>
-                                        <div className="grid grid-cols-2 gap-2">
-                                          {docFiles.map((file) => (
-                                            <div
-                                              key={file.id}
-                                              className="relative border rounded-md p-2 group"
+                                        <Plus className="h-4 w-4" />
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : document.isMultiple ? (
+                            <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
+                          ) : (
+                            <span className="text-gray-400 text-sm">No files uploaded</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {document.isMandatory ? (
+                            <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="file"
+                              id={`file-${document.id}`}
+                              multiple
+                              onChange={(e) => e.target.files && handleFileUpload(document.id, e.target.files)}
+                              className="hidden"
+                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                            />
+                            <label htmlFor={`file-${document.id}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={uploadingDocuments[document.id]}
+                                className="cursor-pointer min-w-[140px] flex items-center justify-center"
+                                asChild
+                              >
+                                <span>
+                                  {uploadingDocuments[document.id] ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                  ) : (
+                                    <Upload className="h-4 w-4" />
+                                  )}
+                                  <span className="ml-1 block truncate">
+                                    Upload Document
+                                  </span>
+                                </span>
+                              </Button>
+                            </label>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ))}
+
+          {/* Organization: Promoter logic */}
+          {customerType === 'Organization' && (
+            <>
+              {/* Only render promoter tables if promoters.length > 0 */}
+              {promoters.length > 0 && promoters.map((promoter, promoterIndex) => (
+                <div key={promoter.id} className="mb-10">
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-lg font-semibold text-gray-800">Promoter {promoterIndex + 1}</h2>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePromoter(promoterIndex)}
+                      className="ml-2 flex items-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-900 px-4 py-2 border border-red-300 shadow transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-red-400 rounded-none"
+                      title="Remove Promoter"
+                      aria-label="Remove Promoter"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                      <span>Remove Promoter</span>
+                    </button>
+                  </div>
+                  {promoterCategories.map((category, categoryIndex) => (
+                    <Card key={categoryIndex} className="mb-6">
+                      <CardHeader>
+                        <CardTitle className="text-lg font-semibold text-gray-800">
+                          {category.category}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[40%]">Document Type</TableHead>
+                              <TableHead className="w-[15%]">Status</TableHead>
+                              <TableHead className="w-[20%]">Uploaded Files</TableHead>
+                              <TableHead className="w-[15%] text-center">Mandatory</TableHead>
+                              <TableHead className="w-[10%]">Action</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {category.documents.map((document: DocumentType) => {
+                              // Unique document id per promoter
+                              const promoterDocId = `${document.id}_promoter${promoterIndex}`;
+                              return (
+                                <TableRow key={promoterDocId}>
+                                  <TableCell className="font-medium">
+                                    <div className="flex items-center gap-2">
+                                      {document.documentType}
+                                      {document.isMultiple && (
+                                        <TooltipProvider>
+                                          <Tooltip delayDuration={0}>
+                                            <TooltipTrigger asChild>
+                                              <span className="cursor-pointer">
+                                                <Info className="h-4 w-4 text-blue-500" />
+                                              </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" align="center" className="max-w-xs whitespace-pre-line text-sm">
+                                              Multiple files required (e.g., front and back sides)
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    {getStatusBadge(promoterDocId)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {uploadedFiles[promoterDocId] && uploadedFiles[promoterDocId].length > 0 ? (
+                                      <div className="space-y-1">
+                                        {uploadedFiles[promoterDocId].map((file, fileIndex) => (
+                                          <div key={file.id} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => handleRemoveFile(promoterDocId, file.id)}
+                                              className="h-6 w-6 p-0 text-red-600 hover:text-red-800 mr-1"
+                                              aria-label="Delete file"
                                             >
-                                              <div className="aspect-square w-full flex items-center justify-center bg-gray-100 rounded mb-1">
-                                                {file.type.includes('image') ? (
-                                                  <img
-                                                    src={file.url}
-                                                    alt={file.name}
-                                                    className="h-full w-full object-cover rounded"
-                                                  />
-                                                ) : (
-                                                  <FileText className="h-8 w-8 text-muted-foreground" />
-                                                )}
-                                              </div>
-                                              <p className="text-xs truncate" title={file.name}>
-                                                {file.name}
-                                              </p>
-                                              {!isDocSubmitted && (
-                                                <button
-                                                  onClick={() => handleRemoveFile(section.id, docType.id, file.id)}
-                                                  className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                            <span className="truncate max-w-[120px]" title={file.name} style={{ marginRight: document.isMultiple ? '0.5rem' : 0 }}>
+                                              {file.name}
+                                            </span>
+                                            {document.isMultiple && fileIndex === uploadedFiles[promoterDocId].length - 1 && (
+                                              <>
+                                                <input
+                                                  type="file"
+                                                  id={`file-plus-${promoterDocId}`}
+                                                  multiple
+                                                  onChange={(e) => e.target.files && handleFileUpload(promoterDocId, e.target.files)}
+                                                  className="hidden"
+                                                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                                />
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50"
+                                                  aria-label="Add more files"
+                                                  onClick={() => window.document.getElementById(`file-plus-${promoterDocId}`)?.click()}
                                                 >
-                                                  <X className="h-3 w-3 text-muted-foreground" />
-                                                </button>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
+                                                  <Plus className="h-4 w-4" />
+                                                </Button>
+                                              </>
+                                            )}
+                                          </div>
+                                        ))}
                                       </div>
+                                    ) : document.isMultiple ? (
+                                      <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
+                                    ) : (
+                                      <span className="text-gray-400 text-sm">No files uploaded</span>
                                     )}
-                                  </CardContent>
-                                </Card>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {document.isMandatory ? (
+                                      <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center space-x-2">
+                                      <input
+                                        type="file"
+                                        id={`file-${promoterDocId}`}
+                                        multiple
+                                        onChange={(e) => e.target.files && handleFileUpload(promoterDocId, e.target.files)}
+                                        className="hidden"
+                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                      />
+                                      <label htmlFor={`file-${promoterDocId}`}>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          disabled={uploadingDocuments[promoterDocId]}
+                                          className="cursor-pointer min-w-[140px] flex items-center justify-center"
+                                          asChild
+                                        >
+                                          <span>
+                                            {uploadingDocuments[promoterDocId] ? (
+                                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                            ) : (
+                                              <Upload className="h-4 w-4" />
+                                            )}
+                                            <span className="ml-1 block truncate">
+                                              Upload Document
+                                            </span>
+                                          </span>
+                                        </Button>
+                                      </label>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
                               );
                             })}
-                          </div>
-                        </CardContent>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </div>
-                  {!isOpen && (
-                    <>
-                      <CardDescription>{section.description}</CardDescription>
-                      <div className="mt-2">
-                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                          <span>Upload progress</span>
-                          <span>{calculateSectionProgress(section.id)}%</span>
-                        </div>
-                        <Progress value={calculateSectionProgress(section.id)} className="h-2" />
-                      </div>
-                    </>
-                  )}
-                </CardHeader>
-              </Card>
-            );
-          })}
-        </div>
-        
-        {/* Overall Progress Section */}
-        <div className="mt-10">
-          <Card className="bg-gray-50">
-            <CardHeader>
-              <CardTitle className="text-xl">Submission Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {documentSections.map(section => {
-                const submittedCount = getSubmittedRequiredDocCount(section.id);
-                const requiredCount = getRequiredDocCount(section.id);
-                
-                return (
-                  <div key={`summary-${section.id}`} className="flex justify-between items-center">
-                    <div className="font-medium">{section.title}</div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">
-                        {submittedCount}/{requiredCount} required docs
-                      </span>
-                      <Circle className="h-3 w-3" fill={submittedCount > 0 ? "#FFA500" : "none"} stroke={submittedCount > 0 ? "#FFA500" : "currentColor"} />
-                    </div>
-                  </div>
-                );
-              })}
-              
-              <Separator className="my-4" />
-              
-              <Button 
-                className="w-full py-6" 
-                disabled={!hasAnyDocumentsUploaded()}
-                onClick={handleSubmitAllDocuments}
-              >
-                Submit All Documents
-              </Button>
-            </CardContent>
-          </Card>
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ))}
+              <div className="mt-8 flex justify-end">
+                <Button
+                  onClick={handleAddPromoter}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white border border-blue-700 shadow-lg flex items-center gap-2 text-base font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-none"
+                  variant="default"
+                  type="button"
+                  style={{ borderRadius: 0 }}
+                >
+                  <Plus className="h-5 w-5" />
+                  Add Promoter
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </MainLayout>

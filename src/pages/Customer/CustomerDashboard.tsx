@@ -9,13 +9,9 @@ import { FileText, Clock } from "lucide-react";
 
 const CustomerDashboard = () => {
   const navigate = useNavigate();
-  const { userId } = useUser();
   
-  useEffect(() => {
-    if (!userId) {
-      navigate("/customer");
-    }
-  }, [userId, navigate]);
+  
+
 
   const dashboardCards = [
     {
@@ -34,9 +30,7 @@ const CustomerDashboard = () => {
     },
   ];
 
-  if (!userId) {
-    return null; // Will redirect in useEffect
-  }
+ 
 
   return (
     <MainLayout showSidebar={true}>
