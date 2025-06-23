@@ -73,7 +73,7 @@ const App = () => (
                         <Route path="/customer/reupload" element={<DocumentReupload />} />
                         <Route path="/customer/addPromoter" element={<AddPromoter />} />
                         <Route path="/customer/promoters" element={<PromotersList />} />
-                        <Route path="/promoters/upload-documents" element={<PromotersUploadDocuments />} />
+                        <Route path="/promoters/upload" element={<PromotersUploadDocuments />} />
 
                         {/* Admin routes */}
                         <Route path="/admin" element={<AdminEntry />} />

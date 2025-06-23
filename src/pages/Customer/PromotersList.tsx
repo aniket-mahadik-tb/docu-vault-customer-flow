@@ -59,7 +59,7 @@ const PromotersList = () => {
 
   const handleUploadClick = (promoter: any) => {
     setSelectedPromoter(promoter);
-    navigate("/promoters/upload-documents");
+    navigate("/promoters/upload");
   };
 
   return (

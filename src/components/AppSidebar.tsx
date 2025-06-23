@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
@@ -30,6 +29,8 @@ import {
 import { CustomerLinks, AdminLinks, SuperAdminLinks, BankLinks } from "@/utils/globalConstants";
 
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useDocumentUploadService } from "@/services/documentUploadService";
+
 interface SidebarLinkProps {
   to: string;
   icon: React.ComponentType<any>;
@@ -41,12 +42,55 @@ const AppSidebar = () => {
   const { state: sidebarState } = useSidebar();
   const location = useLocation();
   const [Role, SetRole] = useState<string>("");
+  const [customerType, setCustomerType] = useState<string>("");
+  const [links, setLinks] = useState([]);
   const { getValueFromLocalStorage } = useLocalStorage();
+  const documentUploadService = useDocumentUploadService();
 
   useEffect(() => {
     const roleFromStorage = getValueFromLocalStorage("role");
     SetRole(roleFromStorage);
 
+    const fetchCustomerTypeAndSetLinks = async () => {
+      if (roleFromStorage === "Customer") {
+        try {
+          const response = await documentUploadService.getDocumentMasters();
+          // response.data is an array
+          const org = response.data.find(
+            (item: any) => item.customerType?.toUpperCase() === "ORGANIZATION"
+          );
+          const individual = response.data.find(
+            (item: any) => item.customerType?.toUpperCase() === "INDIVIDUAL"
+          );
+          if (org) {
+            setCustomerType("Organization");
+            setLinks(CustomerLinks);
+          } else if (individual) {
+            setCustomerType("Individual");
+            setLinks(
+              CustomerLinks.filter(
+                (link) =>
+                  link.to !== "/customer/addPromoter" &&
+                  link.to !== "/customer/promoters"
+              )
+            );
+          } else {
+            setLinks(CustomerLinks);
+          }
+        } catch (error) {
+          setLinks(CustomerLinks);
+        }
+      } else if (roleFromStorage === "Admin") {
+        setLinks(AdminLinks);
+      } else if (roleFromStorage === "SuperAdmin") {
+        setLinks(SuperAdminLinks);
+      } else if (roleFromStorage === "Bank") {
+        setLinks(BankLinks);
+      } else {
+        setLinks([]);
+      }
+    };
+    fetchCustomerTypeAndSetLinks();
   }, []);
 
   const isActive = (path: string) => location.pathname === path;
@@ -71,10 +115,6 @@ const AppSidebar = () => {
         return []; // ✨ fallback if no role found
     }
   };
-
-  // ✨ Get links for current role
-  const links = getLinksByRole(Role);
-
 
   const isCollapsed = sidebarState === "collapsed";
 

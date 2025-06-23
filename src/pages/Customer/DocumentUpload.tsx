@@ -24,7 +24,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const DocumentUpload = () => {
   const navigate = useNavigate();
-  const { getValueFromLocalStorage } = useLocalStorage();//useUser();
+  const { getValueFromLocalStorage, setValueToLocalStorage } = useLocalStorage();
   const token = getValueFromLocalStorage("token");
   const { addDocument, removeDocument, submitFolder, getFolderDocuments, isFolderSubmitted } = useDocuments();
   const { syncCustomerDocuments } = useCustomers();
@@ -58,10 +58,12 @@ const DocumentUpload = () => {
 
         if (org) {
           setCustomerType("Organization");
+          setValueToLocalStorage("customerType", "Organization");
           setOrgCategories(org.documentsByCategory);
           setPromoterCategories(promoter?.documentsByCategory || []);
         } else if (individual) {
           setCustomerType("Individual");
+          setValueToLocalStorage("customerType", "Individual");
           setOrgCategories(individual.documentsByCategory);
           setPromoterCategories([]);
         }
