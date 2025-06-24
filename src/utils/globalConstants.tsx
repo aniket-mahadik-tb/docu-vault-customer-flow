@@ -6,65 +6,65 @@ import { Customer } from "@/contexts/CustomerContext";
 import { GetDocumentByPanCardResponseType } from "./types";
 
 interface SidebarLinkProps {
-    to: string;
-    icon: React.ComponentType<any>;
-    label: string;
+  to: string;
+  icon: React.ComponentType<any>;
+  label: string;
 }
 
 const mockFile: DocumentFile[] = [
-    {
-        id: "DOC001",
-        name: "PAN Card.pdf",
-        type: "kyc1",
-        size: 1.5 * 1024 * 1024,
-        uploaded: new Date(),
-        lastModified: 123456789,
-        url: "/placeholder.svg",
-        isBlobUrl: false
-    },
-    {
-        id: "DOC002",
-        name: "ADHAR Card.pdf",
-        type: "kyc1",
-        size: 1.5 * 1024 * 1024,
-        uploaded: new Date(),
-        lastModified: 123456789,
-        url: "/placeholder.svg",
-        isBlobUrl: false
-    },
-    {
-        id: "DOC003",
-        name: "BANK STATEMENT.pdf",
-        type: "kyc1",
-        size: 1.5 * 1024 * 1024,
-        uploaded: new Date(),
-        lastModified: 123456789,
-        url: "/placeholder.svg",
-        isBlobUrl: false
-    },
+  {
+    id: "DOC001",
+    name: "PAN Card.pdf",
+    type: "kyc1",
+    size: 1.5 * 1024 * 1024,
+    uploaded: new Date(),
+    lastModified: 123456789,
+    url: "/placeholder.svg",
+    isBlobUrl: false
+  },
+  {
+    id: "DOC002",
+    name: "ADHAR Card.pdf",
+    type: "kyc1",
+    size: 1.5 * 1024 * 1024,
+    uploaded: new Date(),
+    lastModified: 123456789,
+    url: "/placeholder.svg",
+    isBlobUrl: false
+  },
+  {
+    id: "DOC003",
+    name: "BANK STATEMENT.pdf",
+    type: "kyc1",
+    size: 1.5 * 1024 * 1024,
+    uploaded: new Date(),
+    lastModified: 123456789,
+    url: "/placeholder.svg",
+    isBlobUrl: false
+  },
 ]
 
 const mockDocumentFolder1: DocumentFolder[] = [
-    {
-        name: "kyc1",
-        files: mockFile,
-        submitted: true,
-    },
-    {
-        name: "bank documents",
-        files: [],
-        submitted: false,
-    },
-    {
-        name: "Financial Documents",
-        files: [],
-        submitted: false,
-    },
-    {
-        name: "Financial Documents",
-        files: [],
-        submitted: false,
-    }
+  {
+    name: "kyc1",
+    files: mockFile,
+    submitted: true,
+  },
+  {
+    name: "bank documents",
+    files: [],
+    submitted: false,
+  },
+  {
+    name: "Financial Documents",
+    files: [],
+    submitted: false,
+  },
+  {
+    name: "Financial Documents",
+    files: [],
+    submitted: false,
+  }
 ]
 
 const mockDocumentFolder2: DocumentFolder[] = []
@@ -72,196 +72,197 @@ const mockDocumentFolder3: DocumentFolder[] = []
 
 
 const mockDocumentRoot: ModifiedDocumentRoot[] = [
-    {
-        userId: "CUST001",
-        folders: { "AAAAA1234A": mockDocumentFolder1 }
-    },
-    {
-        userId: "CUST002",
-        folders: { "ABCDE1234G": mockDocumentFolder2 }
-    },
-    {
-        userId: "CUST003",
-        folders: { "PQRST1234U": mockDocumentFolder3 }
-    }
+  {
+    userId: "CUST001",
+    folders: { "AAAAA1234A": mockDocumentFolder1 }
+  },
+  {
+    userId: "CUST002",
+    folders: { "ABCDE1234G": mockDocumentFolder2 }
+  },
+  {
+    userId: "CUST003",
+    folders: { "PQRST1234U": mockDocumentFolder3 }
+  }
 ]
 
 const mockUsers: Partial<UserContextType>[] = [
-    {
-        role: "SuperAdmin",
-    }
+  {
+    role: "SuperAdmin",
+  }
 ];
 
 
 export const CustomerLinks: SidebarLinkProps[] = [
-    { to: "/customer/dashboard", icon: Home, label: "Dashboard" },
-    { to: "/customer/upload", icon: Upload, label: "Upload Documents" },
-    { to: "/customer/status", icon: ClipboardList, label: "View Status" },
-    { to: "/customer/addPromoter", icon: ClipboardList, label: "View Status" },
+  { to: "/customer/dashboard", icon: Home, label: "Dashboard" },
+  { to: "/customer/upload", icon: Upload, label: "Upload Documents" },
+  { to: "/customer/status", icon: ClipboardList, label: "View Status" },
+  { to: "/customer/addPromoter", icon: Users, label: "Add new Promoters" },
+  { to: "/customer/promoters", icon: FileText, label: "Promoters List" },
 ];
 
 export const AdminLinks: SidebarLinkProps[] = [
-    { to: "/admin/dashboard", icon: BarChart2, label: "Dashboard" },
-    { to: "/admin/customers", icon: Users, label: "Customer List" },
-    // { to: "/admin/review", icon: FileText, label: "Review Documents" },
-    { to: "/admin/share", icon: Share2, label: "Share with Bank" },
-    { to: "/admin/new-customer", icon: User, label: "New Customer" },
+  { to: "/admin/dashboard", icon: BarChart2, label: "Dashboard" },
+  { to: "/admin/customers", icon: Users, label: "Customer List" },
+  // { to: "/admin/review", icon: FileText, label: "Review Documents" },
+  { to: "/admin/share", icon: Share2, label: "Share with Bank" },
+  { to: "/admin/new-customer", icon: User, label: "New Customer" },
 ];
 
 export const SuperAdminLinks: SidebarLinkProps[] = [
-    { to: "/admin/dashboard", icon: BarChart2, label: "Dashboard" },
-    { to: "/admin/new-customer", icon: User, label: "Create New Customer" },
-    { to: "/admin/customers", icon: Users, label: "Customer List" },
-    // { to: "/admin/review", icon: FileText, label: "Review Documents" },
-    { to: "/admin/share", icon: Share2, label: "Share with Bank" },
-    { to: "/admin/new-admin", icon: User, label: "Create New Admin" },
-    { to: "/admin/admins", icon: Shield, label: "Admin List" },
-    { to: "/admin/new-bank-user", icon: User, label: "Create New Bank User" },
-    { to: "/admin/bank-users", icon: Users, label: "Bank User List" },
+  { to: "/admin/dashboard", icon: BarChart2, label: "Dashboard" },
+  { to: "/admin/new-customer", icon: User, label: "Create New Customer" },
+  { to: "/admin/customers", icon: Users, label: "Customer List" },
+  // { to: "/admin/review", icon: FileText, label: "Review Documents" },
+  { to: "/admin/share", icon: Share2, label: "Share with Bank" },
+  { to: "/admin/new-admin", icon: User, label: "Create New Admin" },
+  { to: "/admin/admins", icon: Shield, label: "Admin List" },
+  { to: "/admin/new-bank-user", icon: User, label: "Create New Bank User" },
+  { to: "/admin/bank-users", icon: Users, label: "Bank User List" },
 
 ];
 
 export const BankLinks: SidebarLinkProps[] = [
-    { to: "/bank/dashboard", icon: BarChart2, label: "Dashboard" },
-    { to: "/bank/documents", icon: Folder, label: "Shared Documents" },
-    { to: "/bank/notes", icon: MessageSquare, label: "View Notes" },
+  { to: "/bank/dashboard", icon: BarChart2, label: "Dashboard" },
+  { to: "/bank/documents", icon: Folder, label: "Shared Documents" },
+  { to: "/bank/notes", icon: MessageSquare, label: "View Notes" },
 ];
 
 export const initialCustomers: Customer[] = [
-    {
-        id: "CUST001",
-        name: "Rajesh Kumar",
-        email: "rajesh@example.com",
-        phone: "9876543210",
-        panCard: "ABCDE1234F",
-        businessName: "Kumar Enterprises",
-        documentsSubmitted: true,
-        createdAt: new Date().toISOString(),
-        documents: [
-            {
-                id: "DOC001",
-                name: "PAN Card.pdf",
-                sectionId: "section1",
-                documentTypeId: "kyc1",
-                status: "pending",
-                uploadedAt: new Date().toISOString(),
-                fileUrl: "/placeholder.svg",
-            },
-            {
-                id: "DOC002",
-                name: "Aadhaar Card.pdf",
-                sectionId: "section1",
-                documentTypeId: "kyc2",
-                status: "pending",
-                uploadedAt: new Date().toISOString(),
-                fileUrl: "/placeholder.svg",
-            },
-            {
-                id: "DOC001",
-                name: "PAN Card.pdf",
-                sectionId: "section1",
-                documentTypeId: "kyc1",
-                status: "pending",
-                uploadedAt: new Date().toISOString(),
-                fileUrl: "/placeholder.svg",
-            },
-            {
-                id: "DOC003",
-                name: "Bank Statement.pdf",
-                sectionId: "section2",
-                documentTypeId: "kyc2",
-                status: "pending",
-                uploadedAt: new Date().toISOString(),
-                fileUrl: "/placeholder.svg",
-            },
-            {
-                id: "DOC004",
-                name: "Bank Noc.pdf",
-                sectionId: "section2",
-                documentTypeId: "kyc1",
-                status: "pending",
-                uploadedAt: new Date().toISOString(),
-                fileUrl: "/placeholder.svg",
-            },
-            {
-                id: "DOC005",
-                name: "Tax Reciept.pdf",
-                sectionId: "section1",
-                documentTypeId: "kyc4",
-                status: "pending",
-                uploadedAt: new Date().toISOString(),
-                fileUrl: "/placeholder.svg",
-            },
-            {
-                id: "DOC006",
-                name: "Loan Statement.pdf",
-                sectionId: "section3",
-                documentTypeId: "kyc1",
-                status: "pending",
-                uploadedAt: new Date().toISOString(),
-                fileUrl: "/placeholder.svg",
-            },
-            {
-                id: "DOC007",
-                name: "7/12.pdf",
-                sectionId: "section5",
-                documentTypeId: "kyc2",
-                status: "pending",
-                uploadedAt: new Date().toISOString(),
-                fileUrl: "/placeholder.svg",
-            },
-            {
-                id: "DOC008",
-                name: "8A.pdf",
-                sectionId: "section5",
-                documentTypeId: "kyc1",
-                status: "pending",
-                uploadedAt: new Date().toISOString(),
-                fileUrl: "/placeholder.svg",
-            },
-            {
-                id: "DOC009",
-                name: "Loan Closure.pdf",
-                sectionId: "section3",
-                documentTypeId: "kyc2",
-                status: "pending",
-                uploadedAt: new Date().toISOString(),
-                fileUrl: "/placeholder.svg",
-            },
-        ],
-    },
-    {
-        id: "CUST002",
-        name: "Priya Sharma",
-        email: "priya@example.com",
-        phone: "8765432109",
-        panCard: "FGHIJ5678K",
-        businessName: "Sharma Trading Co.",
-        documentsSubmitted: true,
-        createdAt: new Date().toISOString(),
-        documents: [
-            {
-                id: "DOC003",
-                name: "Income Tax Returns.pdf",
-                sectionId: "section4",
-                documentTypeId: "fin1",
-                status: "pending",
-                uploadedAt: new Date().toISOString(),
-                fileUrl: "/placeholder.svg",
-            },
-        ],
-    },
-    {
-        id: "CUST003",
-        name: "Amit Patel",
-        email: "amit@example.com",
-        phone: "7654321098",
-        panCard: "LMNOP9012Q",
-        businessName: "Patel Industries",
-        documentsSubmitted: false,
-        createdAt: new Date().toISOString(),
-        documents: [],
-    },
+  {
+    id: "CUST001",
+    name: "Rajesh Kumar",
+    email: "rajesh@example.com",
+    phone: "9876543210",
+    panCard: "ABCDE1234F",
+    businessName: "Kumar Enterprises",
+    documentsSubmitted: true,
+    createdAt: new Date().toISOString(),
+    documents: [
+      {
+        id: "DOC001",
+        name: "PAN Card.pdf",
+        sectionId: "section1",
+        documentTypeId: "kyc1",
+        status: "pending",
+        uploadedAt: new Date().toISOString(),
+        fileUrl: "/placeholder.svg",
+      },
+      {
+        id: "DOC002",
+        name: "Aadhaar Card.pdf",
+        sectionId: "section1",
+        documentTypeId: "kyc2",
+        status: "pending",
+        uploadedAt: new Date().toISOString(),
+        fileUrl: "/placeholder.svg",
+      },
+      {
+        id: "DOC001",
+        name: "PAN Card.pdf",
+        sectionId: "section1",
+        documentTypeId: "kyc1",
+        status: "pending",
+        uploadedAt: new Date().toISOString(),
+        fileUrl: "/placeholder.svg",
+      },
+      {
+        id: "DOC003",
+        name: "Bank Statement.pdf",
+        sectionId: "section2",
+        documentTypeId: "kyc2",
+        status: "pending",
+        uploadedAt: new Date().toISOString(),
+        fileUrl: "/placeholder.svg",
+      },
+      {
+        id: "DOC004",
+        name: "Bank Noc.pdf",
+        sectionId: "section2",
+        documentTypeId: "kyc1",
+        status: "pending",
+        uploadedAt: new Date().toISOString(),
+        fileUrl: "/placeholder.svg",
+      },
+      {
+        id: "DOC005",
+        name: "Tax Reciept.pdf",
+        sectionId: "section1",
+        documentTypeId: "kyc4",
+        status: "pending",
+        uploadedAt: new Date().toISOString(),
+        fileUrl: "/placeholder.svg",
+      },
+      {
+        id: "DOC006",
+        name: "Loan Statement.pdf",
+        sectionId: "section3",
+        documentTypeId: "kyc1",
+        status: "pending",
+        uploadedAt: new Date().toISOString(),
+        fileUrl: "/placeholder.svg",
+      },
+      {
+        id: "DOC007",
+        name: "7/12.pdf",
+        sectionId: "section5",
+        documentTypeId: "kyc2",
+        status: "pending",
+        uploadedAt: new Date().toISOString(),
+        fileUrl: "/placeholder.svg",
+      },
+      {
+        id: "DOC008",
+        name: "8A.pdf",
+        sectionId: "section5",
+        documentTypeId: "kyc1",
+        status: "pending",
+        uploadedAt: new Date().toISOString(),
+        fileUrl: "/placeholder.svg",
+      },
+      {
+        id: "DOC009",
+        name: "Loan Closure.pdf",
+        sectionId: "section3",
+        documentTypeId: "kyc2",
+        status: "pending",
+        uploadedAt: new Date().toISOString(),
+        fileUrl: "/placeholder.svg",
+      },
+    ],
+  },
+  {
+    id: "CUST002",
+    name: "Priya Sharma",
+    email: "priya@example.com",
+    phone: "8765432109",
+    panCard: "FGHIJ5678K",
+    businessName: "Sharma Trading Co.",
+    documentsSubmitted: true,
+    createdAt: new Date().toISOString(),
+    documents: [
+      {
+        id: "DOC003",
+        name: "Income Tax Returns.pdf",
+        sectionId: "section4",
+        documentTypeId: "fin1",
+        status: "pending",
+        uploadedAt: new Date().toISOString(),
+        fileUrl: "/placeholder.svg",
+      },
+    ],
+  },
+  {
+    id: "CUST003",
+    name: "Amit Patel",
+    email: "amit@example.com",
+    phone: "7654321098",
+    panCard: "LMNOP9012Q",
+    businessName: "Patel Industries",
+    documentsSubmitted: false,
+    createdAt: new Date().toISOString(),
+    documents: [],
+  },
 ];
 
 export const documentSections = [
@@ -462,59 +463,75 @@ export const documentSections = [
 
 
 export const GetDocumentByPanCardResponse: GetDocumentByPanCardResponseType = {
-    "customerType": "INDIVIDUAL",
-    "documentsByCategory": [
+  "customerType": "INDIVIDUAL",
+  "documentsByCategory": [
+    {
+      "category": "ALL EXISTING FACILITIES LOAN DETAILS (ANNEXURE B)",
+      "documents": [
         {
-            "category": "ALL EXISTING FACILITIES LOAN DETAILS (ANNEXURE B)",
-            "documents": [
-                {
-                    "id": "bfb63dea-6ad9-4553-9c13-fcc429b9e9b0",
-                    "documentType": "ANNEXURE B",
-                    "isMandatory": true,
-                    "isMultiple": true,
-                    "files": [
-                        "gst1.pdf"
-                    ],
-                    "status": "SUBMITTED"
-                }
-            ]
+          "id": "bfb63dea-6ad9-4553-9c13-fcc429b9e9b0",
+          "documentType": "ANNEXURE B",
+          "isMandatory": true,
+          "isMultiple": true,
+          "files": [
+            {
+              "docId": "b014a620-e944-49d3-88ca-25ce793b88b7",
+              "docName": "pan123.pdf",
+              "docStatus": "SUBMITTED"
+            }
+          ],
+          "status": "SUBMITTED"
+        }
+      ]
+    },
+    {
+      "category": "KYC",
+      "documents": [
+        {
+          "id": "f9838a54-8e57-4576-8ce7-d9629f2b6f53",
+          "documentType": "Latest Electricity Bill copy/Address proof",
+          "isMandatory": true,
+          "isMultiple": true,
+          "files": [
+            {
+              "docId": "35c278d9-d228-4257-acc6-03feb657003d",
+              "docName": "gst1.pdf",
+              "docStatus": "APPROVED"
+            }
+          ],
+          "status": "SUBMITTED"
         },
         {
-            "category": "KYC",
-            "documents": [
-                {
-                    "id": "f9838a54-8e57-4576-8ce7-d9629f2b6f53",
-                    "documentType": "Latest Electricity Bill copy/Address proof",
-                    "isMandatory": true,
-                    "isMultiple": true,
-                    "files": [
-                        "address1.pdf"
-                    ],
-                    "status": "SUBMITTED"
-                },
-                {
-                    "id": "d2723c23-fd00-446f-9e25-6a4251ff23a8",
-                    "documentType": "PAN",
-                    "isMandatory": true,
-                    "isMultiple": true,
-                    "files": [
-                        "pan1.pdf"
-                    ],
-                    "status": "SUBMITTED"
-                },
-                {
-                    "id": "d968ac8e-4224-4330-a55a-9aa48626c81f",
-                    "documentType": "Aadhaar (both sides)",
-                    "isMandatory": true,
-                    "isMultiple": true,
-                    "files": [
-                        "aadhaar1.pdf"
-                    ],
-                    "status": "SUBMITTED"
-                }
-            ]
+          "id": "d2723c23-fd00-446f-9e25-6a4251ff23a8",
+          "documentType": "PAN",
+          "isMandatory": true,
+          "isMultiple": true,
+          "files": [
+            {
+              "docId": "47908c82-88bd-47f8-aec1-158e159d5843",
+              "docName": "aadhaar1.pdf",
+              "docStatus": "SUBMITTED"
+            }
+          ],
+          "status": "SUBMITTED"
+        },
+        {
+          "id": "d968ac8e-4224-4330-a55a-9aa48626c81f",
+          "documentType": "Aadhaar (both sides)",
+          "isMandatory": true,
+          "isMultiple": true,
+          "files": [
+            {
+              "docId": "901e8959-ed57-482f-bd0f-a1c974d69c5e",
+              "docName": "address1.pdf",
+              "docStatus": "SUBMITTED"
+            }
+          ],
+          "status": "SUBMITTED"
         }
-    ]
+      ]
+    }
+  ]
 }
 
 

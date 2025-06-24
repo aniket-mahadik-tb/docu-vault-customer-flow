@@ -177,110 +177,29 @@ const BankUsersList = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort("name")}
-                    className="flex items-center gap-1"
-                  >
-                    Name
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort("email")}
-                    className="flex items-center gap-1"
-                  >
-                    Email
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort("bankName")}
-                    className="flex items-center gap-1"
-                  >
-                    Bank Name
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort("status")}
-                    className="flex items-center gap-1"
-                  >
-                    Status
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort("lastLogin")}
-                    className="flex items-center gap-1"
-                  >
-                    Last Login
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
+                <TableHead className="text-center">Name</TableHead>
+                <TableHead className="text-center">Email</TableHead>
+                <TableHead className="text-center">Bank Name</TableHead>
+                <TableHead className="text-center">Status</TableHead>
+                <TableHead className="text-center">Last Login</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAndSortedUsers.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell>{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.bankName}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                        }`}
-                    >
-                      {user.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(user.lastLogin), "MMM d, yyyy HH:mm")}
-                  </TableCell>
-                  {/* <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => navigate(`/admin/edit-bank-user/${user.id}`)}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setUserToDelete(user.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell> */}
-                  <TableCell>
-                    <div className="flex gap-2">
+                  <TableCell className="text-center font-medium">{user.name}</TableCell>
+                  <TableCell className="text-center">{user.email}</TableCell>
+                  <TableCell className="text-center">{user.bankName}</TableCell>
+                  <TableCell className="text-center">{user.status}</TableCell>
+                  <TableCell className="text-center">{user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}</TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex gap-2 justify-center">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => { setEditBankUserData(user), setEditBankUser(true) }}
                       >
-                        {/* <Eye className="h-4 w-4 mr-1" /> View */}
                         <Pencil className="mr-1 h-4 w-4" />
                         Edit
                       </Button>
@@ -294,7 +213,6 @@ const BankUsersList = () => {
                       </Button>
                     </div>
                   </TableCell>
-
                 </TableRow>
               ))}
               {filteredAndSortedUsers.length === 0 && (

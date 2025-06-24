@@ -13,14 +13,14 @@ const Index = () => {
   const{getValueFromLocalStorage,setValueToLocalStorage} = useLocalStorage();
 
   const portalCards = [
-    {
-      title: "Customer Portal",
-      description: "Upload documents and track your submission status",
-      icon: <User className="h-12 w-12 text-primary" />,
-      path: "/customer",
-      role: "Customer" as const,
-      color: "bg-primary/5 hover:bg-primary/10 border-primary/20",
-    },
+    // {
+    //   title: "Customer Portal",
+    //   description: "Upload documents and track your submission status",
+    //   icon: <User className="h-12 w-12 text-primary" />,
+    //   path: "/customer",
+    //   role: "Customer" as const,
+    //   color: "bg-primary/5 hover:bg-primary/10 border-primary/20",
+    // },
     {
       title: "Admin Portal",
       description: "Manage users and document submissions",
@@ -55,7 +55,7 @@ const Index = () => {
       <div className="py-8">
         <h1 className="text-3xl font-bold text-center mb-8">Document Management System</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
           {portalCards.map((card, index) => (
             <Card 
               key={index} 

@@ -134,23 +134,23 @@ const AdminsList = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Admin ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Last Login</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="text-center">Admin ID</TableHead>
+                    <TableHead className="text-center">Name</TableHead>
+                    <TableHead className="text-center">Email</TableHead>
+                    <TableHead className="text-center">Role</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Last Login</TableHead>
+                    <TableHead className="w-40 text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {admins.length > 0 ? (
                     admins.map((admin) => (
                       <TableRow key={admin.id}>
-                        <TableCell>{admin.id}</TableCell>
-                        <TableCell className="font-medium">{admin.name}</TableCell>
-                        <TableCell>{admin.email}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">{admin.id}</TableCell>
+                        <TableCell className="text-center font-medium">{admin.name}</TableCell>
+                        <TableCell className="text-center">{admin.email}</TableCell>
+                        <TableCell className="text-center">
                           <span className={`px-2 py-1 rounded-full text-xs ${admin.role === "SuperAdmin"
                             ? "bg-purple-100 text-purple-800"
                             : "bg-blue-100 text-blue-800"
@@ -158,7 +158,7 @@ const AdminsList = () => {
                             {admin.role}
                           </span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">
                           <span className={`px-2 py-1 rounded-full text-xs ${admin.status === "active"
                             ? "bg-green-100 text-green-800"
                             : "bg-gray-100 text-gray-800"
@@ -166,47 +166,14 @@ const AdminsList = () => {
                             {admin.status}
                           </span>
                         </TableCell>
-                        <TableCell>
-                          {new Date(admin.lastLogin).toLocaleDateString()}
-                        </TableCell>
-                        {/* <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewAdmin(admin)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" /> View
-                            </Button>
-                            {userId && canEditAdmin(userId, admin.id) && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEditAdmin(admin)}
-                                >
-                                  <Pencil className="h-4 w-4 mr-1" /> Edit
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  onClick={() => handleDeleteAdmin(admin)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-1" /> Remove
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell> */}
-                        <TableCell>
-                          <div className="flex gap-2">
+                        <TableCell className="text-center">{new Date(admin.lastLogin).toLocaleDateString()}</TableCell>
+                        <TableCell className="w-40 text-center">
+                          <div className="flex gap-2 justify-center">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={(e) => { setEditAdminData(admin); setEditAdmin(true); e.stopPropagation(); }}
                             >
-                              {/* <Eye className="h-4 w-4 mr-1" /> View */}
                               <Pencil className="mr-1 h-4 w-4" />
                               Edit
                             </Button>

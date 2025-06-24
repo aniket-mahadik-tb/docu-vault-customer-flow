@@ -83,10 +83,10 @@ const DocumentUpload = () => {
       // Default table
       orgCategories.forEach(category => {
         category.documents.forEach(document => {
-          const folderId = `documents_${document.id}`;
+          const folderId = `documents_${document.documentMasterId}`;
           const folderDocuments = getFolderDocuments(token, folderId);
           if (folderDocuments.length > 0) {
-            syncedFiles[document.id] = folderDocuments;
+            syncedFiles[document.documentMasterId] = folderDocuments;
           }
         });
       });
@@ -95,7 +95,7 @@ const DocumentUpload = () => {
       promoterCategories.forEach(category => {
         category.documents.forEach(document => {
           for (let i = 0; i < promoters.length; i++) {
-            const promoterDocId = `${document.id}_promoter${i}`;
+            const promoterDocId = `${document.documentMasterId}_promoter${i}`;
             const folderDocuments = getFolderDocuments(token, promoterDocId);
             if (folderDocuments.length > 0) {
               syncedFiles[promoterDocId] = folderDocuments;
@@ -112,27 +112,27 @@ const DocumentUpload = () => {
 
   const handleFileUpload = async (documentId: string, files: FileList) => {
     if (!token) return;
-  
+
     try {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
       const folderId = `documents_${documentId}`;
-  
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
+
         // Add to local context for UI display (this was the original behavior)
         await addDocument(token, folderId, file);
-        
+
         // Also make API call
         const formData = new FormData();
         formData.append("documentMasterId", documentId);
         formData.append("file", file);
         await documentUploadService.uploadDocuments(formData);
       }
-  
+
       // Submit folder after all files are processed
       submitFolder(token, folderId);
-      
+
       // Sync the uploaded files state to reflect changes
       const syncedFiles: Record<string, DocumentFile[]> = {};
       const folderDocuments = getFolderDocuments(token, folderId);
@@ -140,12 +140,12 @@ const DocumentUpload = () => {
         syncedFiles[documentId] = folderDocuments;
       }
       setUploadedFiles(prev => ({ ...prev, ...syncedFiles }));
-  
+
       toast({
         title: "Files uploaded",
         description: `${files.length} file(s) uploaded successfully`,
       });
-  
+
     } catch (error) {
       console.error("Error uploading files:", error);
       toast({
@@ -157,20 +157,20 @@ const DocumentUpload = () => {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: false }));
     }
   };
-  
+
 
   const handleRemoveFile = (documentId: string, fileId: string) => {
     if (!token) return;
     const folderId = `documents_${documentId}`;
     removeDocument(token, folderId, fileId);
-    
+
     // Sync the uploaded files state to reflect changes
     const folderDocuments = getFolderDocuments(token, folderId);
     setUploadedFiles(prev => ({
       ...prev,
       [documentId]: folderDocuments
     }));
-    
+
     toast({
       title: "File removed",
       description: "Document has been removed",
@@ -266,7 +266,7 @@ const DocumentUpload = () => {
                   </TableHeader>
                   <TableBody>
                     {category.documents.map((document: DocumentType) => (
-                      <TableRow key={document.id}>
+                      <TableRow key={document.documentMasterId}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             {document.documentType}
@@ -287,17 +287,17 @@ const DocumentUpload = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {getStatusBadge(document.id)}
+                          {getStatusBadge(document.documentMasterId)}
                         </TableCell>
                         <TableCell>
-                          {uploadedFiles[document.id] && uploadedFiles[document.id].length > 0 ? (
+                          {uploadedFiles[document.documentMasterId] && uploadedFiles[document.documentMasterId].length > 0 ? (
                             <div className="space-y-1">
-                              {uploadedFiles[document.id].map((file, fileIndex) => (
+                              {uploadedFiles[document.documentMasterId].map((file, fileIndex) => (
                                 <div key={file.id} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleRemoveFile(document.id, file.id)}
+                                    onClick={() => handleRemoveFile(document.documentMasterId, file.id)}
                                     className="h-6 w-6 p-0 text-red-600 hover:text-red-800 mr-1"
                                     aria-label="Delete file"
                                   >
@@ -310,9 +310,9 @@ const DocumentUpload = () => {
                                     <>
                                       <input
                                         type="file"
-                                        id={`file-plus-${document.id}`}
+                                        id={`file-plus-${document.documentMasterId}`}
                                         multiple
-                                        onChange={(e) => e.target.files && handleFileUpload(document.id, e.target.files)}
+                                        onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files)}
                                         className="hidden"
                                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                       />
@@ -321,7 +321,7 @@ const DocumentUpload = () => {
                                         size="sm"
                                         className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50"
                                         aria-label="Add more files"
-                                        onClick={() => window.document.getElementById(`file-plus-${document.id}`)?.click()}
+                                        onClick={() => window.document.getElementById(`file-plus-${document.documentMasterId}`)?.click()}
                                       >
                                         <Plus className="h-4 w-4" />
                                       </Button>
@@ -347,22 +347,22 @@ const DocumentUpload = () => {
                           <div className="flex items-center space-x-2">
                             <input
                               type="file"
-                              id={`file-${document.id}`}
+                              id={`file-${document.documentMasterId}`}
                               multiple
-                              onChange={(e) => e.target.files && handleFileUpload(document.id, e.target.files)}
+                              onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files)}
                               className="hidden"
                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                             />
-                            <label htmlFor={`file-${document.id}`}>
+                            <label htmlFor={`file-${document.documentMasterId}`}>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                disabled={uploadingDocuments[document.id]}
+                                disabled={uploadingDocuments[document.documentMasterId]}
                                 className="cursor-pointer min-w-[140px] flex items-center justify-center"
                                 asChild
                               >
                                 <span>
-                                  {uploadingDocuments[document.id] ? (
+                                  {uploadingDocuments[document.documentMasterId] ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
                                   ) : (
                                     <Upload className="h-4 w-4" />
@@ -423,7 +423,7 @@ const DocumentUpload = () => {
                           <TableBody>
                             {category.documents.map((document: DocumentType) => {
                               // Unique document id per promoter
-                              const promoterDocId = `${document.id}_promoter${promoterIndex}`;
+                              const promoterDocId = `${document.documentMasterId}_promoter${promoterIndex}`;
                               return (
                                 <TableRow key={promoterDocId}>
                                   <TableCell className="font-medium">

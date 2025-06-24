@@ -6,6 +6,7 @@ export interface DocumentType {
   id: string;
   documentType: string;
   isMandatory: boolean;
+  documentMasterId: string
 }
 
 export interface DocumentCategory {

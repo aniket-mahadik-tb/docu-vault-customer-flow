@@ -32,7 +32,7 @@ import { ShimmerButton, ShimmerSectionHeader, ShimmerText, ShimmerThumbnail, Shi
 import { resolve } from "path";
 import { set } from "date-fns";
 import { useTempCustomer } from "@/utils/TempContext";
-import { CustomerType, DocumentResponseType } from "@/utils/types";
+import { CustomerType, DocumentResponseType, FileResponseType } from "@/utils/types";
 
 // Document sections with their titles
 const documentSections = [
@@ -57,6 +57,43 @@ const getStatusBadge = (status: string) => {
   }
 };
 
+// Define a larger color palette for file count badges
+const badgeColors = [
+  'bg-blue-100 text-blue-800',
+  'bg-green-100 text-green-800',
+  'bg-purple-100 text-purple-800',
+  'bg-orange-100 text-orange-800',
+  'bg-pink-100 text-pink-800',
+  'bg-yellow-100 text-yellow-800',
+  'bg-indigo-100 text-indigo-800',
+  'bg-teal-100 text-teal-800',
+  'bg-red-100 text-red-800',
+  'bg-cyan-100 text-cyan-800',
+  'bg-lime-100 text-lime-800',
+  'bg-fuchsia-100 text-fuchsia-800',
+];
+
+// Utility to get color class by file extension
+const fileTypeColors = {
+  pdf: 'bg-red-100 text-red-800',
+  doc: 'bg-blue-100 text-blue-800',
+  docx: 'bg-blue-100 text-blue-800',
+  xls: 'bg-green-100 text-green-800',
+  xlsx: 'bg-green-100 text-green-800',
+  csv: 'bg-yellow-100 text-yellow-800',
+  jpg: 'bg-pink-100 text-pink-800',
+  jpeg: 'bg-pink-100 text-pink-800',
+  png: 'bg-purple-100 text-purple-800',
+  txt: 'bg-gray-100 text-gray-800',
+  zip: 'bg-indigo-100 text-indigo-800',
+  default: 'bg-gray-100 text-gray-800',
+};
+
+function getFileTypeColor(fileName: string) {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  return fileTypeColors[ext] || fileTypeColors.default;
+}
+
 const CustomerDetail = () => {
 
   const { getCustomer, generateUploadLink, syncCustomerDocuments } = useCustomers();
@@ -66,6 +103,7 @@ const CustomerDetail = () => {
   const [reuploadLink, setReuploadLink] = useState<string | null>(null);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [generatingLink, setGeneratingLink] = useState(false);
+
 
   const documentSections = {
     section1: "KYC Documents",
@@ -77,48 +115,56 @@ const CustomerDetail = () => {
   }
 
   const [customer, setCustomer] = useState<CustomerType | null>(null);
-  const { tempCustomer } = useTempCustomer();
+  const { tempCustomer, setTempCustomer } = useTempCustomer();
   const [allDocuments, setAllDocuments] = useState<DocumentResponseType[] | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const entriesPerPage = 8;
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 
   useEffect(() => {
-    (async function fetchCustomer() {
-      try {
-        if (true) {
+    effcts();
+  }, [tempCustomer])
 
-          if (tempCustomer) {
-            setCustomer(tempCustomer);
-            const documents: DocumentResponseType[] = tempCustomer.documents.documentsByCategory.flatMap((cat: any) =>
-              (cat.documents || []).map((doc: any) => ({ ...doc, category: cat.category }))
-            );
-            console.log(documents);
-            setAllDocuments(documents);
-          } else {
-            // If customer not found, redirect to customer list
-            toast({
-              title: `failed to fetch customer details`,
-              description: "Something went wrong please try again",
-              variant: "destructive",
-            });
-            navigate("/admin/customers");
-          }
-
-        }
-      } catch (error) {
-        console.error("Error fetching customer:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch customer details. Please try again.",
-          variant: "destructive",
-        });
-        navigate("/admin/customers");
-      }
-    }
-    )();
+  useEffect(() => {
+    effcts();
   }, [])
 
+  // useEffect(() => {
+  //   console.log(allDocuments)
+  // }, [allDocuments])
+
+  const effcts = async function fetchCustomer() {
+    try {
+      if (true) {
+
+        if (tempCustomer) {
+          setCustomer(tempCustomer);
+          const documents: DocumentResponseType[] = tempCustomer.documents.documentsByCategory.flatMap((cat: any) =>
+            (cat.documents || []).map((doc: any) => ({ ...doc, category: cat.category }))
+          );
+          setAllDocuments(documents);
+        } else {
+          // If customer not found, redirect to customer list
+          toast({
+            title: `failed to fetch customer details`,
+            description: "Something went wrong please try again",
+            variant: "destructive",
+          });
+          navigate("/admin/customers");
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching customer:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch customer details. Please try again.",
+        variant: "destructive",
+      });
+      navigate("/admin/customers");
+    }
+  }
 
   if (!customer) {
     return (
@@ -274,11 +320,8 @@ const CustomerDetail = () => {
           description: `Upload link ready to share with ${customer.email}`,
         });
       }
-
-
     } catch (error) {
       console.error("Error generating upload link:", error);
-
       setGeneratingLink(false);
       toast({
         title: "Error",
@@ -301,26 +344,51 @@ const CustomerDetail = () => {
   };
 
   const handleSyncDocuments = async () => {
-    if (customer) {
-      const res = await customerService.getCustomerById("hiii");
-      if (res.status == 200) {
-        setCustomer(res.data);
-      } else {
-        // If customer not found, redirect to customer list
-        toast({
-          title: `failed to fetch customer details`,
-          description: "Something went wrong please try again",
-          variant: "destructive",
+    try {
+      const response = await customerService.getCustomerDocuments(customer.pan);
+      const documents: DocumentResponseType[] = tempCustomer.documents.documentsByCategory.flatMap((cat: any) =>
+        (cat.documents || []).map((doc: any) => ({ ...doc, category: cat.category }))
+      );
 
-        });
-        navigate("/admin/customers");
-      }
+      setTempCustomer({ ...customer, documents: response });
+      setCustomer({ ...customer, documents: response });
+      setAllDocuments(documents);
+
       toast({
         title: "Documents Synchronized",
         description: "Customer documents have been updated from uploads",
       });
     }
+    catch (e: any) {
+      console.error(e)
+      toast({
+        title: `failed to fetch customer details`,
+        description: "Something went wrong please try again",
+        variant: "destructive",
+
+      });
+    }
   };
+
+  // Flatten all file rows for pagination
+  const paginatedRows = (allDocuments != null) && allDocuments?.flatMap((doc: DocumentResponseType, docIdx: number) => (
+    (doc.files && doc.files.length > 0)
+      ? doc.files.map((file: FileResponseType, idx: number) => ({
+        doc,
+        file,
+        idx,
+        docIdx
+      }))
+      : [{
+        doc,
+        file: null,
+        idx: 0,
+        docIdx
+      }]
+  ));
+
+  const totalPages = Math.ceil(paginatedRows.length / entriesPerPage);
+  const paginatedRowsToShow = paginatedRows.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
 
   return (
     <MainLayout showSidebar={true}>
@@ -403,55 +471,73 @@ const CustomerDetail = () => {
                   <TableRow>
                     <TableHead className="w-[35%] pl-6">Document Type</TableHead>
                     <TableHead className="w-[20%] px-4">Category</TableHead>
-                    <TableHead className="w-[15%] px-4">Status</TableHead>
-                    <TableHead className="w-[15%] px-4">Files Count</TableHead>
                     <TableHead className="w-[15%] px-4">Files</TableHead>
+                    <TableHead className="w-[15%] px-4">Status</TableHead>
                     <TableHead className="w-[15%] px-4">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {allDocuments.length > 0 ? (
-                    allDocuments.map((doc: DocumentResponseType) => (
-                      <TableRow key={`` + doc.id}>
-                        <TableCell className="font-medium pl-6">{doc.documentType}</TableCell>
+                  {paginatedRowsToShow.length > 0 ? (
+                    paginatedRowsToShow.map(({ doc, file, idx, docIdx }, rowIndex) => (
+                      <TableRow key={file?.docId ? String(file.docId) : `${String(doc.documentMasterId)}-${idx}`}>
+                        <TableCell className="font-medium pl-6">
+                          {doc.documentType}
+                          {doc.files && doc.files.length > 1 && (
+                            <>
+                              <span className={`ml-2 rounded px-2 py-0.5 text-xs font-semibold ${badgeColors[docIdx % badgeColors.length]}`}>
+                                {doc.files.length} {doc.files.length === 1 ? 'file' : 'files'}
+                              </span>
+                              <span className="ml-2 text-gray-400">#{idx + 1}</span>
+                            </>
+                          )}
+                        </TableCell>
                         <TableCell className="px-4">{doc.category}</TableCell>
                         <TableCell className="px-4">
-                          {doc.status === "UPLOADED" ? (
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>
-                          ) : doc.status === "REJECTED" ? (
-                            <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Rejected</Badge>
-                          ) : doc.status === "SUBMITTED" ?
-                            <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Submitted</Badge>
-                            :
-                            <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Aproved</Badge>
-                          }
-                        </TableCell>
-                        <TableCell className="px-4">{doc.files ? doc.files.length : 0}</TableCell>
-                        <TableCell className="px-4">
-                          {doc.files && doc.files.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                              {doc.files.map((file: string, idx: number) => (
-                                <span key={idx} className="inline-block bg-gray-100 rounded px-2 py-1 text-xs text-gray-700">{file}</span>
-                              ))}
-                            </div>
+                          {file ? (
+                            <span>{file.docName}</span>
                           ) : (
                             <span className="text-sm text-gray-400">No files</span>
                           )}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/admin/customers/details/review/${doc.id}`)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" /> Review
-                          </Button>
+                          {file ? (
+                            <span
+                              title={
+                                file.docStatus === 'UPLOADED' ? 'File uploaded, pending review' :
+                                  file.docStatus === 'REJECTED' ? 'File was rejected' :
+                                    file.docStatus === 'SUBMITTED' ? 'File submitted, awaiting approval' :
+                                      'File approved'
+                              }
+                            >
+                              {file.docStatus === "UPLOADED" ? (
+                                <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>
+                              ) : file.docStatus === "REJECTED" ? (
+                                <Badge variant="outline" className="bg-red-100 text-red-800">Rejected</Badge>
+                              ) : file.docStatus === "SUBMITTED" ? (
+                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Submitted</Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-green-100 text-green-800">Approved</Badge>
+                              )}
+                            </span>
+                          ) : null}
+                        </TableCell>
+                        <TableCell>
+                          {file ? (
+                            <Button
+                              key={file.docId ? String(file.docId) : `${String(doc.documentMasterId)}-action-${idx}`}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/admin/customers/details/review/${doc.documentMasterId}/${file.docId}`)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" /> Review
+                            </Button>
+                          ) : null}
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-4 px-4">
+                      <TableCell colSpan={6} className="text-center py-4 px-4">
                         No documents found
                       </TableCell>
                     </TableRow>
@@ -459,6 +545,36 @@ const CustomerDetail = () => {
                 </TableBody>
               </Table>
             </div>
+            {totalPages > 1 && (
+              <div className="flex justify-end items-center gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  Previous
+                </Button>
+                {[...Array(totalPages)].map((_, i) => (
+                  <Button
+                    key={i}
+                    variant={currentPage === i + 1 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

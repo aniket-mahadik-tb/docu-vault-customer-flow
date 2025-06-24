@@ -35,7 +35,7 @@ export interface DocumentsByCategoryType {
 }
 
 export interface DocumentResponseType {
-    id: String,
+    documentMasterId: String,
     documentType: String,
     isMandatory: boolean,
     isMultiple: boolean,
@@ -45,4 +45,8 @@ export interface DocumentResponseType {
 }
 
 
-export type FileResponseType = string;
+export interface FileResponseType {
+    docId: String,
+    docName: String,
+    docStatus: String
+}

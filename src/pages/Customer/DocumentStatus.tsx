@@ -23,7 +23,7 @@ const DocumentStatus = () => {
   const { userId } = useUser();
   const { getFolderDocuments, isFolderSubmitted } = useDocuments();
   const documentUploadService = useDocumentUploadService();
-  
+
   const [documentsByCategory, setDocumentsByCategory] = useState<any[]>([]);
   const [customerType, setCustomerType] = useState<string>("");
 
@@ -52,28 +52,28 @@ const DocumentStatus = () => {
     const isSubmitted = isDocumentSubmitted(documentId);
     const hasFiles = documentsByCategory.some(cat => cat.documents && cat.documents.some(doc => doc.id === documentId));
     if (!hasFiles) {
-      return { 
-        status: 'pending', 
-        icon: <Clock className="h-4 w-4 text-yellow-600" />, 
+      return {
+        status: 'pending',
+        icon: <Clock className="h-4 w-4 text-yellow-600" />,
         label: 'Pending'
       };
     }
     if (isSubmitted) {
-      return { 
-        status: 'submitted', 
-        icon: <CheckCircle className="h-4 w-4 text-green-600" />, 
+      return {
+        status: 'submitted',
+        icon: <CheckCircle className="h-4 w-4 text-green-600" />,
         label: 'Submitted'
       };
     } else if (hasFiles) {
-      return { 
-        status: 'uploaded', 
-        icon: <FileText className="h-4 w-4 text-blue-600" />, 
+      return {
+        status: 'uploaded',
+        icon: <FileText className="h-4 w-4 text-blue-600" />,
         label: 'Uploaded'
       };
     } else {
-      return { 
-        status: 'pending', 
-        icon: <AlertCircle className="h-4 w-4 text-yellow-600" />, 
+      return {
+        status: 'pending',
+        icon: <AlertCircle className="h-4 w-4 text-yellow-600" />,
         label: 'Pending'
       };
     }
@@ -118,6 +118,8 @@ const DocumentStatus = () => {
       </MainLayout>
     );
   }
+
+
 
   // Flatten all documents for the table
   const allDocuments = documentsByCategory.flatMap((cat: any) =>
@@ -170,15 +172,18 @@ const DocumentStatus = () => {
                           <TableCell className="px-4">
                             {doc.files && doc.files.length > 0 ? (
                               <div className="flex flex-wrap gap-2">
-                                {doc.files.map((file: string, idx: number) => (
-                                  <span key={idx} className="inline-block bg-gray-100 rounded px-2 py-1 text-xs text-gray-700">{file}</span>
-                                ))}
+                                {doc.files.map((file: any, idx: number) => {
+                                  console.log("file", file)
+                                  console.log("idx", idx)
+                                  return <span key={idx} className="inline-block bg-gray-100 rounded px-2 py-1 text-xs text-gray-700">{file.docName}</span>
+                                })}
                               </div>
                             ) : (
                               <span className="text-sm text-gray-400">No files</span>
                             )}
                           </TableCell>
                         </TableRow>
+
                       ))
                     ) : (
                       <TableRow>

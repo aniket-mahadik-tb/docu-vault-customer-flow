@@ -18,7 +18,7 @@ import {
 import * as pdfjs from "pdfjs-dist";
 import { getSamplePreviewUrl, isPdfPreview, usingSamplePreviews } from "@/lib/previewUtils";
 import { useCustomerService } from "@/services/customerService";
-import { CustomerType, DocumentResponseType } from "@/utils/types";
+import { CustomerType, DocumentResponseType, FileResponseType } from "@/utils/types";
 import { useTempCustomer } from "@/utils/TempContext";
 
 // Updated PDF.js worker with a direct path (using cdnjs instead of unpkg)
@@ -52,7 +52,7 @@ const dataURLtoBlob = (dataURL: string): Blob | null => {
 };
 
 const ReviewDocument = () => {
-  const { documentId } = useParams<{ documentId: string }>();
+  const { masterId, documentId } = useParams<{ masterId: string; documentId: string }>();
   const { getCustomer, updateDocumentStatus, generateUploadLink } = useCustomers();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -68,43 +68,14 @@ const ReviewDocument = () => {
   const [customer, setCustomer] = useState<CustomerType | null>(null);// getCustomer(customerId || "");
   // const document = customer?.documents.find((doc) => doc.id === documentId);
   // const [customer, setCustomer] = useState<CustomerType | null>(null);
-  const { tempCustomer } = useTempCustomer();
-  const [document, setDocument] = useState<DocumentResponseType | null>(null);
+  const { tempCustomer, setTempCustomer } = useTempCustomer();
+  const [document, setDocument] = useState<FileResponseType | null>(null);
   const customerService = useCustomerService();
-  useEffect(() => {
-    if (document) {
-      if (usingSamplePreviews()) {
-        // Use sample preview based on document name
-        const sampleUrl = getSamplePreviewUrl(document.files[0], document.documentType);
+  const [rejectLoading, setRejectLoading] = useState<boolean>(false);
+  const [onHoldLoading, setOnHoldLoading] = useState<boolean>(false);
+  const [approveLoding, setApproveLoding] = useState<boolean>(false);
 
-        if (isPdfPreview(sampleUrl)) {
-          loadPdf(sampleUrl);
-        } else {
-          // For non-PDF samples, just set the URL without conversion
-          setDocumentBlobUrl(sampleUrl);
-        }
-      } else {
-        // If the fileUrl is a data URL, convert it to a Blob URL
-        // if (document.fileUrl.startsWith('data:')) {
-        //   const blob = dataURLtoBlob(document.fileUrl);
-        //   if (blob) {
-        //     const blobUrl = URL.createObjectURL(blob);
-        //     setDocumentBlobUrl(blobUrl);
 
-        //     if (document.fileUrl.toLowerCase().includes('application/pdf') ||
-        //       document.name.toLowerCase().endsWith('.pdf')) {
-        //       loadPdf(blobUrl);
-        //     }
-        //   } else {
-        //     setError("Failed to convert document data to viewable format");
-        //   }
-        // } else
-        if (document.files[0]?.toLowerCase().endsWith('.pdf')) {
-          loadPdf("/placeholder.svg");
-        }
-      }
-    }
-  }, [document]);
 
   // Clean up created Blob URL on unmount
   useEffect(() => {
@@ -116,8 +87,9 @@ const ReviewDocument = () => {
             setCustomer(tempCustomer);
             const documents: DocumentResponseType = tempCustomer.documents.documentsByCategory.flatMap((cat: any) =>
               (cat.documents || []).map((doc: any) => ({ ...doc, category: cat.category }))
-            ).find((doc: any) => doc.id === documentId);
-            setDocument(documents);
+            ).find((doc: DocumentResponseType) => doc.documentMasterId === masterId);
+            const doc: FileResponseType = documents.files.find((doc: FileResponseType) => doc.docId === documentId)
+            setDocument(doc);
           } else {
             toast({
               title: `failed to fetch customer details`,
@@ -146,6 +118,29 @@ const ReviewDocument = () => {
       }
     };
   }, []);
+
+
+  useEffect(() => {
+    if (document) {
+      if (usingSamplePreviews()) {
+        // Use sample preview based on document name
+        const sampleUrl = getSamplePreviewUrl(document.docName, document.docName.slice(document.docName.indexOf(".")));
+
+        if (isPdfPreview(sampleUrl)) {
+          loadPdf(sampleUrl);
+        } else {
+          // For non-PDF samples, just set the URL without conversion
+          setDocumentBlobUrl(sampleUrl);
+        }
+      } else {
+        if (document.docName?.toLowerCase().endsWith('.pdf')) {
+          loadPdf("/placeholder.svg");
+        }
+      }
+    }
+  }, [document]);
+
+
 
 
   useEffect(() => {
@@ -217,15 +212,15 @@ const ReviewDocument = () => {
     }
   };
 
-  const isPdf = document?.files[0].toLowerCase().endsWith('.pdf') ||
-    getSamplePreviewUrl(document?.files[0] || '').toLowerCase().endsWith('.pdf');
-  const isImage = document?.files[0].toLowerCase().match(/\.(jpeg|jpg|gif|png)$/);
+  const isPdf = document?.docName.toLowerCase().endsWith('.pdf') ||
+    getSamplePreviewUrl(document?.docName || '').toLowerCase().endsWith('.pdf');
+  const isImage = document?.docName.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/);
 
   // Get a usable document URL or fallback
   const getDocumentUrl = () => {
     // If we're using sample previews, return the appropriate sample
     if (usingSamplePreviews() && document) {
-      return getSamplePreviewUrl(document.files[0]);
+      return getSamplePreviewUrl(document.docName);
     }
 
     // First try the blob URL if we created one
@@ -266,9 +261,10 @@ const ReviewDocument = () => {
   }
 
   const handleUpdateStatus = async (status: "APPROVED" | "REJECTED" | "UPLOADED") => {
+    if (rejectLoading || onHoldLoading || approveLoding) return;
     try {
       // updateDocumentStatus(customer.id, document.id, status, remarks);
-      await customerService.updateDocumentStatus(customer.pan, document.id, status, remarks)
+      await customerService.updateDocumentStatus(customer.pan, document.docId, status, remarks)
 
       const statusMessage =
         status === "APPROVED" ? "Document approved successfully" :
@@ -279,17 +275,29 @@ const ReviewDocument = () => {
         title: statusMessage,
         description: remarks ? `Remarks: ${remarks}` : undefined,
       });
+
+      const response = await customerService.getCustomerDocuments(customer.pan);
+      const customers: CustomerType = { ...customer, documents: response }
+      await setTempCustomer(customers);
+      setApproveLoding(false)
+      setRejectLoading(false)
+      setOnHoldLoading(false)
       navigate(`/admin/customers/details`);
     }
     catch (e: any) {
+      setApproveLoding(false)
+      setRejectLoading(false)
+      setOnHoldLoading(false)
       console.log(e)
       toast({
         title: "Failed to update status",
         description: remarks ? `Remarks: ${remarks}` : undefined,
         variant: "destructive"
       });
-
     }
+    setApproveLoding(false)
+    setRejectLoading(false)
+    setOnHoldLoading(false)
 
   };
 
@@ -321,7 +329,7 @@ const ReviewDocument = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Document Name</p>
-                  <p className="font-medium">{document.files[0]}</p>
+                  <p className="font-medium">{document.docName}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Uploaded On</p>
@@ -332,7 +340,7 @@ const ReviewDocument = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Current Status</p>
                   <p className="font-medium capitalize">
-                    {document?.status?.replace("_", " ")}
+                    {document?.docStatus?.replace("_", " ")}
                   </p>
                 </div>
                 <div>
@@ -353,23 +361,61 @@ const ReviewDocument = () => {
               <div className="grid grid-cols-3 gap-4 w-full">
                 <Button
                   className="bg-green-600 hover:bg-green-700"
-
-                  onClick={() => handleUpdateStatus("APPROVED")}
+                  onClick={() => {
+                    handleUpdateStatus("APPROVED")
+                    setApproveLoding(true)
+                  }}
                 >
-                  <Check className="mr-2 h-4 w-4" /> Approve
+                  {approveLoding ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      Approving
+                    </span>
+                  ) : (
+                    <><Check className="mr-2 h-4 w-4" /> Approve</>
+                  )}
+
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={() => handleUpdateStatus("REJECTED")}
+                  onClick={() => {
+                    handleUpdateStatus("REJECTED");
+                    setRejectLoading(true)
+                  }}
                 >
-                  <X className="mr-2 h-4 w-4" /> Reject
+                  {rejectLoading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      Rejecting
+                    </span>
+                  ) : (
+                    <><X className="mr-2 h-4 w-4" /> Reject</>
+                  )}
+
                 </Button>
-                <Button
+                {/* <Button
                   variant="outline"
-                  onClick={() => handleUpdateStatus("UPLOADED")}
+                  onClick={() => { handleUpdateStatus("UPLOADED"); setOnHoldLoading(true) }}
                 >
-                  <Clock className="mr-2 h-4 w-4" /> On Hold
-                </Button>
+                  {onHoldLoading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      Holding
+                    </span>
+                  ) : (
+                    <><Clock className="mr-2 h-4 w-4" /> On Hold</>
+                  )}
+
+                </Button> */}
               </div>
             </CardFooter>
           </Card>
@@ -419,7 +465,7 @@ const ReviewDocument = () => {
                 <div className="text-center">
                   <img
                     src={getDocumentUrl()}
-                    alt={document.files[0]}
+                    alt={document.docName + ``}
                     className="max-w-full max-h-[350px] object-contain mx-auto"
                     style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center' }}
                     onError={(e) => {

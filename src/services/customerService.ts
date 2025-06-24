@@ -60,9 +60,6 @@ export function useCustomerService() {
   service.createClient = async (data: ClientCreateRequest): Promise<any> => {
     try {
       const response = await api.post<GenericApiResponse<ClientCreateResponse>>('/clients', data);
-
-      const pan: String = response.data.data.clientPan;
-      await service.generateUploadLink(pan);
       return response;
     } catch (error: any) {
       console.error("Failed to create client:", error);
@@ -180,8 +177,7 @@ export function useCustomerService() {
   ) => {
     try {
       type ExtendedGenericResponse = GenericApiResponse<null> & { timestamp: String }
-      const param = "35c278d9-d228-4257-acc6-03feb657003d" //documentId
-      const response = await api.put<ExtendedGenericResponse>(`documents/${param}/status`, { note: remarks, status: status });
+      const response = await api.put<ExtendedGenericResponse>(`documents/${documentId}/status`, { note: remarks, status: status });
       console.log(response)
       return response;
     } catch (error: any) {
@@ -193,6 +189,7 @@ export function useCustomerService() {
   service.getCustomerDocuments = async (panCard: string) => {
     try {
       const response = await api.get<GenericApiResponse<GetDocumentByPanCardResponseType>>(`/documents/client?pan=${panCard}`);
+      // console.log(response)
       return response.data
     } catch (error: any) {
       console.error("Failed to fetch customer documents");
@@ -208,31 +205,21 @@ export function useCustomerService() {
         throw new Error("Failed to generate upload link");
       }
       return res.data.data;
-
-
-      // Simulate generating an upload link
-      // await delay(500);
-      // if (!customerId) throw new Error("Customer ID is required");
-      // if (documentId && !remarks) throw new Error("Remarks are required for re-upload");
-      // if (documentId && !customerId) throw new Error("Customer ID is required for re-upload");             
-      // await delay(300);
-      // const customer = mockCustomers.find(c => c.id === customerId);
-      // if (!customer) throw new Error("Customer not found");
-
-      // const baseUrl = window.location.origin;
-      // const uploadLink = documentId
-      // ? `${baseUrl}/customer/reupload?customerId=${customerId}&documentId=${documentId}&remarks=${encodeURIComponent(remarks || '')}`
-      //   // : `${baseUrl}/customer?userId=${customerId}`;
-
-      // return {
-      //   data: { uploadLink },
-      //   status: 200,
-      // };
     } catch (error: any) {
       console.error("Failed to generate upload link");
       throw error;
     }
   };
+
+  service.getCustomerByStatus = async (status: "SELECTED" | "SUBMITTED" | "APPROVED") => {
+    try {
+      const response = await api.get<GenericApiResponse<CustomerType[]>>(`/clients?documentStatus=${status}`);
+      return response.data;
+    } catch (e: any) {
+      console.error(e)
+      throw e;
+    }
+  }
 
   return service;
 }
