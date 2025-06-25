@@ -7,7 +7,7 @@ export interface DocumentType {
   id: string;
   documentType: string;
   isMandatory: boolean;
-  isMultipleYear?: boolean;
+  isMultipleYears?: boolean;
   documentMasterId:string
 }
 
