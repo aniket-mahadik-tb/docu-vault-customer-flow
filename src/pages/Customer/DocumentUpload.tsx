@@ -118,41 +118,92 @@ const DocumentUpload = () => {
     syncUploadedFiles();
   }, [token, orgCategories, promoterCategories, getFolderDocuments, promoters.length]);
 
+  // const handleFileUpload = async (documentId: string, files: FileList) => {
+  //   if (!token) return;
+  
+  //   try {
+  //     setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
+  //     const folderId = `documents_${documentId}`;
+  
+  //     for (let i = 0; i < files.length; i++) {
+  //       const file = files[i];
+        
+  //       // Add to local context for UI display (this was the original behavior)
+  //       await addDocument(token, folderId, file);
+        
+  //       // Also make API call
+  //       const formData = new FormData();
+  //       formData.append("documentMasterId", documentId);
+  //       formData.append("file", file);
+  //       await documentUploadService.uploadDocuments(formData);
+  //     }
+  
+  //     // Submit folder after all files are processed
+  //     submitFolder(token, folderId);
+      
+  //     // Sync the uploaded files state to reflect changes
+  //     const syncedFiles: Record<string, DocumentFile[]> = {};
+  //     const folderDocuments = getFolderDocuments(token, folderId);
+  //     if (folderDocuments.length > 0) {
+  //       syncedFiles[documentId] = folderDocuments;
+  //     }
+  //     setUploadedFiles(prev => ({ ...prev, ...syncedFiles }));
+  
+  //     toast({
+  //       title: "Files uploaded",
+  //       description: `${files.length} file(s) uploaded successfully`,
+  //     });
+  
+  //   } catch (error) {
+  //     console.error("Error uploading files:", error);
+  //     toast({
+  //       title: "Upload failed",
+  //       description: "There was an error uploading your files",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setUploadingDocuments(prev => ({ ...prev, [documentId]: false }));
+  //   }
+  // };
+  
   const handleFileUpload = async (documentId: string, files: FileList) => {
     if (!token) return;
   
     try {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
+  
       const folderId = `documents_${documentId}`;
+      const metadata = {
+        documentMasterId: documentId,
+        promoter: "Promoter 1", // Replace with dynamic value if needed
+        year: "",
+        section: ""
+      };
+  
+      const formData = new FormData();
+      formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
   
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        
-        // Add to local context for UI display (this was the original behavior)
-        await addDocument(token, folderId, file);
-        
-        // Also make API call
-        const formData = new FormData();
-        formData.append("documentMasterId", documentId);
-        formData.append("file", file);
-        await documentUploadService.uploadDocuments(formData);
+        formData.append("files", files[i]);
       }
   
-      // Submit folder after all files are processed
-      submitFolder(token, folderId);
-      
-      // Sync the uploaded files state to reflect changes
+      await documentUploadService.uploadDocuments(formData, token); // Updated signature with token
+  
+      // Optionally add to local state if needed
+      submitFolder(token, folderId); // still submitting folder as per old logic
+  
+      toast({
+        title: "Files uploaded",
+        description: `${files.length} file(s) uploaded successfully`,
+      });
+  
+      // Update uploaded file context/state if necessary
       const syncedFiles: Record<string, DocumentFile[]> = {};
       const folderDocuments = getFolderDocuments(token, folderId);
       if (folderDocuments.length > 0) {
         syncedFiles[documentId] = folderDocuments;
       }
       setUploadedFiles(prev => ({ ...prev, ...syncedFiles }));
-  
-      toast({
-        title: "Files uploaded",
-        description: `${files.length} file(s) uploaded successfully`,
-      });
   
     } catch (error) {
       console.error("Error uploading files:", error);
@@ -166,7 +217,6 @@ const DocumentUpload = () => {
     }
   };
   
-
   const handleRemoveFile = (documentId: string, fileId: string) => {
     if (!token) return;
     const folderId = `documents_${documentId}`;
