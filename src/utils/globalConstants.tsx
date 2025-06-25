@@ -467,7 +467,7 @@ export const GetDocumentByPanCardResponse: GetDocumentByPanCardResponseType = {
       "category": "ALL EXISTING FACILITIES LOAN DETAILS (ANNEXURE B)",
       "documents": [
         {
-          "id": "bfb63dea-6ad9-4553-9c13-fcc429b9e9b0",
+          "documentMasterId": "bfb63dea-6ad9-4553-9c13-fcc429b9e9b0",
           "documentType": "ANNEXURE B",
           "isMandatory": true,
           "isMultiple": true,
@@ -486,7 +486,7 @@ export const GetDocumentByPanCardResponse: GetDocumentByPanCardResponseType = {
       "category": "KYC",
       "documents": [
         {
-          "id": "f9838a54-8e57-4576-8ce7-d9629f2b6f53",
+          "documentMasterId": "f9838a54-8e57-4576-8ce7-d9629f2b6f53",
           "documentType": "Latest Electricity Bill copy/Address proof",
           "isMandatory": true,
           "isMultiple": true,
@@ -500,7 +500,7 @@ export const GetDocumentByPanCardResponse: GetDocumentByPanCardResponseType = {
           "status": "SUBMITTED"
         },
         {
-          "id": "d2723c23-fd00-446f-9e25-6a4251ff23a8",
+          "documentMasterId": "d2723c23-fd00-446f-9e25-6a4251ff23a8",
           "documentType": "PAN",
           "isMandatory": true,
           "isMultiple": true,
@@ -514,7 +514,7 @@ export const GetDocumentByPanCardResponse: GetDocumentByPanCardResponseType = {
           "status": "SUBMITTED"
         },
         {
-          "id": "d968ac8e-4224-4330-a55a-9aa48626c81f",
+          "documentMasterId": "d968ac8e-4224-4330-a55a-9aa48626c81f",
           "documentType": "Aadhaar (both sides)",
           "isMandatory": true,
           "isMultiple": true,

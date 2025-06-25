@@ -478,63 +478,74 @@ const CustomerDetail = () => {
                 </TableHeader>
                 <TableBody>
                   {paginatedRowsToShow.length > 0 ? (
-                    paginatedRowsToShow.map(({ doc, file, idx, docIdx }, rowIndex) => (
-                      <TableRow key={file?.docId ? String(file.docId) : `${String(doc.documentMasterId)}-${idx}`}>
-                        <TableCell className="font-medium pl-6">
-                          {doc.documentType}
-                          {doc.files && doc.files.length > 1 && (
-                            <>
-                              <span className={`ml-2 rounded px-2 py-0.5 text-xs font-semibold ${badgeColors[docIdx % badgeColors.length]}`}>
-                                {doc.files.length} {doc.files.length === 1 ? 'file' : 'files'}
+                    paginatedRowsToShow.map(({ doc, file, idx, docIdx }, rowIndex, arr) => {
+                      return (
+                        <TableRow key={file?.docId ? String(file.docId) : `${String(doc.documentMasterId)}-${idx}`}>
+                          <TableCell className="font-medium pl-6">
+                            {doc.documentType}
+                            {doc.files && doc.files.length > 1 && (
+                              <>
+                                <span className={`ml-2 rounded px-2 py-0.5 text-xs font-semibold ${badgeColors[docIdx % badgeColors.length]}`}>
+                                  {doc.files.length} {doc.files.length === 1 ? 'file' : 'files'}
+                                </span>
+                                <span className="ml-2 text-gray-400">#{idx + 1}</span>
+                                <span
+                                  className="ml-1 cursor-pointer inline-flex items-center text-xs bg-pink-100 rounded-full p-0.5"
+                                  title="Year: 2022"
+                                >
+                                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="inline-block align-middle">
+                                    <circle cx="5" cy="5" r="4.5" fill="#fce7f3" />
+                                    <text x="5" y="8" textAnchor="middle" fontSize="7" fill="#ec4899" fontWeight="bold">i</text>
+                                  </svg>
+                                </span>
+                              </>
+                            )}
+                          </TableCell>
+                          <TableCell className="px-4">{doc.category}</TableCell>
+                          <TableCell className="px-4">
+                            {file ? (
+                              <span>{file.docName}</span>
+                            ) : (
+                              <span className="text-sm text-gray-400">No files</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {file ? (
+                              <span
+                                title={
+                                  file.docStatus === 'UPLOADED' ? 'File uploaded, pending review' :
+                                    file.docStatus === 'REJECTED' ? 'File was rejected' :
+                                      file.docStatus === 'SUBMITTED' ? 'File submitted, awaiting approval' :
+                                        'File approved'
+                                }
+                              >
+                                {file.docStatus === "UPLOADED" ? (
+                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>
+                                ) : file.docStatus === "REJECTED" ? (
+                                  <Badge variant="outline" className="bg-red-100 text-red-800">Rejected</Badge>
+                                ) : file.docStatus === "SUBMITTED" ? (
+                                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Submitted</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-green-100 text-green-800">Approved</Badge>
+                                )}
                               </span>
-                              <span className="ml-2 text-gray-400">#{idx + 1}</span>
-                            </>
-                          )}
-                        </TableCell>
-                        <TableCell className="px-4">{doc.category}</TableCell>
-                        <TableCell className="px-4">
-                          {file ? (
-                            <span>{file.docName}</span>
-                          ) : (
-                            <span className="text-sm text-gray-400">No files</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {file ? (
-                            <span
-                              title={
-                                file.docStatus === 'UPLOADED' ? 'File uploaded, pending review' :
-                                  file.docStatus === 'REJECTED' ? 'File was rejected' :
-                                    file.docStatus === 'SUBMITTED' ? 'File submitted, awaiting approval' :
-                                      'File approved'
-                              }
-                            >
-                              {file.docStatus === "UPLOADED" ? (
-                                <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>
-                              ) : file.docStatus === "REJECTED" ? (
-                                <Badge variant="outline" className="bg-red-100 text-red-800">Rejected</Badge>
-                              ) : file.docStatus === "SUBMITTED" ? (
-                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Submitted</Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-green-100 text-green-800">Approved</Badge>
-                              )}
-                            </span>
-                          ) : null}
-                        </TableCell>
-                        <TableCell>
-                          {file ? (
-                            <Button
-                              key={file.docId ? String(file.docId) : `${String(doc.documentMasterId)}-action-${idx}`}
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigate(`/admin/customers/details/review/${doc.documentMasterId}/${file.docId}`)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" /> Review
-                            </Button>
-                          ) : null}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                            ) : null}
+                          </TableCell>
+                          <TableCell>
+                            {file ? (
+                              <Button
+                                key={file.docId ? String(file.docId) : `${String(doc.documentMasterId)}-action-${idx}`}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/admin/customers/details/review/${doc.documentMasterId}/${file.docId}`)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" /> Review
+                              </Button>
+                            ) : null}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   ) : (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-4 px-4">
