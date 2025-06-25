@@ -94,6 +94,20 @@ function getFileTypeColor(fileName: string) {
   return fileTypeColors[ext] || fileTypeColors.default;
 }
 
+// Utility to flatten the new tempCustomer.documents format
+const flattenDocuments = (documentsArr) => {
+  if (!Array.isArray(documentsArr)) return [];
+  return documentsArr.flatMap((customer) =>
+    (customer.documentsByCategory || []).flatMap((cat) =>
+      (cat.documents || []).map((doc) => ({
+        ...doc,
+        category: cat.category,
+        customerType: customer.customerType,
+      }))
+    )
+  );
+};
+
 const CustomerDetail = () => {
 
   const { getCustomer, generateUploadLink, syncCustomerDocuments } = useCustomers();
@@ -141,9 +155,7 @@ const CustomerDetail = () => {
 
         if (tempCustomer) {
           setCustomer(tempCustomer);
-          const documents: DocumentResponseType[] = tempCustomer.documents.documentsByCategory.flatMap((cat: any) =>
-            (cat.documents || []).map((doc: any) => ({ ...doc, category: cat.category }))
-          );
+          const documents: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
           setAllDocuments(documents);
         } else {
           // If customer not found, redirect to customer list
@@ -346,9 +358,7 @@ const CustomerDetail = () => {
   const handleSyncDocuments = async () => {
     try {
       const response = await customerService.getCustomerDocuments(customer.pan);
-      const documents: DocumentResponseType[] = tempCustomer.documents.documentsByCategory.flatMap((cat: any) =>
-        (cat.documents || []).map((doc: any) => ({ ...doc, category: cat.category }))
-      );
+      const documents: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
 
       setTempCustomer({ ...customer, documents: response });
       setCustomer({ ...customer, documents: response });
@@ -498,6 +508,17 @@ const CustomerDetail = () => {
                                     <text x="5" y="8" textAnchor="middle" fontSize="7" fill="#ec4899" fontWeight="bold">i</text>
                                   </svg>
                                 </span>
+                                {doc.customerType && String(doc.customerType).toLowerCase().includes('promoter') && (
+                                  <span
+                                    className="ml-1 cursor-pointer inline-flex items-center text-xs bg-pink-100 rounded-full p-0.5"
+                                    title="Promoter document"
+                                  >
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="inline-block align-middle">
+                                      <circle cx="5" cy="5" r="4.5" fill="#fce7f3" />
+                                      <text x="5" y="8" textAnchor="middle" fontSize="7" fill="#ec4899" fontWeight="bold">p</text>
+                                    </svg>
+                                  </span>
+                                )}
                               </>
                             )}
                           </TableCell>

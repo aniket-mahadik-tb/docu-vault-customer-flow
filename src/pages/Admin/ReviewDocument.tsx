@@ -51,6 +51,20 @@ const dataURLtoBlob = (dataURL: string): Blob | null => {
   }
 };
 
+// Utility to flatten the new tempCustomer.documents format
+const flattenDocuments = (documentsArr) => {
+  if (!Array.isArray(documentsArr)) return [];
+  return documentsArr.flatMap((customer) =>
+    (customer.documentsByCategory || []).flatMap((cat) =>
+      (cat.documents || []).map((doc) => ({
+        ...doc,
+        category: cat.category,
+        customerType: customer.customerType,
+      }))
+    )
+  );
+};
+
 const ReviewDocument = () => {
   const { masterId, documentId } = useParams<{ masterId: string; documentId: string }>();
   const { getCustomer, updateDocumentStatus, generateUploadLink } = useCustomers();
@@ -74,6 +88,7 @@ const ReviewDocument = () => {
   const [rejectLoading, setRejectLoading] = useState<boolean>(false);
   const [onHoldLoading, setOnHoldLoading] = useState<boolean>(false);
   const [approveLoding, setApproveLoding] = useState<boolean>(false);
+  const [currentDoc, setCurrentDoc] = useState<DocumentResponseType | null>(null);
 
 
 
@@ -82,13 +97,13 @@ const ReviewDocument = () => {
     (async function fetchCustomer() {
       try {
         if (true) {
-
           if (tempCustomer) {
             setCustomer(tempCustomer);
-            const documents: DocumentResponseType = tempCustomer.documents.documentsByCategory.flatMap((cat: any) =>
-              (cat.documents || []).map((doc: any) => ({ ...doc, category: cat.category }))
-            ).find((doc: DocumentResponseType) => doc.documentMasterId === masterId);
-            const doc: FileResponseType = documents.files.find((doc: FileResponseType) => doc.docId === documentId)
+            // Use flattenDocuments to find the correct document
+            const allDocs: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
+            const docObj: DocumentResponseType = allDocs.find((doc: DocumentResponseType) => doc.documentMasterId === masterId);
+            setCurrentDoc(docObj);
+            const doc: FileResponseType = docObj.files.find((doc: FileResponseType) => doc.docId === documentId)
             setDocument(doc);
           } else {
             toast({
@@ -98,7 +113,6 @@ const ReviewDocument = () => {
             });
             navigate("/admin/customers");
           }
-
         }
       } catch (error) {
         console.error("Error fetching customer:", error);
@@ -109,8 +123,7 @@ const ReviewDocument = () => {
         });
         navigate("/admin/customers");
       }
-    }
-    )();
+    })();
 
     return () => {
       if (documentBlobUrl) {
@@ -329,7 +342,20 @@ const ReviewDocument = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Document Name</p>
-                  <p className="font-medium">{document.docName}</p>
+                  <p className="font-medium flex items-center">
+                    {document.docName}
+                    {currentDoc && currentDoc.files && currentDoc.files.length > 1 && (
+                      <>
+                        <span className="ml-2 text-gray-400">#{currentDoc.files.findIndex(f => f.docId === document.docId) + 1}</span>
+                        <span className="ml-1 cursor-pointer inline-flex items-center text-xs bg-pink-100 rounded-full p-0.5" title="Year: 2022">
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="inline-block align-middle">
+                            <circle cx="5" cy="5" r="4.5" fill="#fce7f3" />
+                            <text x="5" y="8" textAnchor="middle" fontSize="7" fill="#ec4899" fontWeight="bold">i</text>
+                          </svg>
+                        </span>
+                      </>
+                    )}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Uploaded On</p>
