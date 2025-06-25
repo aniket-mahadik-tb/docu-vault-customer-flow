@@ -118,55 +118,7 @@ const DocumentUpload = () => {
     syncUploadedFiles();
   }, [token, orgCategories, promoterCategories, getFolderDocuments, promoters.length]);
 
-  // const handleFileUpload = async (documentId: string, files: FileList) => {
-  //   if (!token) return;
-  
-  //   try {
-  //     setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
-  //     const folderId = `documents_${documentId}`;
-  
-  //     for (let i = 0; i < files.length; i++) {
-  //       const file = files[i];
-        
-  //       // Add to local context for UI display (this was the original behavior)
-  //       await addDocument(token, folderId, file);
-        
-  //       // Also make API call
-  //       const formData = new FormData();
-  //       formData.append("documentMasterId", documentId);
-  //       formData.append("file", file);
-  //       await documentUploadService.uploadDocuments(formData);
-  //     }
-  
-  //     // Submit folder after all files are processed
-  //     submitFolder(token, folderId);
-      
-  //     // Sync the uploaded files state to reflect changes
-  //     const syncedFiles: Record<string, DocumentFile[]> = {};
-  //     const folderDocuments = getFolderDocuments(token, folderId);
-  //     if (folderDocuments.length > 0) {
-  //       syncedFiles[documentId] = folderDocuments;
-  //     }
-  //     setUploadedFiles(prev => ({ ...prev, ...syncedFiles }));
-  
-  //     toast({
-  //       title: "Files uploaded",
-  //       description: `${files.length} file(s) uploaded successfully`,
-  //     });
-  
-  //   } catch (error) {
-  //     console.error("Error uploading files:", error);
-  //     toast({
-  //       title: "Upload failed",
-  //       description: "There was an error uploading your files",
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setUploadingDocuments(prev => ({ ...prev, [documentId]: false }));
-  //   }
-  // };
-  
-  const handleFileUpload = async (documentId: string, files: FileList) => {
+  const handleFileUpload = async (documentId: string, files: FileList, year?: number) => {
     if (!token) return;
   
     try {
@@ -175,8 +127,8 @@ const DocumentUpload = () => {
       const folderId = `documents_${documentId}`;
       const metadata = {
         documentMasterId: documentId,
-        promoter: "Promoter 1", // Replace with dynamic value if needed
-        year: "",
+        promoter: currentPage > 0 ? `promoter${currentPage}` : "",
+        year: year || "",
         section: ""
       };
   
@@ -443,7 +395,7 @@ const DocumentUpload = () => {
                                 {category.documents.map((document: DocumentType) => {
                                   const docKey = `${document.documentMasterId}_${instanceIdx}`;
                                   // If isMultipleYear, manage years for this doc instance
-                                  const years = document.isMultipleYear
+                                  const years = document.isMultipleYears
                                     ? documentYears[docKey] || [currentYear]
                                     : [undefined];
                                   const isMultipleFiles = document.isMultiple ?? document.isMultiple;
@@ -452,7 +404,7 @@ const DocumentUpload = () => {
                                       <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
                                           {document.documentType}
-                                          {document.isMultipleYear && (
+                                          {document.isMultipleYears && (
                                             <select
                                               value={year}
                                               onChange={e => {
@@ -497,7 +449,7 @@ const DocumentUpload = () => {
                                               type="file"
                                               id={`file-plus-${document.documentMasterId}`}
                                               multiple
-                                              onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files)}
+                                              onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files, year)}
                                               className="hidden"
                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                             />
@@ -534,7 +486,7 @@ const DocumentUpload = () => {
                                             type="file"
                                             id={`file-${document.documentMasterId}`}
                                             multiple
-                                            onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files)}
+                                            onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files, year)}
                                             className="hidden"
                                             accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                           />
@@ -558,7 +510,7 @@ const DocumentUpload = () => {
                                               </span>
                                             </Button>
                                           </label>
-                                          {document.isMultipleYear && yearIdx === years.length - 1 && (
+                                          {document.isMultipleYears && yearIdx === years.length - 1 && (
                                             <Button
                                               variant="outline"
                                               size="sm"
@@ -657,7 +609,7 @@ const DocumentUpload = () => {
                                 {category.documents.map((document: DocumentType) => {
                                   const docKey = `${document.documentMasterId}_promoter${currentPage - 1}_${instanceIdx}`;
                                   // If isMultipleYear, manage years for this doc instance
-                                  const years = document.isMultipleYear
+                                  const years = document.isMultipleYears
                                     ? documentYears[docKey] || [currentYear]
                                     : [undefined];
                                   const isMultipleFiles = document.isMultiple ?? document.isMultiple;
@@ -666,7 +618,7 @@ const DocumentUpload = () => {
                                       <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
                                           {document.documentType}
-                                          {document.isMultipleYear && (
+                                          {document.isMultipleYears && (
                                             <select
                                               value={year}
                                               onChange={e => {
@@ -711,7 +663,7 @@ const DocumentUpload = () => {
                                                       type="file"
                                                       id={`file-plus-${docKey}`}
                                                       multiple
-                                                      onChange={(e) => e.target.files && handleFileUpload(docKey, e.target.files)}
+                                                      onChange={(e) => e.target.files && handleFileUpload(docKey, e.target.files, year)}
                                                       className="hidden"
                                                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                                     />
@@ -748,7 +700,7 @@ const DocumentUpload = () => {
                                             type="file"
                                             id={`file-${docKey}`}
                                             multiple
-                                            onChange={(e) => e.target.files && handleFileUpload(docKey, e.target.files)}
+                                            onChange={(e) => e.target.files && handleFileUpload(docKey, e.target.files, year)}
                                             className="hidden"
                                             accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                           />
@@ -772,7 +724,7 @@ const DocumentUpload = () => {
                                               </span>
                                             </Button>
                                           </label>
-                                          {document.isMultipleYear && yearIdx === years.length - 1 && (
+                                          {document.isMultipleYears && yearIdx === years.length - 1 && (
                                             <Button
                                               variant="outline"
                                               size="sm"

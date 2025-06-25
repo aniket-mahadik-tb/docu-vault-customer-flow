@@ -27,14 +27,23 @@ const DocumentStatus = () => {
   const [documentsByCategory, setDocumentsByCategory] = useState<any[]>([]);
   const [customerType, setCustomerType] = useState<string>("");
 
-
-
   useEffect(() => {
     const fetchUploadedDocuments = async () => {
       try {
         const response = await documentUploadService.getUploadedDocuments();
-        setCustomerType(response.customerType);
-        setDocumentsByCategory(response.documentsByCategory || []);
+        let customerType = "";
+        let documentsByCategory = [];
+        if (Array.isArray(response)) {
+          if (response.length > 0) {
+            customerType = response[0].customerType || "";
+            documentsByCategory = response[0].documentsByCategory || [];
+          }
+        } else {
+          customerType = response.customerType || "";
+          documentsByCategory = response.documentsByCategory || [];
+        }
+        setCustomerType(customerType);
+        setDocumentsByCategory(documentsByCategory);
       } catch (error) {
         console.error("Error fetching uploaded documents:", error);
       }
@@ -118,8 +127,6 @@ const DocumentStatus = () => {
       </MainLayout>
     );
   }
-
-
 
   // Flatten all documents for the table
   const allDocuments = documentsByCategory.flatMap((cat: any) =>
