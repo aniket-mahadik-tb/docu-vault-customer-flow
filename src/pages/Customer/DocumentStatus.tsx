@@ -148,43 +148,59 @@ const DocumentStatus = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[35%] pl-6">Document Type</TableHead>
-                      <TableHead className="w-[20%] px-4">Category</TableHead>
-                      <TableHead className="w-[15%] px-4">Status</TableHead>
-                      <TableHead className="w-[15%] px-4">Files Count</TableHead>
-                      <TableHead className="w-[15%] px-4">Files</TableHead>
+                      <TableHead className="w-[35%] pl-6 text-left">Document Type</TableHead>
+                      <TableHead className="w-[20%] px-4 text-center">Category</TableHead>
+                      <TableHead className="w-[15%] px-4 text-center">Files Count</TableHead>
+                      <TableHead className="w-[15%] px-4 text-center">Status</TableHead>
+                      <TableHead className="w-[15%] px-4 text-center">File Name</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {allDocuments.length > 0 ? (
-                      allDocuments.map((doc: any) => (
-                        <TableRow key={doc.id}>
-                          <TableCell className="font-medium pl-6">{doc.documentType}</TableCell>
-                          <TableCell className="px-4">{doc.category}</TableCell>
-                          <TableCell className="px-4">
-                            {doc.files && doc.files.length > 0 ? (
-                              <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="px-4">{doc.files ? doc.files.length : 0}</TableCell>
-                          <TableCell className="px-4">
-                            {doc.files && doc.files.length > 0 ? (
-                              <div className="flex flex-wrap gap-2">
-                                {doc.files.map((file: any, idx: number) => {
-                                  console.log("file", file)
-                                  console.log("idx", idx)
-                                  return <span key={idx} className="inline-block bg-gray-100 rounded px-2 py-1 text-xs text-gray-700">{file.docName}</span>
-                                })}
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">No files</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                      ))
+                      allDocuments.map((doc: any) => {
+                        if (doc.files && doc.files.length > 0) {
+                          return doc.files.map((file: any, idx: number) => (
+                            <TableRow key={doc.id + '-' + file.docId}>
+                              {idx === 0 && (
+                                <TableCell className="font-medium pl-6 text-left" rowSpan={doc.files.length}>{doc.documentType}</TableCell>
+                              )}
+                              {idx === 0 && (
+                                <TableCell className="px-4 text-center" rowSpan={doc.files.length}>{doc.category}</TableCell>
+                              )}
+                              {idx === 0 && (
+                                <TableCell className="px-4 text-center" rowSpan={doc.files.length}>{doc.files.length}</TableCell>
+                              )}
+                              <TableCell className="px-4 text-center">
+                                <Badge
+                                  variant={file.docStatus === "APPROVED" ? "default" : file.docStatus === "SUBMITTED" ? "secondary" : "outline"}
+                                  className={
+                                    file.docStatus === "APPROVED"
+                                      ? "bg-green-100 text-green-800"
+                                      : file.docStatus === "SUBMITTED"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : "bg-yellow-100 text-yellow-800"
+                                  }
+                                >
+                                  {file.docStatus.charAt(0) + file.docStatus.slice(1).toLowerCase()}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="px-4 text-center">{file.docName}</TableCell>
+                            </TableRow>
+                          ));
+                        } else {
+                          return (
+                            <TableRow key={doc.id + '-nofile'}>
+                              <TableCell className="font-medium pl-6 text-left">{doc.documentType}</TableCell>
+                              <TableCell className="px-4 text-center">{doc.category}</TableCell>
+                              <TableCell className="px-4 text-center">0</TableCell>
+                              <TableCell className="px-4 text-center">
+                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>
+                              </TableCell>
+                              <TableCell className="px-4 text-center text-gray-400">No files</TableCell>
+                            </TableRow>
+                          );
+                        }
+                      })
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-4 px-4">

@@ -467,7 +467,7 @@ export const GetDocumentByPanCardResponse: GetDocumentByPanCardResponseType = {
       "category": "ALL EXISTING FACILITIES LOAN DETAILS (ANNEXURE B)",
       "documents": [
         {
-          "documentMasterId": "bfb63dea-6ad9-4553-9c13-fcc429b9e9b0",
+           "documentMasterId": "bfb63dea-6ad9-4553-9c13-fcc429b9e9b0",
           "documentType": "ANNEXURE B",
           "isMandatory": true,
           "isMultiple": true,

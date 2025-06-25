@@ -69,9 +69,21 @@ export function useDocumentUploadService() {
   };
 
   service.uploadDocuments = async (formData: FormData): Promise<ApiResponse<DocumentUploadResponse>> => {
+    // try {
+    //   const response = await api.post("documents", formData, {
+    //     headers: { 'Content-Type': 'multipart/form-data' }
+    //   });
+    //   return response.data;
+    // } catch (error: any) {
+    //   console.error("Failed to upload documents:", error);
+    //   throw error;
+    // }
+
     try {
-      const response = await api.post("documents", formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const response = await api.post("/documents", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        }
       });
       return response.data;
     } catch (error: any) {
@@ -79,6 +91,8 @@ export function useDocumentUploadService() {
       throw error;
     }
   };
+
+  
 
   service.getUploadedDocuments = async (): Promise<any> => {
     try {
