@@ -1,6 +1,6 @@
 // No need to import useAxios anymore
 import { Customer } from "../contexts/CustomerContext";
-import { CustomerType } from "@/utils/types";
+import { CustomerType, GetDocumentByPanCardResponseType } from "@/utils/types";
 import { constants, initialCustomers } from "@/utils/globalConstants";
 import api from "../instances/axios";
 import axios from "axios";
@@ -60,9 +60,6 @@ export function useCustomerService() {
   service.createClient = async (data: ClientCreateRequest): Promise<any> => {
     try {
       const response = await api.post<GenericApiResponse<ClientCreateResponse>>('/clients', data);
-
-      const pan: String = response.data.data.clientPan;
-      await service.generateUploadLink(pan);
       return response;
     } catch (error: any) {
       console.error("Failed to create client:", error);
@@ -173,30 +170,16 @@ export function useCustomerService() {
   };
 
   service.updateDocumentStatus = async (
-    customerId: string,
+    pan: string,
     documentId: string,
-    status: "approved" | "rejected" | "on_hold" | "pending",
+    status: "APPROVED" | "REJECTED" | "UPLOADED" | "PENDING",
     remarks?: string
   ) => {
     try {
-      await delay(500);
-      const customer = mockCustomers.find(c => c.id === customerId);
-      if (!customer) throw new Error("Customer not found");
-
-      const document = customer.documents.find(d => d.id === documentId);
-      if (!document) throw new Error("Document not found");
-
-      const updatedDocument = {
-        ...document,
-        status,
-        remarks: status === "pending" ? undefined : remarks,
-        reviewedAt: status === "pending" ? undefined : new Date().toISOString(),
-      };
-
-      return {
-        data: updatedDocument,
-        status: 200,
-      };
+      type ExtendedGenericResponse = GenericApiResponse<null> & { timestamp: String }
+      const response = await api.put<ExtendedGenericResponse>(`documents/${documentId}/status`, { note: remarks, status: status });
+      console.log(response)
+      return response;
     } catch (error: any) {
       console.error("Failed to update document status");
       throw error;
@@ -205,18 +188,9 @@ export function useCustomerService() {
 
   service.getCustomerDocuments = async (panCard: string) => {
     try {
-      await delay(300);
-      const response = GetDocumentByPanCardResponse //await api.get<GenericApiResponse<GetDocumentByPanCardResponseType>>("/documents/client");
-
-      // const customer = mockCustomers.find(c => c.id === customerId);
-      // if (!customer) throw new Error("Customer not found");
-
-      // return {
-      //   data: customer.documents,
-      //   status: 200,
-      // };
-      // if(! response.status==200) throw new Error("Some went wrong")
-      return response
+      const response = await api.get<GenericApiResponse<GetDocumentByPanCardResponseType>>(`/documents/client?pan=${panCard}`);
+      // console.log(response)
+      return response.data
     } catch (error: any) {
       console.error("Failed to fetch customer documents");
       throw error;
@@ -231,31 +205,21 @@ export function useCustomerService() {
         throw new Error("Failed to generate upload link");
       }
       return res.data.data;
-
-
-      // Simulate generating an upload link
-      // await delay(500);
-      // if (!customerId) throw new Error("Customer ID is required");
-      // if (documentId && !remarks) throw new Error("Remarks are required for re-upload");
-      // if (documentId && !customerId) throw new Error("Customer ID is required for re-upload");             
-      // await delay(300);
-      // const customer = mockCustomers.find(c => c.id === customerId);
-      // if (!customer) throw new Error("Customer not found");
-
-      // const baseUrl = window.location.origin;
-      // const uploadLink = documentId
-      // ? `${baseUrl}/customer/reupload?customerId=${customerId}&documentId=${documentId}&remarks=${encodeURIComponent(remarks || '')}`
-      //   // : `${baseUrl}/customer?userId=${customerId}`;
-
-      // return {
-      //   data: { uploadLink },
-      //   status: 200,
-      // };
     } catch (error: any) {
       console.error("Failed to generate upload link");
       throw error;
     }
   };
+
+  service.getCustomerByStatus = async (status: "SELECTED" | "SUBMITTED" | "APPROVED") => {
+    try {
+      const response = await api.get<GenericApiResponse<CustomerType[]>>(`/clients?documentStatus=${status}`);
+      return response.data;
+    } catch (e: any) {
+      console.error(e)
+      throw e;
+    }
+  }
 
   return service;
 }

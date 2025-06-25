@@ -8,6 +8,7 @@ export interface DocumentType {
   documentType: string;
   isMandatory: boolean;
   isMultipleYear?: boolean;
+  documentMasterId:string
 }
 
 export interface DocumentCategory {

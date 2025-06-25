@@ -35,12 +35,18 @@ export interface DocumentsByCategoryType {
 }
 
 export interface DocumentResponseType {
-    id: String,
+    documentMasterId: String,
     documentType: String,
     isMandatory: boolean,
     isMultiple: boolean,
     files: FileResponseType[],
+    status: String
+    category?: String
 }
 
 
-export type FileResponseType = string;
+export interface FileResponseType {
+    docId: String,
+    docName: String,
+    docStatus: String
+}

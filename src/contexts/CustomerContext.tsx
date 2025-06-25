@@ -37,7 +37,7 @@ interface CustomerContextType {
     remarks?: string
   ) => void;
   getCustomerDocuments: (customerId: string) => CustomerDocument[];
-  generateUploadLink: (customerId: string, documentId?: string, remarks?: string) => string;
+  generateUploadLink: (customerId: string, documentId?: String, remarks?: string) => string;
   syncCustomerDocuments: (customerIdOrPanCard: string) => void;
   findCustomerByPanCard: (panCard: string) => Customer | undefined;
   updateCustomer: (id: string, customer: Partial<Customer>) => void;
