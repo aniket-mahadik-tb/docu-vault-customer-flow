@@ -79,7 +79,7 @@ const CustomerList = () => {
     // setSelectedCustomer(customer);
     const response = await customerService.getCustomerDocuments(customer.pan);
     customer.documents = response;
-    customer.clientType = response.customerType;
+    // customer.clientType = response.customerType;
     setTempCustomer(customer);
     navigate(`/admin/customers/details`);
   };
