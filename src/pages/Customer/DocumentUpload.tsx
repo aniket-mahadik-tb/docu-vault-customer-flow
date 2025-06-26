@@ -41,6 +41,8 @@ const DocumentUpload = () => {
   const [sectionInstances, setSectionInstances] = useState<{ [key: string]: number }>({});
   // Add state to track years for each document with isMultipleYear
   const [documentYears, setDocumentYears] = useState<{ [key: string]: number[] }>({});
+  // Add state to track selected year for each document/yearIdx
+  const [selectedYears, setSelectedYears] = useState<{ [key: string]: number }>({});
   const currentYear = new Date().getFullYear();
 
   // Pagination state
@@ -479,21 +481,42 @@ const DocumentUpload = () => {
                                           {document.documentType}
                                           {document.isMultipleYears && (
                                             <>
-                                              <select
-                                                value={year}
-                                                onChange={e => {
-                                                  const newYear = parseInt(e.target.value, 10);
-                                                  setDocumentYears(prev => ({
-                                                    ...prev,
-                                                    [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? newYear : y)
-                                                  }));
-                                                }}
-                                                className="border rounded px-2 py-1 text-sm ml-2"
-                                              >
-                                                {Array.from({ length: 6 }).map((_, i) => (
-                                                  <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
-                                                ))}
-                                              </select>
+                                              {(() => {
+                                                const key = `${docKey}_${yearIdx}`;
+                                                if (selectedYears[key] === undefined) {
+                                                  setTimeout(() => {
+                                                    setSelectedYears(prev => ({
+                                                      ...prev,
+                                                      [key]: year
+                                                    }));
+                                                    setDocumentYears(prev => ({
+                                                      ...prev,
+                                                      [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? year : y)
+                                                    }));
+                                                  }, 0);
+                                                }
+                                                return (
+                                                  <select
+                                                    value={selectedYears[key] ?? year}
+                                                    onChange={e => {
+                                                      const newYear = parseInt(e.target.value, 10);
+                                                      setSelectedYears(prev => ({
+                                                        ...prev,
+                                                        [key]: newYear
+                                                      }));
+                                                      setDocumentYears(prev => ({
+                                                        ...prev,
+                                                        [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? newYear : y)
+                                                      }));
+                                                    }}
+                                                    className="border rounded px-2 py-1 text-sm ml-2"
+                                                  >
+                                                    {Array.from({ length: 6 }).map((_, i) => (
+                                                      <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
+                                                    ))}
+                                                  </select>
+                                                );
+                                              })()}
                                             </>
                                           )}
                                         </div>
@@ -587,10 +610,14 @@ const DocumentUpload = () => {
                                                   {isMultipleFiles && fileIndex === files.length - 1 && (
                                                     <>
                                                       <input
+                                                        key={`file-${document.documentMasterId}-${docKey}-${yearIdx}-${selectedYears[`${docKey}_${yearIdx}`] ?? year}`}
                                                         type="file"
-                                                        id={`file-plus-${document.documentMasterId}`}
+                                                        id={`file-${document.documentMasterId}-${docKey}-${yearIdx}`}
                                                         multiple
-                                                        onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files, year)}
+                                                        onChange={(e) => {
+                                                          const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
+                                                         // e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear);
+                                                        }}
                                                         className="hidden"
                                                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                                       />
@@ -599,7 +626,7 @@ const DocumentUpload = () => {
                                                         size="sm"
                                                         className="h-6 w-6 p-0 text-blue-600 ml-2 rounded-full border border-blue-200 bg-blue-50"
                                                         aria-label="Add more files"
-                                                        onClick={() => window.document.getElementById(`file-plus-${document.documentMasterId}`)?.click()}
+                                                        onClick={() => window.document.getElementById(`file-${document.documentMasterId}-${docKey}-${yearIdx}`)?.click()}
                                                       >
                                                         <Plus className="h-4 w-4" />
                                                       </Button>
@@ -637,14 +664,20 @@ const DocumentUpload = () => {
                                       <TableCell>
                                         <div className="flex items-center gap-2 justify-center" style={{ minWidth: 80 }}>
                                           <input
+                                            key={`file-${document.documentMasterId}-${docKey}-${yearIdx}-${selectedYears[`${docKey}_${yearIdx}`] ?? year}`}
                                             type="file"
-                                            id={`file-${document.documentMasterId}`}
+                                            // id={`file-${document.documentMasterId}`}
+                                            id={`file-${document.documentMasterId}-${docKey}-${yearIdx}`} 
                                             multiple
-                                            onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files, year)}
+                                            onChange={(e) => {
+                                              const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
+                                              e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear);
+                                            }}
                                             className="hidden"
                                             accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                           />
-                                          <label htmlFor={`file-${document.documentMasterId}`}>
+                                          {/* <label htmlFor={`file-${document.documentMasterId}`}> */}
+                                          <label htmlFor={`file-${document.documentMasterId}-${docKey}-${yearIdx}`}>
                                             <Button
                                               variant="outline"
                                               size="sm"
@@ -772,21 +805,42 @@ const DocumentUpload = () => {
                                           {document.documentType}
                                           {document.isMultipleYears && (
                                             <>
-                                              <select
-                                                value={year}
-                                                onChange={e => {
-                                                  const newYear = parseInt(e.target.value, 10);
-                                                  setDocumentYears(prev => ({
-                                                    ...prev,
-                                                    [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? newYear : y)
-                                                  }));
-                                                }}
-                                                className="border rounded px-2 py-1 text-sm ml-2"
-                                              >
-                                                {Array.from({ length: 6 }).map((_, i) => (
-                                                  <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
-                                                ))}
-                                              </select>
+                                              {(() => {
+                                                const key = `${docKey}_${yearIdx}`;
+                                                if (selectedYears[key] === undefined) {
+                                                  setTimeout(() => {
+                                                    setSelectedYears(prev => ({
+                                                      ...prev,
+                                                      [key]: year
+                                                    }));
+                                                    setDocumentYears(prev => ({
+                                                      ...prev,
+                                                      [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? year : y)
+                                                    }));
+                                                  }, 0);
+                                                }
+                                                return (
+                                                  <select
+                                                    value={selectedYears[key] ?? year}
+                                                    onChange={e => {
+                                                      const newYear = parseInt(e.target.value, 10);
+                                                      setSelectedYears(prev => ({
+                                                        ...prev,
+                                                        [key]: newYear
+                                                      }));
+                                                      setDocumentYears(prev => ({
+                                                        ...prev,
+                                                        [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? newYear : y)
+                                                      }));
+                                                    }}
+                                                    className="border rounded px-2 py-1 text-sm ml-2"
+                                                  >
+                                                    {Array.from({ length: 6 }).map((_, i) => (
+                                                      <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
+                                                    ))}
+                                                  </select>
+                                                );
+                                              })()}
                                             </>
                                           )}
                                         </div>
@@ -882,10 +936,15 @@ const DocumentUpload = () => {
                                                   {isMultipleFiles && fileIndex === files.length - 1 && (
                                                     <>
                                                       <input
+                                                        key={`file-${document.documentMasterId}-${docKey}-${yearIdx}-${selectedYears[`${docKey}_${yearIdx}`] ?? year}`}
                                                         type="file"
-                                                        id={`file-plus-${docKey}`}
+                                                        id={`file-${document.documentMasterId}-${docKey}-${yearIdx}`}
                                                         multiple
-                                                        onChange={(e) => e.target.files && handleFileUpload(docKey, e.target.files, year)}
+                                                        onChange={(e) => {
+                                                          const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
+
+                                                          e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear);
+                                                        }}
                                                         className="hidden"
                                                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                                       />
@@ -894,7 +953,7 @@ const DocumentUpload = () => {
                                                         size="sm"
                                                         className="h-6 w-6 p-0 text-blue-600 ml-2 rounded-full border border-blue-200 bg-blue-50"
                                                         aria-label="Add more files"
-                                                        onClick={() => window.document.getElementById(`file-plus-${docKey}`)?.click()}
+                                                        onClick={() => window.document.getElementById(`file-${document.documentMasterId}-${docKey}-${yearIdx}`)?.click()}
                                                       >
                                                         <Plus className="h-4 w-4" />
                                                       </Button>
@@ -932,10 +991,15 @@ const DocumentUpload = () => {
                                       <TableCell>
                                         <div className="flex items-center gap-2 justify-center" style={{ minWidth: 80 }}>
                                           <input
+                                            key={`file-${docKey}-${yearIdx}-${selectedYears[`${docKey}_${yearIdx}`] ?? year}`}
                                             type="file"
                                             id={`file-${docKey}`}
                                             multiple
-                                            onChange={(e) => e.target.files && handleFileUpload(docKey, e.target.files, year)}
+                                            onChange={(e) => {
+                                              const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
+                                              console.log("FILE uplod",selectedYear)
+                                             // e.target.files && handleFileUpload(docKey, e.target.files, selectedYear);
+                                            }}
                                             className="hidden"
                                             accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                                           />
