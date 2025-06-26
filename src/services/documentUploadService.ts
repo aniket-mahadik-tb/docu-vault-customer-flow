@@ -3,7 +3,7 @@ import { tempData } from "@/utils/globalConstants";
 
 // Types for document upload API
 export interface DocumentType {
-  isMultiple: boolean;
+  isMultipleFiles: boolean;
   id: string;
   documentType: string;
   isMandatory: boolean;

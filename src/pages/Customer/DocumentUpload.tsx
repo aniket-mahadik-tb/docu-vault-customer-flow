@@ -471,57 +471,142 @@ const DocumentUpload = () => {
                                   const years = document.isMultipleYears
                                     ? documentYears[docKey] || [currentYear]
                                     : [undefined];
-                                  const isMultipleFiles = document.isMultiple ?? document.isMultiple;
+                                  const isMultipleFiles = document.isMultipleFiles;
                                   return years.map((year, yearIdx) => (
                                     <TableRow key={docKey + "_" + yearIdx}>
                                       <TableCell className="font-medium">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2" style={{ textAlign: 'start' }}>
+                                          {/* Fixed-width i icon container for alignment */}
+                                          <span style={{ display: 'inline-flex', width: 24, justifyContent: 'center' }}>
+                                            {document.isMultipleYears ? null : (
+                                              <TooltipProvider>
+                                                <Tooltip>
+                                                  <TooltipTrigger asChild>
+                                                    <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
+                                                  </TooltipTrigger>
+                                                  <TooltipContent>
+                                                    <span>This document supports multiple files.</span>
+                                                  </TooltipContent>
+                                                </Tooltip>
+                                              </TooltipProvider>
+                                            )}
+                                          </span>
                                           {document.documentType}
                                           {document.isMultipleYears && (
-                                            <select
-                                              value={year}
-                                              onChange={e => {
-                                                const newYear = parseInt(e.target.value, 10);
-                                                setDocumentYears(prev => ({
-                                                  ...prev,
-                                                  [docKey]: prev[docKey].map((y, idx) => idx === yearIdx ? newYear : y)
-                                                }));
-                                              }}
-                                              className="border rounded px-2 py-1 text-sm ml-2"
-                                            >
-                                              {Array.from({ length: 6 }).map((_, i) => (
-                                                <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
-                                              ))}
-                                            </select>
+                                            <>
+                                              <select
+                                                value={year}
+                                                onChange={e => {
+                                                  const newYear = parseInt(e.target.value, 10);
+                                                  setDocumentYears(prev => ({
+                                                    ...prev,
+                                                    [docKey]: prev[docKey].map((y, idx) => idx === yearIdx ? newYear : y)
+                                                  }));
+                                                }}
+                                                className="border rounded px-2 py-1 text-sm ml-2"
+                                              >
+                                                {Array.from({ length: 6 }).map((_, i) => (
+                                                  <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
+                                                ))}
+                                              </select>
+                                              <TooltipProvider>
+                                                <Tooltip>
+                                                  <TooltipTrigger asChild>
+                                                    <Info className={`h-5 w-5 ml-2 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
+                                                  </TooltipTrigger>
+                                                  <TooltipContent>
+                                                    <span>This document supports multiple files.</span>
+                                                  </TooltipContent>
+                                                </Tooltip>
+                                              </TooltipProvider>
+                                            </>
                                           )}
                                         </div>
                                       </TableCell>
                                       <TableCell>
-                                        {getStatusBadge(document.documentMasterId)}
-                                      </TableCell>
-                                      <TableCell>
-                                        {/* Use API files here */}
+                                        {/* Status column: show status for each file from API */}
                                         {(() => {
                                           const files = getApiFilesForDocument(
                                             document.documentMasterId,
                                             category.category,
                                             document.isMultipleYears ? years[yearIdx] : undefined
                                           );
-                                          return files.length > 0 ? (
-                                            <div className="space-y-1">
-                                              {files.map((file, fileIndex) => (
-                                                <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
-                                                  <span className="truncate max-w-[120px]" title={file.docName}>
-                                                    {file.docName}
-                                                  </span>
-                                                  {/* Optionally, show status or actions */}
+                                          if (files.length === 0) {
+                                            return <span className="text-gray-400 text-sm">No files</span>;
+                                          }
+                                          return (
+                                            <div className="space-y-1 flex flex-col">
+                                              {files.map((file) => (
+                                                <div key={file.docId} className="flex items-center gap-2">
+                                                  {/* Status badge/icon for file */}
+                                                  {file.docStatus === 'SUBMITTED' && (
+                                                    <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>
+                                                  )}
+                                                  {file.docStatus === 'PENDING' && (
+                                                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>
+                                                  )}
+                                                  {/* Add more status mappings as needed */}
                                                 </div>
                                               ))}
                                             </div>
-                                          ) : isMultipleFiles ? (
-                                            <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
-                                          ) : (
-                                            <span className="text-gray-400 text-sm">No files uploaded</span>
+                                          );
+                                        })()}
+                                      </TableCell>
+                                      <TableCell>
+                                        {/* Uploaded Files column: only show file names and plus icon */}
+                                        {(() => {
+                                          const files = getApiFilesForDocument(
+                                            document.documentMasterId,
+                                            category.category,
+                                            document.isMultipleYears ? years[yearIdx] : undefined
+                                          );
+                                          if (files.length === 0) {
+                                            return (
+                                              <span className="text-gray-400 text-sm">No files uploaded yet</span>
+                                            );
+                                          }
+                                          return (
+                                            <div className="space-y-1 flex flex-col">
+                                              {files.map((file, fileIndex) => (
+                                                <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
+                                                  {/* Trash icon before file name */}
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-800 mr-1"
+                                                    aria-label="Delete file"
+                                                    disabled
+                                                  >
+                                                    <Trash2 className="h-4 w-4" />
+                                                  </Button>
+                                                  <span className="truncate max-w-[120px]" title={file.docName}>
+                                                    {file.docName}
+                                                  </span>
+                                                  {/* Show plus icon for uploading more files */}
+                                                  {isMultipleFiles && fileIndex === files.length - 1 && (
+                                                    <>
+                                                      <input
+                                                        type="file"
+                                                        id={`file-plus-${document.documentMasterId}`}
+                                                        multiple
+                                                        onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files, year)}
+                                                        className="hidden"
+                                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                                      />
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50 hover:border-blue-300"
+                                                        aria-label="Add more files"
+                                                        onClick={() => window.document.getElementById(`file-plus-${document.documentMasterId}`)?.click()}
+                                                      >
+                                                        <Plus className="h-4 w-4" />
+                                                      </Button>
+                                                    </>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </div>
                                           );
                                         })()}
                                       </TableCell>
@@ -663,36 +748,60 @@ const DocumentUpload = () => {
                                   const years = document.isMultipleYears
                                     ? documentYears[docKey] || [currentYear]
                                     : [undefined];
-                                  const isMultipleFiles = document.isMultiple ?? document.isMultiple;
+                                  const isMultipleFiles = document.isMultipleFiles ?? document.isMultipleFiles;
                                   return years.map((year, yearIdx) => (
                                     <TableRow key={docKey + "_" + yearIdx}>
                                       <TableCell className="font-medium">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2" style={{ textAlign: 'start' }}>
+                                          {/* Fixed-width i icon container for alignment (promoter) */}
+                                          <span style={{ display: 'inline-flex', width: 24, justifyContent: 'center' }}>
+                                            {document.isMultipleYears ? null : (
+                                              <TooltipProvider>
+                                                <Tooltip>
+                                                  <TooltipTrigger asChild>
+                                                    <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
+                                                  </TooltipTrigger>
+                                                  <TooltipContent>
+                                                    <span>This document supports multiple files.</span>
+                                                  </TooltipContent>
+                                                </Tooltip>
+                                              </TooltipProvider>
+                                            )}
+                                          </span>
                                           {document.documentType}
                                           {document.isMultipleYears && (
-                                            <select
-                                              value={year}
-                                              onChange={e => {
-                                                const newYear = parseInt(e.target.value, 10);
-                                                setDocumentYears(prev => ({
-                                                  ...prev,
-                                                  [docKey]: prev[docKey].map((y, idx) => idx === yearIdx ? newYear : y)
-                                                }));
-                                              }}
-                                              className="border rounded px-2 py-1 text-sm ml-2"
-                                            >
-                                              {Array.from({ length: 6 }).map((_, i) => (
-                                                <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
-                                              ))}
-                                            </select>
+                                            <>
+                                              <select
+                                                value={year}
+                                                onChange={e => {
+                                                  const newYear = parseInt(e.target.value, 10);
+                                                  setDocumentYears(prev => ({
+                                                    ...prev,
+                                                    [docKey]: prev[docKey].map((y, idx) => idx === yearIdx ? newYear : y)
+                                                  }));
+                                                }}
+                                                className="border rounded px-2 py-1 text-sm ml-2"
+                                              >
+                                                {Array.from({ length: 6 }).map((_, i) => (
+                                                  <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
+                                                ))}
+                                              </select>
+                                              <TooltipProvider>
+                                                <Tooltip>
+                                                  <TooltipTrigger asChild>
+                                                    <Info className={`h-5 w-5 ml-2 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
+                                                  </TooltipTrigger>
+                                                  <TooltipContent>
+                                                    <span>This document supports multiple files.</span>
+                                                  </TooltipContent>
+                                                </Tooltip>
+                                              </TooltipProvider>
+                                            </>
                                           )}
                                         </div>
                                       </TableCell>
                                       <TableCell>
-                                        {getStatusBadge(docKey)}
-                                      </TableCell>
-                                      <TableCell>
-                                        {/* Use API files here for promoter */}
+                                        {/* Status column: show status for each file from API (promoter) */}
                                         {(() => {
                                           const files = getApiFilesForDocument(
                                             document.documentMasterId,
@@ -700,21 +809,83 @@ const DocumentUpload = () => {
                                             document.isMultipleYears ? years[yearIdx] : undefined,
                                             currentPage - 1
                                           );
-                                          return files.length > 0 ? (
-                                            <div className="space-y-1">
-                                              {files.map((file, fileIndex) => (
-                                                <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
-                                                  <span className="truncate max-w-[120px]" title={file.docName}>
-                                                    {file.docName}
-                                                  </span>
-                                                  {/* Optionally, show status or actions */}
+                                          if (files.length === 0) {
+                                            return <span className="text-gray-400 text-sm">No files</span>;
+                                          }
+                                          return (
+                                            <div className="space-y-1 flex flex-col">
+                                              {files.map((file) => (
+                                                <div key={file.docId} className="flex items-center gap-2">
+                                                  {/* Status badge/icon for file */}
+                                                  {file.docStatus === 'SUBMITTED' && (
+                                                    <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>
+                                                  )}
+                                                  {file.docStatus === 'PENDING' && (
+                                                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>
+                                                  )}
+                                                  {/* Add more status mappings as needed */}
                                                 </div>
                                               ))}
                                             </div>
-                                          ) : isMultipleFiles ? (
-                                            <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
-                                          ) : (
-                                            <span className="text-gray-400 text-sm">No files uploaded</span>
+                                          );
+                                        })()}
+                                      </TableCell>
+                                      <TableCell>
+                                        {/* Uploaded Files column: only show file names and plus icon (promoter) */}
+                                        {(() => {
+                                          const files = getApiFilesForDocument(
+                                            document.documentMasterId,
+                                            category.category,
+                                            document.isMultipleYears ? years[yearIdx] : undefined,
+                                            currentPage - 1
+                                          );
+                                          if (files.length === 0) {
+                                            return (
+                                              <span className="text-gray-400 text-sm">No files uploaded yet</span>
+                                            );
+                                          }
+                                          return (
+                                            <div className="space-y-1 flex flex-col">
+                                              {files.map((file, fileIndex) => (
+                                                <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
+                                                  {/* Trash icon before file name */}
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-800 mr-1"
+                                                    aria-label="Delete file"
+                                                    disabled
+                                                  >
+                                                    <Trash2 className="h-4 w-4" />
+                                                  </Button>
+                                                  <span className="truncate max-w-[120px]" title={file.docName}>
+                                                    {file.docName}
+                                                  </span>
+                                                  {/* Show plus icon for uploading more files */}
+                                                  {isMultipleFiles && fileIndex === files.length - 1 && (
+                                                    <>
+                                                      <input
+                                                        type="file"
+                                                        id={`file-plus-${docKey}`}
+                                                        multiple
+                                                        onChange={(e) => e.target.files && handleFileUpload(docKey, e.target.files, year)}
+                                                        className="hidden"
+                                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                                      />
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50 hover:border-blue-300"
+                                                        aria-label="Add more files"
+                                                        onClick={() => window.document.getElementById(`file-plus-${docKey}`)?.click()}
+                                                      >
+                                                        <Plus className="h-4 w-4" />
+                                                      </Button>
+                                                    </>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </div>
                                           );
                                         })()}
                                       </TableCell>
