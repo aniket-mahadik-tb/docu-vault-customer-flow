@@ -472,217 +472,238 @@ const DocumentUpload = () => {
                                     ? documentYears[docKey] || [currentYear]
                                     : [undefined];
                                   const isMultipleFiles = document.isMultipleFiles;
-                                  return years.map((year, yearIdx) => (
-                                    <TableRow key={docKey + "_" + yearIdx}>
-                                      <TableCell className="font-medium">
-                                        <div className="flex items-center gap-2" style={{ textAlign: 'start' }}>
-                                          {document.documentType}
-                                          {document.isMultipleYears && (
-                                            <>
-                                              <select
-                                                value={year}
-                                                onChange={e => {
-                                                  const newYear = parseInt(e.target.value, 10);
-                                                  setDocumentYears(prev => ({
-                                                    ...prev,
-                                                    [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? newYear : y)
-                                                  }));
-                                                }}
-                                                className="border rounded px-2 py-1 text-sm ml-2"
-                                              >
-                                                {Array.from({ length: 6 }).map((_, i) => (
-                                                  <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
-                                                ))}
-                                              </select>
-                                            </>
-                                          )}
-                                        </div>
-                                      </TableCell>
-                                      <TableCell>
-                                        {/* Status column: show status for each file from API */}
-                                        {(() => {
-                                          const files = getApiFilesForDocument(
-                                            document.documentMasterId,
-                                            category.category,
-                                            document.isMultipleYears ? years[yearIdx] : undefined
-                                          );
-                                          if (files.length === 0) {
-                                            return <span className="text-gray-400 text-sm">No files</span>;
-                                          }
-                                          return (
-                                            <div className="space-y-1 flex flex-col">
-                                              {files.map((file) => {
-                                                let badge;
-                                                switch ((file.docStatus || '').toUpperCase()) {
-                                                  case 'SUBMITTED':
-                                                    badge = <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
-                                                    break;
-                                                  case 'PENDING':
-                                                    badge = <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-                                                    break;
-                                                  case 'REJECTED':
-                                                    badge = <Badge variant="destructive" className="bg-red-100 text-red-800">Rejected</Badge>;
-                                                    break;
-                                                  default:
-                                                    badge = <Badge variant="secondary" className="bg-gray-100 text-gray-800">{file.docStatus}</Badge>;
-                                                }
-                                                return (
-                                                  <div key={file.docId} className="flex items-center gap-2">
-                                                    {badge}
-                                                  </div>
-                                                );
-                                              })}
-                                            </div>
-                                          );
-                                        })()}
-                                      </TableCell>
-                                      <TableCell>
-                                        {/* Uploaded Files column: only show file names and plus icon */}
-                                        {(() => {
-                                          const files = getApiFilesForDocument(
-                                            document.documentMasterId,
-                                            category.category,
-                                            document.isMultipleYears ? years[yearIdx] : undefined
-                                          );
-                                          if (files.length === 0) {
-                                            return (
-                                              <span className="text-gray-400 text-sm">No files uploaded yet</span>
-                                            );
-                                          }
-                                          return (
-                                            <div className="space-y-1 flex flex-col">
-                                              {files.map((file, fileIndex) => (
-                                                <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
-                                                  {/* Trash icon before file name, hidden if status is APPROVED */}
-                                                  {String(file.docStatus).toUpperCase() !== 'APPROVED' ? (
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      className="h-6 w-6 p-0 text-red-700 mr-1"
-                                                      aria-label="Delete file"
-                                                      disabled
+                                  return years.map((year, yearIdx) => {
+                                    const yearKey = `${docKey}_${year}`;
+                                    return (
+                                      <TableRow key={yearKey}>
+                                        <TableCell className="font-medium">
+                                          <div className="flex items-center gap-2" style={{ textAlign: 'start' }}>
+                                            {document.documentType}
+                                            {document.isMultipleYears && (
+                                              <>
+                                                {(() => {
+                                                  // Get all selected years for this docKey except the current one
+                                                  const selectedYears = (years as number[]).filter((_, idx) => idx !== yearIdx);
+                                                  // All possible years
+                                                  const possibleYears = Array.from({ length: 6 }).map((_, i) => currentYear - i);
+                                                  // Filter out already selected years
+                                                  const availableYears = possibleYears.filter(y => !selectedYears.includes(y));
+                                                  return (
+                                                    <select
+                                                      value={year}
+                                                      onChange={e => {
+                                                        const newYear = parseInt(e.target.value, 10);
+                                                        setDocumentYears(prev => ({
+                                                          ...prev,
+                                                          [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? newYear : y)
+                                                        }));
+                                                      }}
+                                                      className="border rounded px-2 py-1 text-sm ml-2"
                                                     >
-                                                      <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                  ) : (
-                                                    <span style={{ width: 24, display: 'inline-block' }}></span>
-                                                  )}
-                                                  {/* Eye icon for preview, always visible */}
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0 text-blue-800 mr-1"
-                                                    aria-label="View file"
-                                                    disabled
-                                                  >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
-                                                      <circle cx="12" cy="12" r="3" />
-                                                    </svg>
-                                                  </Button>
-                                                  <span className="truncate max-w-[120px]" title={file.docName}>
-                                                    {file.docName}
-                                                  </span>
-                                                  {/* Show plus icon for uploading more files */}
-                                                  {isMultipleFiles && fileIndex === files.length - 1 && (
-                                                    <>
-                                                      <input
-                                                        type="file"
-                                                        id={`file-plus-${document.documentMasterId}`}
-                                                        multiple
-                                                        onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files, year)}
-                                                        className="hidden"
-                                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                                      />
+                                                      {availableYears.map(y => (
+                                                        <option key={y} value={y}>{y}</option>
+                                                      ))}
+                                                    </select>
+                                                  );
+                                                })()}
+                                              </>
+                                            )}
+                                          </div>
+                                        </TableCell>
+                                        <TableCell>
+                                          {/* Status column: show status for each file from API */}
+                                          {(() => {
+                                            const files = getApiFilesForDocument(
+                                              document.documentMasterId,
+                                              category.category,
+                                              document.isMultipleYears ? years[yearIdx] : undefined
+                                            );
+                                            if (files.length === 0) {
+                                              return <span className="text-gray-400 text-sm">No files</span>;
+                                            }
+                                            return (
+                                              <div className="space-y-1 flex flex-col">
+                                                {files.map((file) => {
+                                                  let badge;
+                                                  switch ((file.docStatus || '').toUpperCase()) {
+                                                    case 'SUBMITTED':
+                                                      badge = <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
+                                                      break;
+                                                    case 'PENDING':
+                                                      badge = <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+                                                      break;
+                                                    case 'REJECTED':
+                                                      badge = <Badge variant="destructive" className="bg-red-100 text-red-800">Rejected</Badge>;
+                                                      break;
+                                                    default:
+                                                      badge = <Badge variant="secondary" className="bg-gray-100 text-gray-800">{file.docStatus}</Badge>;
+                                                  }
+                                                  return (
+                                                    <div key={file.docId} className="flex items-center gap-2">
+                                                      {badge}
+                                                    </div>
+                                                  );
+                                                })}
+                                              </div>
+                                            );
+                                          })()}
+                                        </TableCell>
+                                        <TableCell>
+                                          {/* Uploaded Files column: only show file names and plus icon */}
+                                          {(() => {
+                                            const files = getApiFilesForDocument(
+                                              document.documentMasterId,
+                                              category.category,
+                                              document.isMultipleYears ? years[yearIdx] : undefined
+                                            );
+                                            if (files.length === 0) {
+                                              return (
+                                                <span className="text-gray-400 text-sm">No files uploaded yet</span>
+                                              );
+                                            }
+                                            return (
+                                              <div className="space-y-1 flex flex-col">
+                                                {files.map((file, fileIndex) => (
+                                                  <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
+                                                    {/* Trash icon before file name, hidden if status is APPROVED */}
+                                                    {String(file.docStatus).toUpperCase() !== 'APPROVED' ? (
                                                       <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-6 w-6 p-0 text-blue-600 ml-2 rounded-full border border-blue-200 bg-blue-50"
-                                                        aria-label="Add more files"
-                                                        onClick={() => window.document.getElementById(`file-plus-${document.documentMasterId}`)?.click()}
+                                                        className="h-6 w-6 p-0 text-red-700 mr-1"
+                                                        aria-label="Delete file"
+                                                        disabled
                                                       >
-                                                        <Plus className="h-4 w-4" />
+                                                        <Trash2 className="h-4 w-4" />
                                                       </Button>
-                                                    </>
+                                                    ) : (
+                                                      <span style={{ width: 24, display: 'inline-block' }}></span>
+                                                    )}
+                                                    {/* Eye icon for preview, always visible */}
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-6 w-6 p-0 text-blue-800 mr-1"
+                                                      aria-label="View file"
+                                                      disabled
+                                                    >
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
+                                                        <circle cx="12" cy="12" r="3" />
+                                                      </svg>
+                                                    </Button>
+                                                    <span className="truncate max-w-[120px]" title={file.docName}>
+                                                      {file.docName}
+                                                    </span>
+                                                    {/* Show plus icon for uploading more files */}
+                                                    {isMultipleFiles && fileIndex === files.length - 1 && (
+                                                      <>
+                                                        <input
+                                                          type="file"
+                                                          id={`file-${yearKey}`}
+                                                          multiple
+                                                          onChange={(e) => e.target.files && handleFileUpload(yearKey, e.target.files, year)}
+                                                          className="hidden"
+                                                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                                        />
+                                                        <label htmlFor={`file-${yearKey}`}>
+                                                          <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-6 w-6 p-0 text-blue-600 ml-2 rounded-full border border-blue-200 bg-blue-50"
+                                                            aria-label="Add more files"
+                                                            onClick={() => window.document.getElementById(`file-${yearKey}`)?.click()}
+                                                          >
+                                                            <Plus className="h-4 w-4" />
+                                                          </Button>
+                                                        </label>
+                                                      </>
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            );
+                                          })()}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                          {/* Mandatory badge and i icon for multiple files */}
+                                          <div className="flex items-center justify-center gap-2">
+                                            {document.isMandatory ? (
+                                              <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
+                                            ) : (
+                                              <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
+                                            )}
+                                            {/* i icon for multiple files, visible only if isMultipleFiles, else invisible for alignment */}
+                                            <TooltipProvider>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <span style={{ display: 'inline-flex', width: 20, justifyContent: 'center' }}>
+                                                    <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
+                                                  </span>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <span>This document supports multiple files.</span>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </TooltipProvider>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell>
+                                          <div className="flex items-center gap-2 justify-center" style={{ minWidth: 80 }}>
+                                            <input
+                                              type="file"
+                                              id={`file-${yearKey}`}
+                                              multiple
+                                              onChange={(e) => e.target.files && handleFileUpload(yearKey, e.target.files, year)}
+                                              className="hidden"
+                                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                            />
+                                            <label htmlFor={`file-${yearKey}`}>
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                disabled={uploadingDocuments[yearKey]}
+                                                className="cursor-pointer min-w-[140px] flex items-center justify-center border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                                                asChild
+                                              >
+                                                <span>
+                                                  {uploadingDocuments[yearKey] ? (
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                                  ) : (
+                                                    <Upload className="h-4 w-4" />
                                                   )}
-                                                </div>
-                                              ))}
-                                            </div>
-                                          );
-                                        })()}
-                                      </TableCell>
-                                      <TableCell className="text-center">
-                                        {/* Mandatory badge and i icon for multiple files */}
-                                        <div className="flex items-center justify-center gap-2">
-                                          {document.isMandatory ? (
-                                            <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
-                                          ) : (
-                                            <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
-                                          )}
-                                          {/* i icon for multiple files, visible only if isMultipleFiles, else invisible for alignment */}
-                                          <TooltipProvider>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <span style={{ display: 'inline-flex', width: 20, justifyContent: 'center' }}>
-                                                  <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
+                                                  <span className="ml-1 block truncate">
+                                                    Upload Document
+                                                  </span>
                                                 </span>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <span>This document supports multiple files.</span>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        </div>
-                                      </TableCell>
-                                      <TableCell>
-                                        <div className="flex items-center gap-2 justify-center" style={{ minWidth: 80 }}>
-                                          <input
-                                            type="file"
-                                            id={`file-${document.documentMasterId}`}
-                                            multiple
-                                            onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files, year)}
-                                            className="hidden"
-                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                          />
-                                          <label htmlFor={`file-${document.documentMasterId}`}>
+                                              </Button>
+                                            </label>
+                                            {/* Always render the + button, but hide it if not needed for consistent spacing */}
                                             <Button
                                               variant="outline"
                                               size="sm"
-                                              disabled={uploadingDocuments[document.documentMasterId]}
-                                              className="cursor-pointer min-w-[140px] flex items-center justify-center border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                                              asChild
+                                              onClick={() => setDocumentYears(prev => {
+                                                const selectedYears = prev[docKey] || [currentYear];
+                                                const possibleYears = Array.from({ length: 6 }).map((_, i) => currentYear - i);
+                                                const availableYears = possibleYears.filter(y => !selectedYears.includes(y));
+                                                const nextYear = availableYears[0] ?? currentYear; // fallback to currentYear if all taken
+                                                return {
+                                                  ...prev,
+                                                  [docKey]: [...selectedYears, nextYear]
+                                                };
+                                              })}
+                                              className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${document.isMultipleYears && yearIdx === years.length - 1 ? '' : 'invisible'}`}
+                                              aria-label="Add Year"
                                             >
-                                              <span>
-                                                {uploadingDocuments[document.documentMasterId] ? (
-                                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                                                ) : (
-                                                  <Upload className="h-4 w-4" />
-                                                )}
-                                                <span className="ml-1 block truncate">
-                                                  Upload Document
-                                                </span>
-                                              </span>
+                                              +
                                             </Button>
-                                          </label>
-                                          {/* Always render the + button, but hide it if not needed for consistent spacing */}
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setDocumentYears(prev => ({
-                                              ...prev,
-                                              [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
-                                            }))}
-                                            className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${document.isMultipleYears && yearIdx === years.length - 1 ? '' : 'invisible'}`}
-                                            aria-label="Add Year"
-                                          >
-                                            +
-                                          </Button>
-                                        </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  ));
-                                })}
-                              </TableBody>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </>
+                              )}
                             </Table>
                           </CardContent>
                         </Card>
@@ -765,219 +786,240 @@ const DocumentUpload = () => {
                                     ? documentYears[docKey] || [currentYear]
                                     : [undefined];
                                   const isMultipleFiles = document.isMultipleFiles ?? document.isMultipleFiles;
-                                  return years.map((year, yearIdx) => (
-                                    <TableRow key={docKey + "_" + yearIdx}>
-                                      <TableCell className="font-medium">
-                                        <div className="flex items-center gap-2" style={{ textAlign: 'start' }}>
-                                          {document.documentType}
-                                          {document.isMultipleYears && (
-                                            <>
-                                              <select
-                                                value={year}
-                                                onChange={e => {
-                                                  const newYear = parseInt(e.target.value, 10);
-                                                  setDocumentYears(prev => ({
-                                                    ...prev,
-                                                    [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? newYear : y)
-                                                  }));
-                                                }}
-                                                className="border rounded px-2 py-1 text-sm ml-2"
-                                              >
-                                                {Array.from({ length: 6 }).map((_, i) => (
-                                                  <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
-                                                ))}
-                                              </select>
-                                            </>
-                                          )}
-                                        </div>
-                                      </TableCell>
-                                      <TableCell>
-                                        {/* Status column: show status for each file from API (promoter) */}
-                                        {(() => {
-                                          const files = getApiFilesForDocument(
-                                            document.documentMasterId,
-                                            category.category,
-                                            document.isMultipleYears ? years[yearIdx] : undefined,
-                                            currentPage - 1
-                                          );
-                                          if (files.length === 0) {
-                                            return <span className="text-gray-400 text-sm">No files</span>;
-                                          }
-                                          return (
-                                            <div className="space-y-1 flex flex-col">
-                                              {files.map((file) => {
-                                                let badge;
-                                                switch ((file.docStatus || '').toUpperCase()) {
-                                                  case 'SUBMITTED':
-                                                    badge = <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
-                                                    break;
-                                                  case 'PENDING':
-                                                    badge = <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-                                                    break;
-                                                  case 'REJECTED':
-                                                    badge = <Badge variant="destructive" className="bg-red-100 text-red-800">Rejected</Badge>;
-                                                    break;
-                                                  default:
-                                                    badge = <Badge variant="secondary" className="bg-gray-100 text-gray-800">{file.docStatus}</Badge>;
-                                                }
-                                                return (
-                                                  <div key={file.docId} className="flex items-center gap-2">
-                                                    {badge}
-                                                  </div>
-                                                );
-                                              })}
-                                            </div>
-                                          );
-                                        })()}
-                                      </TableCell>
-                                      <TableCell>
-                                        {/* Uploaded Files column: only show file names and plus icon (promoter) */}
-                                        {(() => {
-                                          const files = getApiFilesForDocument(
-                                            document.documentMasterId,
-                                            category.category,
-                                            document.isMultipleYears ? years[yearIdx] : undefined,
-                                            currentPage - 1
-                                          );
-                                          if (files.length === 0) {
-                                            return (
-                                              <span className="text-gray-400 text-sm">No files uploaded yet</span>
-                                            );
-                                          }
-                                          return (
-                                            <div className="space-y-1 flex flex-col">
-                                              {files.map((file, fileIndex) => (
-                                                <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
-                                                  {/* Trash icon before file name, hidden if status is APPROVED (promoter) */}
-                                                  {String(file.docStatus).toUpperCase() !== 'APPROVED' ? (
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      className="h-6 w-6 p-0 text-red-700 mr-1"
-                                                      aria-label="Delete file"
-                                                      disabled
+                                  return years.map((year, yearIdx) => {
+                                    const yearKey = `${docKey}_${year}`;
+                                    return (
+                                      <TableRow key={yearKey}>
+                                        <TableCell className="font-medium">
+                                          <div className="flex items-center gap-2" style={{ textAlign: 'start' }}>
+                                            {document.documentType}
+                                            {document.isMultipleYears && (
+                                              <>
+                                                {(() => {
+                                                  // Get all selected years for this docKey except the current one
+                                                  const selectedYears = (years as number[]).filter((_, idx) => idx !== yearIdx);
+                                                  // All possible years
+                                                  const possibleYears = Array.from({ length: 6 }).map((_, i) => currentYear - i);
+                                                  // Filter out already selected years
+                                                  const availableYears = possibleYears.filter(y => !selectedYears.includes(y));
+                                                  return (
+                                                    <select
+                                                      value={year}
+                                                      onChange={e => {
+                                                        const newYear = parseInt(e.target.value, 10);
+                                                        setDocumentYears(prev => ({
+                                                          ...prev,
+                                                          [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? newYear : y)
+                                                        }));
+                                                      }}
+                                                      className="border rounded px-2 py-1 text-sm ml-2"
                                                     >
-                                                      <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                  ) : (
-                                                    <span style={{ width: 24, display: 'inline-block' }}></span>
-                                                  )}
-                                                  {/* Eye icon for preview, always visible (promoter) */}
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0 text-blue-800 mr-1"
-                                                    aria-label="View file"
-                                                    disabled
-                                                  >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
-                                                      <circle cx="12" cy="12" r="3" />
-                                                    </svg>
-                                                  </Button>
-                                                  <span className="truncate max-w-[120px]" title={file.docName}>
-                                                    {file.docName}
-                                                  </span>
-                                                  {/* Show plus icon for uploading more files */}
-                                                  {isMultipleFiles && fileIndex === files.length - 1 && (
-                                                    <>
-                                                      <input
-                                                        type="file"
-                                                        id={`file-plus-${docKey}`}
-                                                        multiple
-                                                        onChange={(e) => e.target.files && handleFileUpload(docKey, e.target.files, year)}
-                                                        className="hidden"
-                                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                                      />
+                                                      {availableYears.map(y => (
+                                                        <option key={y} value={y}>{y}</option>
+                                                      ))}
+                                                    </select>
+                                                  );
+                                                })()}
+                                              </>
+                                            )}
+                                          </div>
+                                        </TableCell>
+                                        <TableCell>
+                                          {/* Status column: show status for each file from API (promoter) */}
+                                          {(() => {
+                                            const files = getApiFilesForDocument(
+                                              document.documentMasterId,
+                                              category.category,
+                                              document.isMultipleYears ? years[yearIdx] : undefined,
+                                              currentPage - 1
+                                            );
+                                            if (files.length === 0) {
+                                              return <span className="text-gray-400 text-sm">No files</span>;
+                                            }
+                                            return (
+                                              <div className="space-y-1 flex flex-col">
+                                                {files.map((file) => {
+                                                  let badge;
+                                                  switch ((file.docStatus || '').toUpperCase()) {
+                                                    case 'SUBMITTED':
+                                                      badge = <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
+                                                      break;
+                                                    case 'PENDING':
+                                                      badge = <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+                                                      break;
+                                                    case 'REJECTED':
+                                                      badge = <Badge variant="destructive" className="bg-red-100 text-red-800">Rejected</Badge>;
+                                                      break;
+                                                    default:
+                                                      badge = <Badge variant="secondary" className="bg-gray-100 text-gray-800">{file.docStatus}</Badge>;
+                                                  }
+                                                  return (
+                                                    <div key={file.docId} className="flex items-center gap-2">
+                                                      {badge}
+                                                    </div>
+                                                  );
+                                                })}
+                                              </div>
+                                            );
+                                          })()}
+                                        </TableCell>
+                                        <TableCell>
+                                          {/* Uploaded Files column: only show file names and plus icon (promoter) */}
+                                          {(() => {
+                                            const files = getApiFilesForDocument(
+                                              document.documentMasterId,
+                                              category.category,
+                                              document.isMultipleYears ? years[yearIdx] : undefined,
+                                              currentPage - 1
+                                            );
+                                            if (files.length === 0) {
+                                              return (
+                                                <span className="text-gray-400 text-sm">No files uploaded yet</span>
+                                              );
+                                            }
+                                            return (
+                                              <div className="space-y-1 flex flex-col">
+                                                {files.map((file, fileIndex) => (
+                                                  <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
+                                                    {/* Trash icon before file name, hidden if status is APPROVED (promoter) */}
+                                                    {String(file.docStatus).toUpperCase() !== 'APPROVED' ? (
                                                       <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-6 w-6 p-0 text-blue-600 ml-2 rounded-full border border-blue-200 bg-blue-50"
-                                                        aria-label="Add more files"
-                                                        onClick={() => window.document.getElementById(`file-plus-${docKey}`)?.click()}
+                                                        className="h-6 w-6 p-0 text-red-700 mr-1"
+                                                        aria-label="Delete file"
+                                                        disabled
                                                       >
-                                                        <Plus className="h-4 w-4" />
+                                                        <Trash2 className="h-4 w-4" />
                                                       </Button>
-                                                    </>
+                                                    ) : (
+                                                      <span style={{ width: 24, display: 'inline-block' }}></span>
+                                                    )}
+                                                    {/* Eye icon for preview, always visible (promoter) */}
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-6 w-6 p-0 text-blue-800 mr-1"
+                                                      aria-label="View file"
+                                                      disabled
+                                                    >
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
+                                                        <circle cx="12" cy="12" r="3" />
+                                                      </svg>
+                                                    </Button>
+                                                    <span className="truncate max-w-[120px]" title={file.docName}>
+                                                      {file.docName}
+                                                    </span>
+                                                    {/* Show plus icon for uploading more files */}
+                                                    {isMultipleFiles && fileIndex === files.length - 1 && (
+                                                      <>
+                                                        <input
+                                                          type="file"
+                                                          id={`file-${yearKey}`}
+                                                          multiple
+                                                          onChange={(e) => e.target.files && handleFileUpload(yearKey, e.target.files, year)}
+                                                          className="hidden"
+                                                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                                        />
+                                                        <label htmlFor={`file-${yearKey}`}>
+                                                          <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-6 w-6 p-0 text-blue-600 ml-2 rounded-full border border-blue-200 bg-blue-50"
+                                                            aria-label="Add more files"
+                                                            onClick={() => window.document.getElementById(`file-${yearKey}`)?.click()}
+                                                          >
+                                                            <Plus className="h-4 w-4" />
+                                                          </Button>
+                                                        </label>
+                                                      </>
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            );
+                                          })()}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                          {/* Mandatory badge and i icon for multiple files (promoter) */}
+                                          <div className="flex items-center justify-center gap-2">
+                                            {document.isMandatory ? (
+                                              <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
+                                            ) : (
+                                              <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
+                                            )}
+                                            {/* i icon for multiple files, visible only if isMultipleFiles, else invisible for alignment */}
+                                            <TooltipProvider>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <span style={{ display: 'inline-flex', width: 20, justifyContent: 'center' }}>
+                                                    <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
+                                                  </span>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <span>This document supports multiple files.</span>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </TooltipProvider>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell>
+                                          <div className="flex items-center gap-2 justify-center" style={{ minWidth: 80 }}>
+                                            <input
+                                              type="file"
+                                              id={`file-${yearKey}`}
+                                              multiple
+                                              onChange={(e) => e.target.files && handleFileUpload(yearKey, e.target.files, year)}
+                                              className="hidden"
+                                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                            />
+                                            <label htmlFor={`file-${yearKey}`}>
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                disabled={uploadingDocuments[yearKey]}
+                                                className="cursor-pointer min-w-[140px] flex items-center justify-center border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                                                asChild
+                                              >
+                                                <span>
+                                                  {uploadingDocuments[yearKey] ? (
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                                  ) : (
+                                                    <Upload className="h-4 w-4" />
                                                   )}
-                                                </div>
-                                              ))}
-                                            </div>
-                                          );
-                                        })()}
-                                      </TableCell>
-                                      <TableCell className="text-center">
-                                        {/* Mandatory badge and i icon for multiple files (promoter) */}
-                                        <div className="flex items-center justify-center gap-2">
-                                          {document.isMandatory ? (
-                                            <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
-                                          ) : (
-                                            <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
-                                          )}
-                                          {/* i icon for multiple files, visible only if isMultipleFiles, else invisible for alignment */}
-                                          <TooltipProvider>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <span style={{ display: 'inline-flex', width: 20, justifyContent: 'center' }}>
-                                                  <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
+                                                  <span className="ml-1 block truncate">
+                                                    Upload Document
+                                                  </span>
                                                 </span>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <span>This document supports multiple files.</span>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        </div>
-                                      </TableCell>
-                                      <TableCell>
-                                        <div className="flex items-center gap-2 justify-center" style={{ minWidth: 80 }}>
-                                          <input
-                                            type="file"
-                                            id={`file-${docKey}`}
-                                            multiple
-                                            onChange={(e) => e.target.files && handleFileUpload(docKey, e.target.files, year)}
-                                            className="hidden"
-                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                          />
-                                          <label htmlFor={`file-${docKey}`}>
+                                              </Button>
+                                            </label>
+                                            {/* Always render the + button, but hide it if not needed for consistent spacing (promoter) */}
                                             <Button
                                               variant="outline"
                                               size="sm"
-                                              disabled={uploadingDocuments[docKey]}
-                                              className="cursor-pointer min-w-[140px] flex items-center justify-center border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                                              asChild
+                                              onClick={() => setDocumentYears(prev => {
+                                                const selectedYears = prev[docKey] || [currentYear];
+                                                const possibleYears = Array.from({ length: 6 }).map((_, i) => currentYear - i);
+                                                const availableYears = possibleYears.filter(y => !selectedYears.includes(y));
+                                                const nextYear = availableYears[0] ?? currentYear; // fallback to currentYear if all taken
+                                                return {
+                                                  ...prev,
+                                                  [docKey]: [...selectedYears, nextYear]
+                                                };
+                                              })}
+                                              className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${document.isMultipleYears && yearIdx === years.length - 1 ? '' : 'invisible'}`}
+                                              aria-label="Add Year"
                                             >
-                                              <span>
-                                                {uploadingDocuments[docKey] ? (
-                                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                                                ) : (
-                                                  <Upload className="h-4 w-4" />
-                                                )}
-                                                <span className="ml-1 block truncate">
-                                                  Upload Document
-                                                </span>
-                                              </span>
+                                              +
                                             </Button>
-                                          </label>
-                                          {/* Always render the + button, but hide it if not needed for consistent spacing (promoter) */}
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setDocumentYears(prev => ({
-                                              ...prev,
-                                              [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
-                                            }))}
-                                            className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${document.isMultipleYears && yearIdx === years.length - 1 ? '' : 'invisible'}`}
-                                            aria-label="Add Year"
-                                          >
-                                            +
-                                          </Button>
-                                        </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  ));
-                                })}
-                              </TableBody>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </>
+                              )}
                             </Table>
                           </CardContent>
                         </Card>
