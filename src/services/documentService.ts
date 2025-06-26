@@ -1,6 +1,7 @@
 import { DocumentFile, DocumentFolder, DocumentRoot, ModifiedDocumentRoot } from "@/contexts/DocumentContext";
-import { useCustomerService } from "./customerService";
+import { GenericApiResponse, useCustomerService } from "./customerService";
 import { constants } from "@/utils/globalConstants";
+import api from "@/instances/axios";
 
 
 const { mockFile, mockDocumentFolder1, mockDocumentFolder2, mockDocumentFolder3, mockDocumentRoot } = constants;
@@ -103,6 +104,17 @@ export function useDocumentService() {
             throw err;
         }
     };
+
+    service.getDocumentByDocumentID = async (documentId: string) => {
+        try {
+            const res = await api.get<GenericApiResponse<any>>(`/documents/${documentId}`)
+            console.log(res)
+            return res.data
+        } catch (e: any) {
+            console.error(e)
+            throw e;
+        }
+    }
 
 
 
@@ -220,4 +232,6 @@ export function useDocumentService() {
             throw err;
         }
     };
+
+    return service;
 }

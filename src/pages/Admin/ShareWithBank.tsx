@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import MainLayout from "@/layouts/MainLayout";
 import { useCustomers } from "@/contexts/CustomerContext";
 import { Button } from "@/components/ui/button";
@@ -22,16 +22,29 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CustomersToShareWithBank, useCustomerService } from "@/services/customerService";
+import CustomerList from "./CustomerList";
 
 const ShareWithBank = () => {
-  const { customers } = useCustomers();
+  const [customers, setCustomers] = useState<CustomersToShareWithBank[] | null>(null);
   const { toast } = useToast();
+  const customerService = useCustomerService();
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
 
+
+  useEffect(() => {
+    (async () => {
+      const customersList = await customerService.getCustomersToShareWithBank();
+      setCustomers(customersList);
+    })();
+  }, [])
+
   // Filter for customers that have at least one approved document
-  const eligibleCustomers = customers.filter((customer) =>
-    customer.documents.some((doc) => doc.status === "approved")
-  );
+  const eligibleCustomers = customers
+  // .filter((customer) =>
+  //   // customer.documents.some((doc) => doc.status === "approved")
+  //   customer
+  // );
 
   const handleToggleCustomer = (customerId: string) => {
     setSelectedCustomers((prev) =>
@@ -62,12 +75,12 @@ const ShareWithBank = () => {
   };
 
   const approvedDocumentCount = (customerId: string) => {
-    const customer = customers.find((c) => c.id === customerId);
+    const customer = customers.find((c) => c.pan === customerId);
     if (!customer) return 0;
-    return customer.documents.filter((doc) => doc.status === "approved").length;
+    // return customer.documents.filter((doc) => doc.status === "approved").length;
   };
 
-  return (
+  return (customers) ? (
     <MainLayout showSidebar={true}>
       <div className="py-6">
         <div className="flex justify-between items-center mb-6">
@@ -93,7 +106,7 @@ const ShareWithBank = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {eligibleCustomers.length > 0 ? (
+            {customers.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -101,12 +114,12 @@ const ShareWithBank = () => {
                       <TableHead className="w-12">
                         <Checkbox
                           checked={
-                            eligibleCustomers.length > 0 &&
-                            selectedCustomers.length === eligibleCustomers.length
+                            customers.length > 0 &&
+                            customers.length === customers.length
                           }
                           onCheckedChange={(checked) => {
                             if (checked) {
-                              setSelectedCustomers(eligibleCustomers.map((c) => c.id));
+                              setSelectedCustomers(customers.map((c) => c.pan));
                             } else {
                               setSelectedCustomers([]);
                             }
@@ -119,12 +132,12 @@ const ShareWithBank = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {eligibleCustomers.map((customer) => (
-                      <TableRow key={customer.id}>
+                    {customers.map((customer) => (
+                      <TableRow key={customer.pan}>
                         <TableCell>
                           <Checkbox
-                            checked={selectedCustomers.includes(customer.id)}
-                            onCheckedChange={() => handleToggleCustomer(customer.id)}
+                            checked={selectedCustomers.includes(customer.pan)}
+                            onCheckedChange={() => handleToggleCustomer(customer.pan)}
                           />
                         </TableCell>
                         <TableCell className="font-medium">
@@ -133,16 +146,16 @@ const ShareWithBank = () => {
                             <div>
                               <p>{customer.name}</p>
                               <p className="text-xs text-muted-foreground">
-                                {customer.panCard}
+                                {customer.pan}
                               </p>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>{customer.businessName || "-"}</TableCell>
+                        <TableCell>{customer?.name || "-"}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Check className="h-4 w-4 text-green-500" />
-                            <span>{approvedDocumentCount(customer.id)} documents</span>
+                            <span>{approvedDocumentCount(customer.pan)} documents</span>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -168,6 +181,15 @@ const ShareWithBank = () => {
             </Button>
           </CardFooter>
         </Card>
+      </div>
+    </MainLayout>
+  ) : (
+    <MainLayout showSidebar={true}>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading document status...</p>
+        </div>
       </div>
     </MainLayout>
   );
