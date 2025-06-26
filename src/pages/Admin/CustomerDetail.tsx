@@ -156,6 +156,7 @@ const CustomerDetail = () => {
         if (tempCustomer) {
           setCustomer(tempCustomer);
           const documents: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
+          console.log(documents)
           setAllDocuments(documents);
         } else {
           // If customer not found, redirect to customer list
@@ -397,6 +398,9 @@ const CustomerDetail = () => {
       }]
   ));
 
+  // Check if any document is for ORGANIZATION
+  const hasOrganizationDocs = allDocuments?.some(doc => doc.customerType?.toLowerCase() === "organization");
+
   const totalPages = Math.ceil(paginatedRows.length / entriesPerPage);
   const paginatedRowsToShow = paginatedRows.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
 
@@ -481,6 +485,9 @@ const CustomerDetail = () => {
                   <TableRow>
                     <TableHead className="w-[35%] pl-6">Document Type</TableHead>
                     <TableHead className="w-[20%] px-4">Category</TableHead>
+                    {hasOrganizationDocs && (
+                      <TableHead className="w-[15%] px-4">Customer Type</TableHead>
+                    )}
                     <TableHead className="w-[15%] px-4">Files</TableHead>
                     <TableHead className="w-[15%] px-4">Status</TableHead>
                     <TableHead className="w-[15%] px-4">Action</TableHead>
@@ -523,6 +530,24 @@ const CustomerDetail = () => {
                             )}
                           </TableCell>
                           <TableCell className="px-4">{doc.category}</TableCell>
+                          {hasOrganizationDocs && (
+                            <TableCell className="px-4">
+                              {doc.customerType && String(doc.customerType).toLowerCase().includes('promoter') ? (
+                                <span className="flex items-center gap-2">
+                                  <span>PROMOTER</span>
+                                  {(() => {
+                                    // Extract number from customerType (e.g., 'promoter1' -> 1)
+                                    const match = String(doc.customerType).match(/promoter(\d+)/i);
+                                    return match ? (
+                                      <span className="text-gray-400 text-xs">#{match[1]}</span>
+                                    ) : null;
+                                  })()}
+                                </span>
+                              ) : (
+                                doc.customerType
+                              )}
+                            </TableCell>
+                          )}
                           <TableCell className="px-4">
                             {file ? (
                               <span>{file.docName}</span>
@@ -569,7 +594,7 @@ const CustomerDetail = () => {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-4 px-4">
+                      <TableCell colSpan={hasOrganizationDocs ? 7 : 6} className="text-center py-4 px-4">
                         No documents found
                       </TableCell>
                     </TableRow>

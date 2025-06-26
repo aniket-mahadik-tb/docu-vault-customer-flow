@@ -20,6 +20,7 @@ import { getSamplePreviewUrl, isPdfPreview, usingSamplePreviews } from "@/lib/pr
 import { useCustomerService } from "@/services/customerService";
 import { CustomerType, DocumentResponseType, FileResponseType } from "@/utils/types";
 import { useTempCustomer } from "@/utils/TempContext";
+import { useDocumentService } from "@/services/documentService";
 
 // Updated PDF.js worker with a direct path (using cdnjs instead of unpkg)
 const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -83,12 +84,13 @@ const ReviewDocument = () => {
   // const document = customer?.documents.find((doc) => doc.id === documentId);
   // const [customer, setCustomer] = useState<CustomerType | null>(null);
   const { tempCustomer, setTempCustomer } = useTempCustomer();
-  const [document, setDocument] = useState<FileResponseType | null>(null);
+  const [document, setDocument] = useState<any | null>(null);
   const customerService = useCustomerService();
   const [rejectLoading, setRejectLoading] = useState<boolean>(false);
   const [onHoldLoading, setOnHoldLoading] = useState<boolean>(false);
   const [approveLoding, setApproveLoding] = useState<boolean>(false);
-  const [currentDoc, setCurrentDoc] = useState<DocumentResponseType | null>(null);
+  // const [currentDoc, setCurrentDoc] = useState<DocumentResponseType | null>(null);
+  const documentService = useDocumentService();
 
 
 
@@ -99,12 +101,14 @@ const ReviewDocument = () => {
         if (true) {
           if (tempCustomer) {
             setCustomer(tempCustomer);
-            // Use flattenDocuments to find the correct document
-            const allDocs: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
-            const docObj: DocumentResponseType = allDocs.find((doc: DocumentResponseType) => doc.documentMasterId === masterId);
-            setCurrentDoc(docObj);
-            const doc: FileResponseType = docObj.files.find((doc: FileResponseType) => doc.docId === documentId)
-            setDocument(doc);
+            // // Use flattenDocuments to find the correct document
+            // const allDocs: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
+            // const docObj: DocumentResponseType = allDocs.find((doc: DocumentResponseType) => doc.documentMasterId === masterId);
+            // // setCurrentDoc(docObj);
+            // const doc: FileResponseType = docObj.files.find((doc: FileResponseType) => doc.docId === documentId)
+            const res = await documentService.getDocumentByDocumentID(documentId);
+
+            setDocument(res.data);
           } else {
             toast({
               title: `failed to fetch customer details`,
@@ -137,7 +141,7 @@ const ReviewDocument = () => {
     if (document) {
       if (usingSamplePreviews()) {
         // Use sample preview based on document name
-        const sampleUrl = getSamplePreviewUrl(document.docName, document.docName.slice(document.docName.indexOf(".")));
+        const sampleUrl = getSamplePreviewUrl(document.fileName, document.fileName.slice(document.fileName.indexOf(".")));
 
         if (isPdfPreview(sampleUrl)) {
           loadPdf(sampleUrl);
@@ -146,7 +150,7 @@ const ReviewDocument = () => {
           setDocumentBlobUrl(sampleUrl);
         }
       } else {
-        if (document.docName?.toLowerCase().endsWith('.pdf')) {
+        if (document.fileName?.toLowerCase().endsWith('.pdf')) {
           loadPdf("/placeholder.svg");
         }
       }
@@ -225,15 +229,15 @@ const ReviewDocument = () => {
     }
   };
 
-  const isPdf = document?.docName.toLowerCase().endsWith('.pdf') ||
-    getSamplePreviewUrl(document?.docName || '').toLowerCase().endsWith('.pdf');
-  const isImage = document?.docName.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/);
+  const isPdf = document?.fileName.toLowerCase().endsWith('.pdf') ||
+    getSamplePreviewUrl(document?.fileName || '').toLowerCase().endsWith('.pdf');
+  const isImage = document?.fileName.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/);
 
   // Get a usable document URL or fallback
   const getDocumentUrl = () => {
     // If we're using sample previews, return the appropriate sample
     if (usingSamplePreviews() && document) {
-      return getSamplePreviewUrl(document.docName);
+      return getSamplePreviewUrl(document.fileName);
     }
 
     // First try the blob URL if we created one
@@ -277,7 +281,7 @@ const ReviewDocument = () => {
     if (rejectLoading || onHoldLoading || approveLoding) return;
     try {
       // updateDocumentStatus(customer.id, document.id, status, remarks);
-      await customerService.updateDocumentStatus(customer.pan, document.docId, status, remarks)
+      await customerService.updateDocumentStatus(customer.pan, document.documentId, status, remarks)
 
       const statusMessage =
         status === "APPROVED" ? "Document approved successfully" :
@@ -301,7 +305,6 @@ const ReviewDocument = () => {
       setApproveLoding(false)
       setRejectLoading(false)
       setOnHoldLoading(false)
-      console.log(e)
       toast({
         title: "Failed to update status",
         description: remarks ? `Remarks: ${remarks}` : undefined,
@@ -343,30 +346,26 @@ const ReviewDocument = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Document Name</p>
                   <p className="font-medium flex items-center">
-                    {document.docName}
-                    {currentDoc && currentDoc.files && currentDoc.files.length > 1 && (
-                      <>
-                        <span className="ml-2 text-gray-400">#{currentDoc.files.findIndex(f => f.docId === document.docId) + 1}</span>
-                        <span className="ml-1 cursor-pointer inline-flex items-center text-xs bg-pink-100 rounded-full p-0.5" title="Year: 2022">
-                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="inline-block align-middle">
-                            <circle cx="5" cy="5" r="4.5" fill="#fce7f3" />
-                            <text x="5" y="8" textAnchor="middle" fontSize="7" fill="#ec4899" fontWeight="bold">i</text>
-                          </svg>
-                        </span>
-                      </>
-                    )}
+                    {document.fileName}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Uploaded On</p>
                   <p className="font-medium">
-                    {/* {new Date(document.uploadedAt).toLocaleDateString()} */}
+                    {new Date(document.uploadedOn).toLocaleDateString()}
                   </p>
                 </div>
+                {/* <div>
+                  <p className="text-sm text-muted-foreground">Uploaded On</p>
+                  <p className="font-medium capitalize">
+                    {new Date(document?.uploadedOn).toLocaleDateString()}{" "}
+                    {new Date(document?.uploadedOn).toLocaleTimeString()}
+                  </p>
+                </div> */}
                 <div>
                   <p className="text-sm text-muted-foreground">Current Status</p>
                   <p className="font-medium capitalize">
-                    {document?.docStatus?.replace("_", " ")}
+                    {document?.currentStatus?.replace("_", " ")}
                   </p>
                 </div>
                 <div>
@@ -408,6 +407,14 @@ const ReviewDocument = () => {
                 <Button
                   variant="destructive"
                   onClick={() => {
+                    if (!remarks.trim()) {
+                      toast({
+                        title: "Remarks required",
+                        description: "Please provide remarks before rejecting the document.",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
                     handleUpdateStatus("REJECTED");
                     setRejectLoading(true)
                   }}
@@ -491,7 +498,7 @@ const ReviewDocument = () => {
                 <div className="text-center">
                   <img
                     src={getDocumentUrl()}
-                    alt={document.docName + ``}
+                    alt={document.fileName + ``}
                     className="max-w-full max-h-[350px] object-contain mx-auto"
                     style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center' }}
                     onError={(e) => {

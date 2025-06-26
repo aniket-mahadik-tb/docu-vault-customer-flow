@@ -21,6 +21,12 @@ export interface ClientCreateRequest {
   }>;
 }
 
+export interface CustomersToShareWithBank {
+  pan: string,
+  name: string,
+  approvedDocumentCount: number
+}
+
 export interface ClientCreateResponse {
   clientPan: string;
   status: String
@@ -67,6 +73,8 @@ export function useCustomerService() {
     }
   };
 
+
+
   service.getAllCustomers = async () => {
     try {
       const res = await api.get<GenericApiResponse<CustomerType[]>>('/clients');
@@ -86,6 +94,16 @@ export function useCustomerService() {
       throw error;
     }
   };
+
+  service.getCustomersToShareWithBank = async () => {
+    try {
+      const res = await api.get<GenericApiResponse<CustomersToShareWithBank[]>>("/clients/clients-with-approved-docs")
+      return res.data.data;
+    } catch (e: any) {
+      console.error(e)
+      throw e;
+    }
+  }
 
   service.getCustomerById = async (pan: string) => {
     try {
