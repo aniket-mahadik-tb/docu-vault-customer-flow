@@ -120,35 +120,39 @@ const DocumentUpload = () => {
 
   const handleFileUpload = async (documentId: string, files: FileList, year?: number) => {
     if (!token) return;
-  
+
     try {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
-  
+
       const folderId = `documents_${documentId}`;
+      const originalDocumentId = documentId.includes('_promoter')
+        ? documentId.split('_promoter')[0]
+        : documentId;
+
       const metadata = {
-        documentMasterId: documentId,
+        documentMasterId: originalDocumentId,
         promoter: currentPage > 0 ? `promoter${currentPage}` : "",
         year: year || "",
         section: ""
       };
-  
+
       const formData = new FormData();
       formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-  
+
       for (let i = 0; i < files.length; i++) {
         formData.append("files", files[i]);
       }
-  
+
       await documentUploadService.uploadDocuments(formData, token); // Updated signature with token
-  
+
       // Optionally add to local state if needed
       submitFolder(token, folderId); // still submitting folder as per old logic
-  
+
       toast({
         title: "Files uploaded",
         description: `${files.length} file(s) uploaded successfully`,
       });
-  
+
       // Update uploaded file context/state if necessary
       const syncedFiles: Record<string, DocumentFile[]> = {};
       const folderDocuments = getFolderDocuments(token, folderId);
@@ -156,7 +160,7 @@ const DocumentUpload = () => {
         syncedFiles[documentId] = folderDocuments;
       }
       setUploadedFiles(prev => ({ ...prev, ...syncedFiles }));
-  
+
     } catch (error) {
       console.error("Error uploading files:", error);
       toast({
@@ -168,19 +172,19 @@ const DocumentUpload = () => {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: false }));
     }
   };
-  
+
   const handleRemoveFile = (documentId: string, fileId: string) => {
     if (!token) return;
     const folderId = `documents_${documentId}`;
     removeDocument(token, folderId, fileId);
-    
+
     // Sync the uploaded files state to reflect changes
     const folderDocuments = getFolderDocuments(token, folderId);
     setUploadedFiles(prev => ({
       ...prev,
       [documentId]: folderDocuments
     }));
-    
+
     toast({
       title: "File removed",
       description: "Document has been removed",
@@ -227,14 +231,20 @@ const DocumentUpload = () => {
     try {
       // Fetch promoter documents from API
       const response = await documentUploadService.getDocumentMasters();
-      const promoterData = response.data.find(
-        (item: any) => item.customerType?.toUpperCase() === "PROMOTER"
+
+      // const promoterData = response.data.find(
+      //   (item: any) => item.customerType?.toUpperCase() === "PROMOTER"
+      // );
+
+
+      const promoterData = response.data.find((item: any) =>
+        item.customerType?.toLowerCase().startsWith("promoter")
       );
-      
+
       if (promoterData) {
-        const newPromoter = { 
-          id: Date.now(), 
-          categories: promoterData.documentsByCategory 
+        const newPromoter = {
+          id: Date.now(),
+          categories: promoterData.documentsByCategory
         };
         setPromoters((prev) => [...prev, newPromoter]);
         // Navigate to the new promoter's documents page
@@ -242,7 +252,7 @@ const DocumentUpload = () => {
       } else {
         toast({
           title: "Error",
-          description: "Could not fetch promoter document requirements",
+          description: "Could not fetch promoter document requirements hiii",
           variant: "destructive",
         });
       }
@@ -310,7 +320,7 @@ const DocumentUpload = () => {
                 {currentPage === 0 ? "Document Upload" : `Promoter ${currentPage} Documents`}
               </h1>
               <p className="text-gray-600 mt-1">
-                {currentPage === 0 
+                {currentPage === 0
                   ? "Please upload the required documents for your application"
                   : "Please upload the required documents for this promoter"
                 }
@@ -411,7 +421,7 @@ const DocumentUpload = () => {
                                                 const newYear = parseInt(e.target.value, 10);
                                                 setDocumentYears(prev => ({
                                                   ...prev,
-                                                  [docKey]: (prev[docKey] || [year]).map((y, idx) => idx === yearIdx ? newYear : y)
+                                                  [docKey]: prev[docKey].map((y, idx) => idx === yearIdx ? newYear : y)
                                                 }));
                                               }}
                                               className="border rounded px-2 py-1 text-sm ml-2"
@@ -443,35 +453,35 @@ const DocumentUpload = () => {
                                                 <span className="truncate max-w-[120px]" title={file.name} style={{ marginRight: isMultipleFiles ? '0.5rem' : 0 }}>
                                                   {file.name}
                                                 </span>
-                                        {isMultipleFiles && fileIndex === uploadedFiles[document.documentMasterId].length - 1 && (
-                                          <>
-                                            <input
-                                              type="file"
-                                              id={`file-plus-${document.documentMasterId}`}
-                                              multiple
-                                              onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files, year)}
-                                              className="hidden"
-                                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                            />
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50 hover:border-blue-300"
-                                              aria-label="Add more files"
-                                              onClick={() => window.document.getElementById(`file-plus-${document.documentMasterId}`)?.click()}
-                                            >
-                                              <Plus className="h-4 w-4" />
-                                            </Button>
-                                          </>
+                                                {isMultipleFiles && fileIndex === uploadedFiles[document.documentMasterId].length - 1 && (
+                                                  <>
+                                                    <input
+                                                      type="file"
+                                                      id={`file-plus-${document.documentMasterId}`}
+                                                      multiple
+                                                      onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files, year)}
+                                                      className="hidden"
+                                                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                                    />
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50 hover:border-blue-300"
+                                                      aria-label="Add more files"
+                                                      onClick={() => window.document.getElementById(`file-plus-${document.documentMasterId}`)?.click()}
+                                                    >
+                                                      <Plus className="h-4 w-4" />
+                                                    </Button>
+                                                  </>
+                                                )}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : isMultipleFiles ? (
+                                          <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
+                                        ) : (
+                                          <span className="text-gray-400 text-sm">No files uploaded</span>
                                         )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : isMultipleFiles ? (
-                                  <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
-                                ) : (
-                                  <span className="text-gray-400 text-sm">No files uploaded</span>
-                                )}
                                       </TableCell>
                                       <TableCell className="text-center">
                                         {document.isMandatory ? (
@@ -516,7 +526,7 @@ const DocumentUpload = () => {
                                               size="sm"
                                               onClick={() => setDocumentYears(prev => ({
                                                 ...prev,
-                                                [docKey]: [...(prev[docKey] || [year]), year]
+                                                [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
                                               }))}
                                               className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                                               aria-label="Add Year"
@@ -625,7 +635,7 @@ const DocumentUpload = () => {
                                                 const newYear = parseInt(e.target.value, 10);
                                                 setDocumentYears(prev => ({
                                                   ...prev,
-                                                  [docKey]: (prev[docKey] || [year]).map((y, idx) => idx === yearIdx ? newYear : y)
+                                                  [docKey]: prev[docKey].map((y, idx) => idx === yearIdx ? newYear : y)
                                                 }));
                                               }}
                                               className="border rounded px-2 py-1 text-sm ml-2"
@@ -730,7 +740,7 @@ const DocumentUpload = () => {
                                               size="sm"
                                               onClick={() => setDocumentYears(prev => ({
                                                 ...prev,
-                                                [docKey]: [...(prev[docKey] || [year]), year]
+                                                [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
                                               }))}
                                               className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                                               aria-label="Add Year"
@@ -769,6 +779,54 @@ const DocumentUpload = () => {
                 );
               })}
             </>
+          )}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Page {currentPage + 1} of {totalPages}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 0}
+                  className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }).map((_, index) => (
+                    <Button
+                      key={index}
+                      variant={currentPage === index ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(index)}
+                      className={`w-8 h-8 p-0 ${currentPage === index
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                        }`}
+                    >
+                      {index}
+                    </Button>
+                  ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages - 1}
+                  className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </div>
