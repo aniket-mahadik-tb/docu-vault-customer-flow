@@ -46,11 +46,14 @@ const DocumentUpload = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0); // 0 = main documents, 1+ = promoter pages
 
+  const [apiDocumentMasters, setApiDocumentMasters] = useState<any[]>([]); // <-- New state
+
   // Call document masters API on page render
   useEffect(() => {
     const fetchDocumentMasters = async () => {
       try {
         const response = await documentUploadService.getDocumentMasters();
+        setApiDocumentMasters(response.data); // <-- Store API data
         // response.data is an array
         const org = response.data.find(
           (item: any) => item.customerType?.toUpperCase() === "ORGANIZATION"
@@ -175,6 +178,15 @@ const DocumentUpload = () => {
         syncedFiles[documentId] = folderDocuments;
       }
       setUploadedFiles(prev => ({ ...prev, ...syncedFiles }));
+
+      // Fetch latest document masters from API to update uploaded files from API
+      try {
+        const response = await documentUploadService.getDocumentMasters();
+        setApiDocumentMasters(response.data);
+      } catch (err) {
+        // Optionally handle error
+        console.error("Error refreshing document masters after upload", err);
+      }
 
     } catch (error) {
       console.error("Error uploading files:", error);
@@ -312,6 +324,43 @@ const DocumentUpload = () => {
   // Get total pages (main page + promoter pages)
   const totalPages = promoters.length + 1;
 
+  // Helper to get files for a document from API response
+  const getApiFilesForDocument = (
+    documentMasterId: string,
+    category: string,
+    year?: number | string,
+    promoterIndex?: number
+  ) => {
+    let customerTypeObj;
+    if (promoterIndex !== undefined) {
+      customerTypeObj = apiDocumentMasters.find((d) =>
+        d.customerType?.toLowerCase() === `promoter${promoterIndex + 1}`
+      );
+    } else {
+      customerTypeObj = apiDocumentMasters.find((d) =>
+        d.customerType?.toUpperCase() === customerType?.toUpperCase()
+      );
+    }
+    if (!customerTypeObj) return [];
+    const categoryObj = customerTypeObj.documentsByCategory.find(
+      (cat: any) => cat.category === category
+    );
+    if (!categoryObj) return [];
+    let docObjs = categoryObj.documents.filter(
+      (doc: any) => doc.documentMasterId === documentMasterId
+    );
+    if (year !== undefined && year !== null) {
+      docObjs = docObjs.filter((doc: any) => String(doc.year) === String(year));
+    }
+    let files: any[] = [];
+    docObjs.forEach((doc: any) => {
+      if (doc.files && doc.files.length > 0) {
+        files = files.concat(doc.files);
+      }
+    });
+    return files;
+  };
+
   if (!customerType) {
     return (
       <MainLayout showSidebar={true}>
@@ -419,7 +468,6 @@ const DocumentUpload = () => {
                               <TableBody>
                                 {category.documents.map((document: DocumentType) => {
                                   const docKey = `${document.documentMasterId}_${instanceIdx}`;
-                                  // If isMultipleYear, manage years for this doc instance
                                   const years = document.isMultipleYears
                                     ? documentYears[docKey] || [currentYear]
                                     : [undefined];
@@ -452,51 +500,30 @@ const DocumentUpload = () => {
                                         {getStatusBadge(document.documentMasterId)}
                                       </TableCell>
                                       <TableCell>
-                                        {uploadedFiles[document.documentMasterId] && uploadedFiles[document.documentMasterId].length > 0 ? (
-                                          <div className="space-y-1">
-                                            {uploadedFiles[document.documentMasterId].map((file, fileIndex) => (
-                                              <div key={file.id} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={() => handleRemoveFile(document.documentMasterId, file.id)}
-                                                  className="h-6 w-6 p-0 text-red-600 hover:text-red-800 mr-1"
-                                                  aria-label="Delete file"
-                                                >
-                                                  <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                                <span className="truncate max-w-[120px]" title={file.name} style={{ marginRight: isMultipleFiles ? '0.5rem' : 0 }}>
-                                                  {file.name}
-                                                </span>
-                                                {isMultipleFiles && fileIndex === uploadedFiles[document.documentMasterId].length - 1 && (
-                                                  <>
-                                                    <input
-                                                      type="file"
-                                                      id={`file-plus-${document.documentMasterId}`}
-                                                      multiple
-                                                      onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files, year)}
-                                                      className="hidden"
-                                                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                                    />
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50 hover:border-blue-300"
-                                                      aria-label="Add more files"
-                                                      onClick={() => window.document.getElementById(`file-plus-${document.documentMasterId}`)?.click()}
-                                                    >
-                                                      <Plus className="h-4 w-4" />
-                                                    </Button>
-                                                  </>
-                                                )}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        ) : isMultipleFiles ? (
-                                          <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
-                                        ) : (
-                                          <span className="text-gray-400 text-sm">No files uploaded</span>
-                                        )}
+                                        {/* Use API files here */}
+                                        {(() => {
+                                          const files = getApiFilesForDocument(
+                                            document.documentMasterId,
+                                            category.category,
+                                            document.isMultipleYears ? years[yearIdx] : undefined
+                                          );
+                                          return files.length > 0 ? (
+                                            <div className="space-y-1">
+                                              {files.map((file, fileIndex) => (
+                                                <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
+                                                  <span className="truncate max-w-[120px]" title={file.docName}>
+                                                    {file.docName}
+                                                  </span>
+                                                  {/* Optionally, show status or actions */}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : isMultipleFiles ? (
+                                            <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
+                                          ) : (
+                                            <span className="text-gray-400 text-sm">No files uploaded</span>
+                                          );
+                                        })()}
                                       </TableCell>
                                       <TableCell className="text-center">
                                         {document.isMandatory ? (
@@ -633,7 +660,6 @@ const DocumentUpload = () => {
                               <TableBody>
                                 {category.documents.map((document: DocumentType) => {
                                   const docKey = `${document.documentMasterId}_promoter${currentPage - 1}_${instanceIdx}`;
-                                  // If isMultipleYear, manage years for this doc instance
                                   const years = document.isMultipleYears
                                     ? documentYears[docKey] || [currentYear]
                                     : [undefined];
@@ -666,51 +692,31 @@ const DocumentUpload = () => {
                                         {getStatusBadge(docKey)}
                                       </TableCell>
                                       <TableCell>
-                                        {uploadedFiles[docKey] && uploadedFiles[docKey].length > 0 ? (
-                                          <div className="space-y-1">
-                                            {uploadedFiles[docKey].map((file, fileIndex) => (
-                                              <div key={file.id} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={() => handleRemoveFile(docKey, file.id)}
-                                                  className="h-6 w-6 p-0 text-red-600 hover:text-red-800 mr-1"
-                                                  aria-label="Delete file"
-                                                >
-                                                  <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                                <span className="truncate max-w-[120px]" title={file.name} style={{ marginRight: isMultipleFiles ? '0.5rem' : 0 }}>
-                                                  {file.name}
-                                                </span>
-                                                {isMultipleFiles && fileIndex === uploadedFiles[docKey].length - 1 && (
-                                                  <>
-                                                    <input
-                                                      type="file"
-                                                      id={`file-plus-${docKey}`}
-                                                      multiple
-                                                      onChange={(e) => e.target.files && handleFileUpload(docKey, e.target.files, year)}
-                                                      className="hidden"
-                                                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                                    />
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50 hover:border-blue-300"
-                                                      aria-label="Add more files"
-                                                      onClick={() => window.document.getElementById(`file-plus-${docKey}`)?.click()}
-                                                    >
-                                                      <Plus className="h-4 w-4" />
-                                                    </Button>
-                                                  </>
-                                                )}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        ) : isMultipleFiles ? (
-                                          <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
-                                        ) : (
-                                          <span className="text-gray-400 text-sm">No files uploaded</span>
-                                        )}
+                                        {/* Use API files here for promoter */}
+                                        {(() => {
+                                          const files = getApiFilesForDocument(
+                                            document.documentMasterId,
+                                            category.category,
+                                            document.isMultipleYears ? years[yearIdx] : undefined,
+                                            currentPage - 1
+                                          );
+                                          return files.length > 0 ? (
+                                            <div className="space-y-1">
+                                              {files.map((file, fileIndex) => (
+                                                <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
+                                                  <span className="truncate max-w-[120px]" title={file.docName}>
+                                                    {file.docName}
+                                                  </span>
+                                                  {/* Optionally, show status or actions */}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : isMultipleFiles ? (
+                                            <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
+                                          ) : (
+                                            <span className="text-gray-400 text-sm">No files uploaded</span>
+                                          );
+                                        })()}
                                       </TableCell>
                                       <TableCell className="text-center">
                                         {document.isMandatory ? (
