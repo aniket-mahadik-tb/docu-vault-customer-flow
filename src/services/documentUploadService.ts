@@ -1,5 +1,4 @@
 import api from "../instances/axios";
-import { tempData } from "@/utils/globalConstants";
 
 // Types for document upload API
 export interface DocumentType {
@@ -55,12 +54,8 @@ export function useDocumentUploadService() {
 
   service.getDocumentMasters = async (customerType: "Individual" | "Organization" = "Individual"): Promise<ApiResponse<DocumentMastersResponse>> => {
     try {
-      // Real API call
         const response = await api.get(`document/master/customer-type`);
         return response.data;
-        console.log("tempData", tempData);
-        return tempData as unknown as ApiResponse<DocumentMastersResponse>;
-     
       
     } catch (error: any) {
       console.error("Failed to fetch document masters:", error);
