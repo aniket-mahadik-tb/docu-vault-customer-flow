@@ -120,35 +120,38 @@ const DocumentUpload = () => {
 
   const handleFileUpload = async (documentId: string, files: FileList, year?: number) => {
     if (!token) return;
-  
+
     try {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
-  
+
       const folderId = `documents_${documentId}`;
+      const originalDocumentId = documentId.includes('_promoter')
+        ? documentId.split('_promoter')[0]
+        : documentId;
       const metadata = {
-        documentMasterId: documentId,
+        documentMasterId: originalDocumentId,
         promoter: currentPage > 0 ? `promoter${currentPage}` : "",
         year: year || "",
         section: ""
       };
-  
+
       const formData = new FormData();
       formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-  
+
       for (let i = 0; i < files.length; i++) {
         formData.append("files", files[i]);
       }
-  
+
       await documentUploadService.uploadDocuments(formData, token); // Updated signature with token
-  
+
       // Optionally add to local state if needed
       submitFolder(token, folderId); // still submitting folder as per old logic
-  
+
       toast({
         title: "Files uploaded",
         description: `${files.length} file(s) uploaded successfully`,
       });
-  
+
       // Update uploaded file context/state if necessary
       const syncedFiles: Record<string, DocumentFile[]> = {};
       const folderDocuments = getFolderDocuments(token, folderId);
@@ -156,7 +159,7 @@ const DocumentUpload = () => {
         syncedFiles[documentId] = folderDocuments;
       }
       setUploadedFiles(prev => ({ ...prev, ...syncedFiles }));
-  
+
     } catch (error) {
       console.error("Error uploading files:", error);
       toast({
@@ -168,19 +171,19 @@ const DocumentUpload = () => {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: false }));
     }
   };
-  
+
   const handleRemoveFile = (documentId: string, fileId: string) => {
     if (!token) return;
     const folderId = `documents_${documentId}`;
     removeDocument(token, folderId, fileId);
-    
+
     // Sync the uploaded files state to reflect changes
     const folderDocuments = getFolderDocuments(token, folderId);
     setUploadedFiles(prev => ({
       ...prev,
       [documentId]: folderDocuments
     }));
-    
+
     toast({
       title: "File removed",
       description: "Document has been removed",
@@ -230,11 +233,11 @@ const DocumentUpload = () => {
       const promoterData = response.data.find(
         (item: any) => item.customerType?.toUpperCase() === "PROMOTER"
       );
-      
+
       if (promoterData) {
-        const newPromoter = { 
-          id: Date.now(), 
-          categories: promoterData.documentsByCategory 
+        const newPromoter = {
+          id: Date.now(),
+          categories: promoterData.documentsByCategory
         };
         setPromoters((prev) => [...prev, newPromoter]);
         // Navigate to the new promoter's documents page
@@ -310,7 +313,7 @@ const DocumentUpload = () => {
                 {currentPage === 0 ? "Document Upload" : `Promoter ${currentPage} Documents`}
               </h1>
               <p className="text-gray-600 mt-1">
-                {currentPage === 0 
+                {currentPage === 0
                   ? "Please upload the required documents for your application"
                   : "Please upload the required documents for this promoter"
                 }
@@ -443,35 +446,35 @@ const DocumentUpload = () => {
                                                 <span className="truncate max-w-[120px]" title={file.name} style={{ marginRight: isMultipleFiles ? '0.5rem' : 0 }}>
                                                   {file.name}
                                                 </span>
-                                        {isMultipleFiles && fileIndex === uploadedFiles[document.documentMasterId].length - 1 && (
-                                          <>
-                                            <input
-                                              type="file"
-                                              id={`file-plus-${document.documentMasterId}`}
-                                              multiple
-                                              onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files, year)}
-                                              className="hidden"
-                                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                            />
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50 hover:border-blue-300"
-                                              aria-label="Add more files"
-                                              onClick={() => window.document.getElementById(`file-plus-${document.documentMasterId}`)?.click()}
-                                            >
-                                              <Plus className="h-4 w-4" />
-                                            </Button>
-                                          </>
+                                                {isMultipleFiles && fileIndex === uploadedFiles[document.documentMasterId].length - 1 && (
+                                                  <>
+                                                    <input
+                                                      type="file"
+                                                      id={`file-plus-${document.documentMasterId}`}
+                                                      multiple
+                                                      onChange={(e) => e.target.files && handleFileUpload(document.documentMasterId, e.target.files, year)}
+                                                      className="hidden"
+                                                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                                    />
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50 hover:border-blue-300"
+                                                      aria-label="Add more files"
+                                                      onClick={() => window.document.getElementById(`file-plus-${document.documentMasterId}`)?.click()}
+                                                    >
+                                                      <Plus className="h-4 w-4" />
+                                                    </Button>
+                                                  </>
+                                                )}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : isMultipleFiles ? (
+                                          <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
+                                        ) : (
+                                          <span className="text-gray-400 text-sm">No files uploaded</span>
                                         )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : isMultipleFiles ? (
-                                  <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
-                                ) : (
-                                  <span className="text-gray-400 text-sm">No files uploaded</span>
-                                )}
                                       </TableCell>
                                       <TableCell className="text-center">
                                         {document.isMandatory ? (
