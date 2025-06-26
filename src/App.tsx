@@ -28,6 +28,7 @@ import PromotersUploadDocuments from "./pages/PromotersUploadDocuments";
 import AdminEntry from "./pages/Admin/Login";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import CustomerList from "./pages/Admin/CustomerList";
+// import CustomerDetail from "./pages/Admin/CustomerDetail";
 import CustomerDetail from "./pages/Admin/CustomerDetailsCard";
 import ReviewDocument from "./pages/Admin/ReviewDocument";
 import ReviewDocuments from "./pages/Admin/ReviewDocuments";
