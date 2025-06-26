@@ -108,6 +108,16 @@ const flattenDocuments = (documentsArr) => {
   );
 };
 
+// Utility to group documents by category
+const groupDocumentsByCategory = (documents: DocumentResponseType[]) => {
+  return documents.reduce((acc: Record<string, DocumentResponseType[]>, doc) => {
+    const category = (doc.category || 'Uncategorized').toString();
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(doc);
+    return acc;
+  }, {});
+};
+
 const CustomerDetail = () => {
 
   const { getCustomer, generateUploadLink, syncCustomerDocuments } = useCustomers();
@@ -118,6 +128,8 @@ const CustomerDetail = () => {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [generatingLink, setGeneratingLink] = useState(false);
 
+  // Pagination state: current page (0-based)
+  const [docPage, setDocPage] = useState(0);
 
   const documentSections = {
     section1: "KYC Documents",
@@ -254,7 +266,7 @@ const CustomerDetail = () => {
                   <div className="space-y-6">
 
 
-                    <div className="rounded-md border">
+                    <div className="rounded-md">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -381,28 +393,41 @@ const CustomerDetail = () => {
     }
   };
 
-  // Flatten all file rows for pagination
-  const paginatedRows = (allDocuments != null) && allDocuments?.flatMap((doc: DocumentResponseType, docIdx: number) => (
-    (doc.files && doc.files.length > 0)
-      ? doc.files.map((file: FileResponseType, idx: number) => ({
-        doc,
-        file,
-        idx,
-        docIdx
-      }))
-      : [{
-        doc,
-        file: null,
-        idx: 0,
-        docIdx
-      }]
-  ));
+  // Identify all unique customer types
+  const allCustomerTypes = allDocuments
+    ? Array.from(
+        new Set(
+          allDocuments.map((doc) =>
+            doc.customerType ? doc.customerType.toLowerCase() : "organization"
+          )
+        )
+      )
+    : [];
+
+  // Move main customer (organization/individual) to the front, promoters after
+  const mainTypes = ["organization", "individual"];
+  const sortedCustomerTypes = [
+    ...allCustomerTypes.filter((type) => mainTypes.includes(type)),
+    ...allCustomerTypes.filter((type) => !mainTypes.includes(type)),
+  ];
+
+  // Get the customer type for the current page
+  const currentCustomerType = sortedCustomerTypes[docPage];
+
+  // Filter documents for the current customer type
+  const docsForCurrentType = allDocuments
+    ? allDocuments.filter(
+        (doc) =>
+          (doc.customerType ? doc.customerType.toLowerCase() : "organization") ===
+          currentCustomerType
+      )
+    : [];
+
+  // Group filtered documents by category
+  const groupedDocs = groupDocumentsByCategory(docsForCurrentType);
 
   // Check if any document is for ORGANIZATION
   const hasOrganizationDocs = allDocuments?.some(doc => doc.customerType?.toLowerCase() === "organization");
-
-  const totalPages = Math.ceil(paginatedRows.length / entriesPerPage);
-  const paginatedRowsToShow = paginatedRows.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
 
   return (
     <MainLayout showSidebar={true}>
@@ -468,163 +493,160 @@ const CustomerDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Documents Table - revert to previous look */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex justify-between">
-              Submitted Documents
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {allDocuments.length} documents available
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[35%] pl-6">Document Type</TableHead>
-                    <TableHead className="w-[20%] px-4">Category</TableHead>
-                    {hasOrganizationDocs && (
-                      <TableHead className="w-[15%] px-4">Customer Type</TableHead>
-                    )}
-                    <TableHead className="w-[15%] px-4">Files</TableHead>
-                    <TableHead className="w-[15%] px-4">Status</TableHead>
-                    <TableHead className="w-[15%] px-4">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedRowsToShow.length > 0 ? (
-                    paginatedRowsToShow.map(({ doc, file, idx, docIdx }, rowIndex, arr) => {
-                      return (
-                        <TableRow key={file?.docId ? String(file.docId) : `${String(doc.documentMasterId)}-${idx}`}>
-                          <TableCell className="font-medium pl-6">
-                            {doc.documentType}
-                            {doc.files && doc.files.length > 1 && (
-                              <>
-                                <span className={`ml-2 rounded px-2 py-0.5 text-xs font-semibold badge-nowrap ${badgeColors[docIdx % badgeColors.length]}`}>
-                                  {doc.files.length} {doc.files.length === 1 ? 'file' : 'files'}
-                                </span>
-                                <span className="ml-2 text-gray-400">#{idx + 1}</span>
-                                {doc.year ? (
-                                  <span
-                                    className="ml-2 rounded px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-400"
-                                    title={`Year: ${doc.year}`}
-                                  >
-                                    {doc.year}
-                                  </span>
-                                ) : null}
-                                {doc.customerType && String(doc.customerType).toLowerCase().includes('promoter') && (
-                                  null
-                                )}
-                              </>
-                            )}
-                          </TableCell>
-                          <TableCell className="px-4">{doc.category}</TableCell>
-                          {hasOrganizationDocs && (
-                            <TableCell className="px-4">
-                              {doc.customerType && String(doc.customerType).toLowerCase().includes('promoter') ? (
-                                <span className="flex items-center gap-2">
-                                  <span>PROMOTER</span>
-                                  {(() => {
-                                    // Extract number from customerType (e.g., 'promoter1' -> 1)
-                                    const match = String(doc.customerType).match(/promoter\s*(\d+)/i);
-                                    return match ? (
-                                      <span className="text-gray-400 text-xs">#{match[1]}</span>
-                                    ) : null;
-                                  })()}
-                                </span>
-                              ) : (
-                                doc.customerType
-                              )}
-                            </TableCell>
-                          )}
-                          <TableCell className="px-4">
-                            {file ? (
-                              <span>{file.docName}</span>
-                            ) : (
-                              <span className="text-sm text-gray-400">No files</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {file ? (
-                              <span
-                                title={
-                                  file.docStatus === 'UPLOADED' ? 'File uploaded, pending review' :
-                                    file.docStatus === 'REJECTED' ? 'File was rejected' :
-                                      file.docStatus === 'SUBMITTED' ? 'File submitted, awaiting approval' :
-                                        'File approved'
-                                }
-                              >
-                                {file.docStatus === "UPLOADED" ? (
-                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>
-                                ) : file.docStatus === "REJECTED" ? (
-                                  <Badge variant="outline" className="bg-red-100 text-red-800">Rejected</Badge>
-                                ) : file.docStatus === "SUBMITTED" ? (
-                                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Submitted</Badge>
-                                ) : (
-                                  <Badge variant="outline" className="bg-green-100 text-green-800">Approved</Badge>
-                                )}
-                              </span>
-                            ) : null}
-                          </TableCell>
-                          <TableCell>
-                            {file ? (
-                              <Button
-                                key={file.docId ? String(file.docId) : `${String(doc.documentMasterId)}-action-${idx}`}
-                                variant="outline"
-                                size="sm"
-                                onClick={() => navigate(`/admin/customers/details/review/${doc.documentMasterId}/${file.docId}`)}
-                              >
-                                <Eye className="h-4 w-4 mr-1" /> Review
-                              </Button>
-                            ) : null}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={hasOrganizationDocs ? 7 : 6} className="text-center py-4 px-4">
-                        No documents found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            {totalPages > 1 && (
-              <div className="flex justify-end items-center gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Previous
-                </Button>
-                {[...Array(totalPages)].map((_, i) => (
-                  <Button
-                    key={i}
-                    variant={currentPage === i + 1 ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentPage(i + 1)}
-                  >
-                    {i + 1}
-                  </Button>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </Button>
-              </div>
+        {/* Documents Table - now grouped by category in cards */}
+        <div className="mb-6">
+          {currentCustomerType === "organization" && (
+            <h2 className="text-xl font-bold">Organization Documents</h2>
+          )}
+          {currentCustomerType === "individual" && (
+            <h2 className="text-xl font-bold">Individual Documents</h2>
+          )}
+          {/^promoter\d+$/i.test(currentCustomerType) && (
+            <h2 className="text-xl font-bold">
+              Promoter {currentCustomerType.match(/\d+/)?.[0]} Documents
+            </h2>
+          )}
+          {!["organization", "individual"].includes(currentCustomerType) &&
+            !/^promoter\d+$/i.test(currentCustomerType) && (
+              <h2 className="text-xl font-bold">
+                {currentCustomerType.charAt(0).toUpperCase() + currentCustomerType.slice(1)} Documents
+              </h2>
             )}
-          </CardContent>
-        </Card>
+        </div>
+        {Object.entries(groupedDocs).map(([category, docs]) => (
+          <Card key={category} className="mb-8">
+            <CardHeader className="py-2 px-4">
+              <CardTitle className="text-base font-semibold">{category}</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                {docs.reduce((sum, doc) => sum + (doc.files?.length || 0), 0)} files in this category
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[35%] pl-6">Document Type</TableHead>
+                      <TableHead className="w-[15%] px-4">Files</TableHead>
+                      <TableHead className="w-[15%] px-4">Status</TableHead>
+                      <TableHead className="w-[15%] px-4">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {docs.flatMap((doc, docIdx) =>
+                      (doc.files && doc.files.length > 0
+                        ? doc.files.map((file, idx) => ({
+                            doc,
+                            file,
+                            idx,
+                            docIdx,
+                          }))
+                        : [{ doc, file: null, idx: 0, docIdx }])
+                    ).map(({ doc, file, idx, docIdx }) => (
+                      <TableRow key={file?.docId ? String(file.docId) : `${String(doc.documentMasterId)}-${idx}`}>
+                        <TableCell className="font-medium pl-6">
+                          {doc.documentType}
+                          {doc.files && doc.files.length > 1 && (
+                            <>
+                              <span className={`ml-2 rounded px-2 py-0.5 text-xs font-semibold badge-nowrap ${badgeColors[docIdx % badgeColors.length]}`}>
+                                {doc.files.length} {doc.files.length === 1 ? 'file' : 'files'}
+                              </span>
+                              <span className="ml-2 text-gray-400">#{idx + 1}</span>
+                              {doc.year ? (
+                                <span
+                                  className="ml-2 rounded px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-400"
+                                  title={`Year: ${doc.year}`}
+                                >
+                                  {doc.year}
+                                </span>
+                              ) : null}
+                              {doc.customerType && String(doc.customerType).toLowerCase().includes('promoter') && (
+                                null
+                              )}
+                            </>
+                          )}
+                        </TableCell>
+                        <TableCell className="px-4">
+                          {file ? (
+                            <span>{file.docName}</span>
+                          ) : (
+                            <span className="text-sm text-gray-400">No files</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {file ? (
+                            <span
+                              title={
+                                file.docStatus === 'UPLOADED' ? 'File uploaded, pending review' :
+                                file.docStatus === 'REJECTED' ? 'File was rejected' :
+                                file.docStatus === 'SUBMITTED' ? 'File submitted, awaiting approval' :
+                                'File approved'
+                              }
+                            >
+                              {file.docStatus === "UPLOADED" ? (
+                                <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>
+                              ) : file.docStatus === "REJECTED" ? (
+                                <Badge variant="outline" className="bg-red-100 text-red-800">Rejected</Badge>
+                              ) : file.docStatus === "SUBMITTED" ? (
+                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Submitted</Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-green-100 text-green-800">Approved</Badge>
+                              )}
+                            </span>
+                          ) : null}
+                        </TableCell>
+                        <TableCell>
+                          {file ? (
+                            <Button
+                              key={file.docId ? String(file.docId) : `${String(doc.documentMasterId)}-action-${idx}`}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/admin/customers/details/review/${doc.documentMasterId}/${file.docId}`)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" /> Review
+                            </Button>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+
+        {/* Pagination Controls */}
+        {sortedCustomerTypes.length > 1 && (
+          <div className="flex justify-end items-center gap-2 mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={docPage === 0}
+              onClick={() => setDocPage(docPage - 1)}
+            >
+              Previous
+            </Button>
+            {sortedCustomerTypes.map((type, i) => (
+              <Button
+                key={type}
+                variant={docPage === i ? "default" : "outline"}
+                size="sm"
+                onClick={() => setDocPage(i)}
+              >
+                {i + 1}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={docPage === sortedCustomerTypes.length - 1}
+              onClick={() => setDocPage(docPage + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        )}
 
         {/* Dialog for Upload Link */}
         <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>

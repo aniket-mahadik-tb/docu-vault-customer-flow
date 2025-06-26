@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import MainLayout from "@/layouts/MainLayout";
 import { useCustomers } from "@/contexts/CustomerContext";
@@ -72,12 +71,6 @@ const ShareWithBank = () => {
 
     // Clear selection after sharing
     setSelectedCustomers([]);
-  };
-
-  const approvedDocumentCount = (customerId: string) => {
-    const customer = customers.find((c) => c.pan === customerId);
-    if (!customer) return 0;
-    // return customer.documents.filter((doc) => doc.status === "approved").length;
   };
 
   return (customers) ? (
@@ -155,7 +148,7 @@ const ShareWithBank = () => {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Check className="h-4 w-4 text-green-500" />
-                            <span>{approvedDocumentCount(customer.pan)} documents</span>
+                            <span>{customer.approvedDocumentCount} documents</span>
                           </div>
                         </TableCell>
                       </TableRow>
