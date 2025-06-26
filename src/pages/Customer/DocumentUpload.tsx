@@ -616,7 +616,7 @@ const DocumentUpload = () => {
                                                         multiple
                                                         onChange={(e) => {
                                                           const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
-                                                         // e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear);
+                                                          e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear);
                                                         }}
                                                         className="hidden"
                                                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -998,7 +998,7 @@ const DocumentUpload = () => {
                                             onChange={(e) => {
                                               const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
                                               console.log("FILE uplod",selectedYear)
-                                             // e.target.files && handleFileUpload(docKey, e.target.files, selectedYear);
+                                              e.target.files && handleFileUpload(docKey, e.target.files, selectedYear);
                                             }}
                                             className="hidden"
                                             accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
