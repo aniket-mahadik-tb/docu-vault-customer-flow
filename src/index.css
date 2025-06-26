@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -93,4 +92,9 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.badge-nowrap {
+  white-space: nowrap;
+  display: inline-block;
 }

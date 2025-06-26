@@ -42,6 +42,7 @@ export interface DocumentResponseType {
     files: FileResponseType[],
     status: String
     category?: String
+    year?: String
     customerType?: string
 }
 
