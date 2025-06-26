@@ -485,7 +485,7 @@ const DocumentUpload = () => {
                                                   const newYear = parseInt(e.target.value, 10);
                                                   setDocumentYears(prev => ({
                                                     ...prev,
-                                                    [docKey]: prev[docKey].map((y, idx) => idx === yearIdx ? newYear : y)
+                                                    [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? newYear : y)
                                                   }));
                                                 }}
                                                 className="border rounded px-2 py-1 text-sm ml-2"
@@ -778,7 +778,7 @@ const DocumentUpload = () => {
                                                   const newYear = parseInt(e.target.value, 10);
                                                   setDocumentYears(prev => ({
                                                     ...prev,
-                                                    [docKey]: prev[docKey].map((y, idx) => idx === yearIdx ? newYear : y)
+                                                    [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? newYear : y)
                                                   }));
                                                 }}
                                                 className="border rounded px-2 py-1 text-sm ml-2"
