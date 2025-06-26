@@ -55,23 +55,38 @@ const DocumentUpload = () => {
         const org = response.data.find(
           (item: any) => item.customerType?.toUpperCase() === "ORGANIZATION"
         );
-        const promoter = response.data.find(
-          (item: any) => item.customerType?.toUpperCase() === "PROMOTER"
-        );
         const individual = response.data.find(
           (item: any) => item.customerType?.toUpperCase() === "INDIVIDUAL"
+        );
+
+        // Find all promoters (customerType starts with 'promoter', case-insensitive)
+        const promoterEntries = response.data.filter(
+          (item: any) => typeof item.customerType === 'string' && item.customerType.toLowerCase().startsWith('promoter')
         );
 
         if (org) {
           setCustomerType("Organization");
           setValueToLocalStorage("customerType", "Organization");
           setOrgCategories(org.documentsByCategory);
-          setPromoterCategories(promoter?.documentsByCategory || []);
+          // If you want to use the first promoter's categories as the template for new promoters:
+          setPromoterCategories(promoterEntries[0]?.documentsByCategory || []);
         } else if (individual) {
           setCustomerType("Individual");
           setValueToLocalStorage("customerType", "Individual");
           setOrgCategories(individual.documentsByCategory);
           setPromoterCategories([]);
+        }
+
+        // Initialize promoters state from API response
+        if (promoterEntries.length > 0) {
+          const initialPromoters = promoterEntries.map((entry: any, idx: number) => ({
+            id: Date.now() + idx, // or use a better unique id if available
+            categories: entry.documentsByCategory,
+            details: {}, // You can fill this if you have promoter details
+          }));
+          setPromoters(initialPromoters);
+        } else {
+          setPromoters([]);
         }
       } catch (error) {
         console.error("Error fetching document masters:", error);
