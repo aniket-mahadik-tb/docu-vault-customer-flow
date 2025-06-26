@@ -476,21 +476,6 @@ const DocumentUpload = () => {
                                     <TableRow key={docKey + "_" + yearIdx}>
                                       <TableCell className="font-medium">
                                         <div className="flex items-center gap-2" style={{ textAlign: 'start' }}>
-                                          {/* Fixed-width i icon container for alignment */}
-                                          <span style={{ display: 'inline-flex', width: 24, justifyContent: 'center' }}>
-                                            {document.isMultipleYears ? null : (
-                                              <TooltipProvider>
-                                                <Tooltip>
-                                                  <TooltipTrigger asChild>
-                                                    <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
-                                                  </TooltipTrigger>
-                                                  <TooltipContent>
-                                                    <span>This document supports multiple files.</span>
-                                                  </TooltipContent>
-                                                </Tooltip>
-                                              </TooltipProvider>
-                                            )}
-                                          </span>
                                           {document.documentType}
                                           {document.isMultipleYears && (
                                             <>
@@ -509,16 +494,6 @@ const DocumentUpload = () => {
                                                   <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
                                                 ))}
                                               </select>
-                                              <TooltipProvider>
-                                                <Tooltip>
-                                                  <TooltipTrigger asChild>
-                                                    <Info className={`h-5 w-5 ml-2 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
-                                                  </TooltipTrigger>
-                                                  <TooltipContent>
-                                                    <span>This document supports multiple files.</span>
-                                                  </TooltipContent>
-                                                </Tooltip>
-                                              </TooltipProvider>
                                             </>
                                           )}
                                         </div>
@@ -536,18 +511,27 @@ const DocumentUpload = () => {
                                           }
                                           return (
                                             <div className="space-y-1 flex flex-col">
-                                              {files.map((file) => (
-                                                <div key={file.docId} className="flex items-center gap-2">
-                                                  {/* Status badge/icon for file */}
-                                                  {file.docStatus === 'SUBMITTED' && (
-                                                    <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>
-                                                  )}
-                                                  {file.docStatus === 'PENDING' && (
-                                                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>
-                                                  )}
-                                                  {/* Add more status mappings as needed */}
-                                                </div>
-                                              ))}
+                                              {files.map((file) => {
+                                                let badge;
+                                                switch ((file.docStatus || '').toUpperCase()) {
+                                                  case 'SUBMITTED':
+                                                    badge = <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
+                                                    break;
+                                                  case 'PENDING':
+                                                    badge = <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+                                                    break;
+                                                  case 'REJECTED':
+                                                    badge = <Badge variant="destructive" className="bg-red-100 text-red-800">Rejected</Badge>;
+                                                    break;
+                                                  default:
+                                                    badge = <Badge variant="secondary" className="bg-gray-100 text-gray-800">{file.docStatus}</Badge>;
+                                                }
+                                                return (
+                                                  <div key={file.docId} className="flex items-center gap-2">
+                                                    {badge}
+                                                  </div>
+                                                );
+                                              })}
                                             </div>
                                           );
                                         })()}
@@ -569,15 +553,32 @@ const DocumentUpload = () => {
                                             <div className="space-y-1 flex flex-col">
                                               {files.map((file, fileIndex) => (
                                                 <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
-                                                  {/* Trash icon before file name */}
+                                                  {/* Trash icon before file name, hidden if status is APPROVED */}
+                                                  {String(file.docStatus).toUpperCase() !== 'APPROVED' ? (
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-6 w-6 p-0 text-red-700 mr-1"
+                                                      aria-label="Delete file"
+                                                      disabled
+                                                    >
+                                                      <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                  ) : (
+                                                    <span style={{ width: 24, display: 'inline-block' }}></span>
+                                                  )}
+                                                  {/* Eye icon for preview, always visible */}
                                                   <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-800 mr-1"
-                                                    aria-label="Delete file"
+                                                    className="h-6 w-6 p-0 text-blue-800 mr-1"
+                                                    aria-label="View file"
                                                     disabled
                                                   >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
+                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
+                                                      <circle cx="12" cy="12" r="3" />
+                                                    </svg>
                                                   </Button>
                                                   <span className="truncate max-w-[120px]" title={file.docName}>
                                                     {file.docName}
@@ -596,7 +597,7 @@ const DocumentUpload = () => {
                                                       <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50 hover:border-blue-300"
+                                                        className="h-6 w-6 p-0 text-blue-600 ml-2 rounded-full border border-blue-200 bg-blue-50"
                                                         aria-label="Add more files"
                                                         onClick={() => window.document.getElementById(`file-plus-${document.documentMasterId}`)?.click()}
                                                       >
@@ -611,14 +612,30 @@ const DocumentUpload = () => {
                                         })()}
                                       </TableCell>
                                       <TableCell className="text-center">
-                                        {document.isMandatory ? (
-                                          <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
-                                        ) : (
-                                          <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
-                                        )}
+                                        {/* Mandatory badge and i icon for multiple files */}
+                                        <div className="flex items-center justify-center gap-2">
+                                          {document.isMandatory ? (
+                                            <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
+                                          ) : (
+                                            <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
+                                          )}
+                                          {/* i icon for multiple files, visible only if isMultipleFiles, else invisible for alignment */}
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <span style={{ display: 'inline-flex', width: 20, justifyContent: 'center' }}>
+                                                  <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
+                                                </span>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <span>This document supports multiple files.</span>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        </div>
                                       </TableCell>
                                       <TableCell>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 justify-center" style={{ minWidth: 80 }}>
                                           <input
                                             type="file"
                                             id={`file-${document.documentMasterId}`}
@@ -647,20 +664,19 @@ const DocumentUpload = () => {
                                               </span>
                                             </Button>
                                           </label>
-                                          {document.isMultipleYears && yearIdx === years.length - 1 && (
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              onClick={() => setDocumentYears(prev => ({
-                                                ...prev,
-                                                [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
-                                              }))}
-                                              className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                                              aria-label="Add Year"
-                                            >
-                                              +
-                                            </Button>
-                                          )}
+                                          {/* Always render the + button, but hide it if not needed for consistent spacing */}
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setDocumentYears(prev => ({
+                                              ...prev,
+                                              [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
+                                            }))}
+                                            className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${document.isMultipleYears && yearIdx === years.length - 1 ? '' : 'invisible'}`}
+                                            aria-label="Add Year"
+                                          >
+                                            +
+                                          </Button>
                                         </div>
                                       </TableCell>
                                     </TableRow>
@@ -720,7 +736,7 @@ const DocumentUpload = () => {
                                   return updated;
                                 });
                               }}
-                              className="absolute top-2 right-2 z-10 p-1 rounded-full hover:bg-red-100 text-red-500 border border-red-200 hover:border-red-300"
+                              className="absolute top-2 right-2 z-10 p-1 rounded-full bg-red-100 text-red-500 border border-red-200 hover:border-red-300"
                               aria-label="Remove section"
                             >
                               <X className="h-5 w-5" />
@@ -753,21 +769,6 @@ const DocumentUpload = () => {
                                     <TableRow key={docKey + "_" + yearIdx}>
                                       <TableCell className="font-medium">
                                         <div className="flex items-center gap-2" style={{ textAlign: 'start' }}>
-                                          {/* Fixed-width i icon container for alignment (promoter) */}
-                                          <span style={{ display: 'inline-flex', width: 24, justifyContent: 'center' }}>
-                                            {document.isMultipleYears ? null : (
-                                              <TooltipProvider>
-                                                <Tooltip>
-                                                  <TooltipTrigger asChild>
-                                                    <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
-                                                  </TooltipTrigger>
-                                                  <TooltipContent>
-                                                    <span>This document supports multiple files.</span>
-                                                  </TooltipContent>
-                                                </Tooltip>
-                                              </TooltipProvider>
-                                            )}
-                                          </span>
                                           {document.documentType}
                                           {document.isMultipleYears && (
                                             <>
@@ -786,16 +787,6 @@ const DocumentUpload = () => {
                                                   <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
                                                 ))}
                                               </select>
-                                              <TooltipProvider>
-                                                <Tooltip>
-                                                  <TooltipTrigger asChild>
-                                                    <Info className={`h-5 w-5 ml-2 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
-                                                  </TooltipTrigger>
-                                                  <TooltipContent>
-                                                    <span>This document supports multiple files.</span>
-                                                  </TooltipContent>
-                                                </Tooltip>
-                                              </TooltipProvider>
                                             </>
                                           )}
                                         </div>
@@ -814,18 +805,27 @@ const DocumentUpload = () => {
                                           }
                                           return (
                                             <div className="space-y-1 flex flex-col">
-                                              {files.map((file) => (
-                                                <div key={file.docId} className="flex items-center gap-2">
-                                                  {/* Status badge/icon for file */}
-                                                  {file.docStatus === 'SUBMITTED' && (
-                                                    <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>
-                                                  )}
-                                                  {file.docStatus === 'PENDING' && (
-                                                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>
-                                                  )}
-                                                  {/* Add more status mappings as needed */}
-                                                </div>
-                                              ))}
+                                              {files.map((file) => {
+                                                let badge;
+                                                switch ((file.docStatus || '').toUpperCase()) {
+                                                  case 'SUBMITTED':
+                                                    badge = <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
+                                                    break;
+                                                  case 'PENDING':
+                                                    badge = <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+                                                    break;
+                                                  case 'REJECTED':
+                                                    badge = <Badge variant="destructive" className="bg-red-100 text-red-800">Rejected</Badge>;
+                                                    break;
+                                                  default:
+                                                    badge = <Badge variant="secondary" className="bg-gray-100 text-gray-800">{file.docStatus}</Badge>;
+                                                }
+                                                return (
+                                                  <div key={file.docId} className="flex items-center gap-2">
+                                                    {badge}
+                                                  </div>
+                                                );
+                                              })}
                                             </div>
                                           );
                                         })()}
@@ -848,15 +848,32 @@ const DocumentUpload = () => {
                                             <div className="space-y-1 flex flex-col">
                                               {files.map((file, fileIndex) => (
                                                 <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
-                                                  {/* Trash icon before file name */}
+                                                  {/* Trash icon before file name, hidden if status is APPROVED (promoter) */}
+                                                  {String(file.docStatus).toUpperCase() !== 'APPROVED' ? (
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-6 w-6 p-0 text-red-700 mr-1"
+                                                      aria-label="Delete file"
+                                                      disabled
+                                                    >
+                                                      <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                  ) : (
+                                                    <span style={{ width: 24, display: 'inline-block' }}></span>
+                                                  )}
+                                                  {/* Eye icon for preview, always visible (promoter) */}
                                                   <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-800 mr-1"
-                                                    aria-label="Delete file"
+                                                    className="h-6 w-6 p-0 text-blue-800 mr-1"
+                                                    aria-label="View file"
                                                     disabled
                                                   >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
+                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
+                                                      <circle cx="12" cy="12" r="3" />
+                                                    </svg>
                                                   </Button>
                                                   <span className="truncate max-w-[120px]" title={file.docName}>
                                                     {file.docName}
@@ -875,7 +892,7 @@ const DocumentUpload = () => {
                                                       <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 ml-2 rounded-full border border-blue-200 bg-blue-50 hover:border-blue-300"
+                                                        className="h-6 w-6 p-0 text-blue-600 ml-2 rounded-full border border-blue-200 bg-blue-50"
                                                         aria-label="Add more files"
                                                         onClick={() => window.document.getElementById(`file-plus-${docKey}`)?.click()}
                                                       >
@@ -890,14 +907,30 @@ const DocumentUpload = () => {
                                         })()}
                                       </TableCell>
                                       <TableCell className="text-center">
-                                        {document.isMandatory ? (
-                                          <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
-                                        ) : (
-                                          <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
-                                        )}
+                                        {/* Mandatory badge and i icon for multiple files (promoter) */}
+                                        <div className="flex items-center justify-center gap-2">
+                                          {document.isMandatory ? (
+                                            <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
+                                          ) : (
+                                            <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
+                                          )}
+                                          {/* i icon for multiple files, visible only if isMultipleFiles, else invisible for alignment */}
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <span style={{ display: 'inline-flex', width: 20, justifyContent: 'center' }}>
+                                                  <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
+                                                </span>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <span>This document supports multiple files.</span>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        </div>
                                       </TableCell>
                                       <TableCell>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 justify-center" style={{ minWidth: 80 }}>
                                           <input
                                             type="file"
                                             id={`file-${docKey}`}
@@ -926,20 +959,19 @@ const DocumentUpload = () => {
                                               </span>
                                             </Button>
                                           </label>
-                                          {document.isMultipleYears && yearIdx === years.length - 1 && (
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              onClick={() => setDocumentYears(prev => ({
-                                                ...prev,
-                                                [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
-                                              }))}
-                                              className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                                              aria-label="Add Year"
-                                            >
-                                              +
-                                            </Button>
-                                          )}
+                                          {/* Always render the + button, but hide it if not needed for consistent spacing (promoter) */}
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setDocumentYears(prev => ({
+                                              ...prev,
+                                              [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
+                                            }))}
+                                            className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${document.isMultipleYears && yearIdx === years.length - 1 ? '' : 'invisible'}`}
+                                            aria-label="Add Year"
+                                          >
+                                            +
+                                          </Button>
                                         </div>
                                       </TableCell>
                                     </TableRow>
@@ -972,55 +1004,53 @@ const DocumentUpload = () => {
               })}
             </>
           )}
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>Page {currentPage + 1} of {totalPages}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={goToPreviousPage}
-                  disabled={currentPage === 0}
-                  className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }).map((_, index) => (
-                    <Button
-                      key={index}
-                      variant={currentPage === index ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => goToPage(index)}
-                      className={`w-8 h-8 p-0 ${currentPage === index
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                        }`}
-                    >
-                      {index}
-                    </Button>
-                  ))}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={goToNextPage}
-                  disabled={currentPage === totalPages - 1}
-                  className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                >
-                  Next
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>Page {currentPage + 1} of {totalPages}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={currentPage === 0}
+                className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }).map((_, index) => (
+                  <Button
+                    key={index}
+                    variant={currentPage === index ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => goToPage(index)}
+                    className={`w-8 h-8 p-0 ${currentPage === index
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                      }`}
+                  >
+                    {index + 1}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages - 1}
+                className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+              >
+                Next
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );
