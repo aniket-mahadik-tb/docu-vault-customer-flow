@@ -128,6 +128,7 @@ const DocumentUpload = () => {
       const originalDocumentId = documentId.includes('_promoter')
         ? documentId.split('_promoter')[0]
         : documentId;
+
       const metadata = {
         documentMasterId: originalDocumentId,
         promoter: currentPage > 0 ? `promoter${currentPage}` : "",
@@ -230,8 +231,14 @@ const DocumentUpload = () => {
     try {
       // Fetch promoter documents from API
       const response = await documentUploadService.getDocumentMasters();
-      const promoterData = response.data.find(
-        (item: any) => item.customerType?.toUpperCase() === "PROMOTER"
+
+      // const promoterData = response.data.find(
+      //   (item: any) => item.customerType?.toUpperCase() === "PROMOTER"
+      // );
+
+
+      const promoterData = response.data.find((item: any) =>
+        item.customerType?.toLowerCase().startsWith("promoter")
       );
 
       if (promoterData) {
@@ -245,7 +252,7 @@ const DocumentUpload = () => {
       } else {
         toast({
           title: "Error",
-          description: "Could not fetch promoter document requirements",
+          description: "Could not fetch promoter document requirements hiii",
           variant: "destructive",
         });
       }
@@ -414,7 +421,7 @@ const DocumentUpload = () => {
                                                 const newYear = parseInt(e.target.value, 10);
                                                 setDocumentYears(prev => ({
                                                   ...prev,
-                                                  [docKey]: (prev[docKey] || [year]).map((y, idx) => idx === yearIdx ? newYear : y)
+                                                  [docKey]: prev[docKey].map((y, idx) => idx === yearIdx ? newYear : y)
                                                 }));
                                               }}
                                               className="border rounded px-2 py-1 text-sm ml-2"
@@ -519,7 +526,7 @@ const DocumentUpload = () => {
                                               size="sm"
                                               onClick={() => setDocumentYears(prev => ({
                                                 ...prev,
-                                                [docKey]: [...(prev[docKey] || [year]), year]
+                                                [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
                                               }))}
                                               className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                                               aria-label="Add Year"
@@ -628,7 +635,7 @@ const DocumentUpload = () => {
                                                 const newYear = parseInt(e.target.value, 10);
                                                 setDocumentYears(prev => ({
                                                   ...prev,
-                                                  [docKey]: (prev[docKey] || [year]).map((y, idx) => idx === yearIdx ? newYear : y)
+                                                  [docKey]: prev[docKey].map((y, idx) => idx === yearIdx ? newYear : y)
                                                 }));
                                               }}
                                               className="border rounded px-2 py-1 text-sm ml-2"
@@ -733,7 +740,7 @@ const DocumentUpload = () => {
                                               size="sm"
                                               onClick={() => setDocumentYears(prev => ({
                                                 ...prev,
-                                                [docKey]: [...(prev[docKey] || [year]), year]
+                                                [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
                                               }))}
                                               className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                                               aria-label="Add Year"
@@ -772,6 +779,54 @@ const DocumentUpload = () => {
                 );
               })}
             </>
+          )}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Page {currentPage + 1} of {totalPages}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 0}
+                  className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }).map((_, index) => (
+                    <Button
+                      key={index}
+                      variant={currentPage === index ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(index)}
+                      className={`w-8 h-8 p-0 ${currentPage === index
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                        }`}
+                    >
+                      {index}
+                    </Button>
+                  ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages - 1}
+                  className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </div>
