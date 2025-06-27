@@ -38,7 +38,7 @@ const DocumentUpload = () => {
   const { getValueFromLocalStorage, setValueToLocalStorage } = useLocalStorage();
   const token = getValueFromLocalStorage("token");
   const { addDocument, removeDocument, submitFolder, getFolderDocuments, isFolderSubmitted } = useDocuments();
-  const { syncCustomerDocuments } = useCustomers();
+  const { syncCustomerDocuments, promoterTemplate, setPromoterTemplate } = useCustomers();
   const documentUploadService = useDocumentUploadService();
 
   const [customerType, setCustomerType] = useState<'Individual' | 'Organization'>();
@@ -60,6 +60,7 @@ const DocumentUpload = () => {
   const [currentPage, setCurrentPage] = useState(0); // 0 = main documents, 1+ = promoter pages
 
   const [apiDocumentMasters, setApiDocumentMasters] = useState<any[]>([]); // <-- New state
+  const [maxPromoters, setMaxPromoters] = useState(0);
 
   // Call document masters API on page render
   useEffect(() => {
@@ -67,6 +68,7 @@ const DocumentUpload = () => {
       try {
         const response = await documentUploadService.getDocumentMasters();
         setApiDocumentMasters(response.data); // <-- Store API data
+        setMaxPromoters(response.data.length - 1); // 1 org, rest promoters
         // response.data is an array
         const org = response.data.find(
           (item: any) => item.customerType?.toUpperCase() === "ORGANIZATION"
@@ -77,7 +79,44 @@ const DocumentUpload = () => {
 
         // Find all promoters (customerType starts with 'promoter', case-insensitive)
         const promoterEntries = response.data.filter(
-          (item: any) => typeof item.customerType === 'string' && item.customerType.toLowerCase().startsWith('promoter')
+          (item: any) =>
+            typeof item.customerType === 'string' &&
+            item.customerType.replace(/\s+/g, '').toLowerCase().startsWith('promoter')
+        );
+
+        // Always use promoter 1 (first promoter entry) as the template for blank promoters
+        const promoter1Obj = promoterEntries.find(
+          (item: any) =>
+            item.customerType &&
+            item.customerType.replace(/\s+/g, '').toLowerCase() === 'promoter1'
+        );
+        if (promoter1Obj) {
+          // Deep copy and empty all files arrays for template
+          const deepEmptyPromoter = JSON.parse(JSON.stringify(promoter1Obj));
+          deepEmptyPromoter.documentsByCategory = deepEmptyPromoter.documentsByCategory.map((cat: any) => ({
+            ...cat,
+            documents: cat.documents.map((doc: any) => ({
+              ...doc,
+              files: []
+            }))
+          }));
+          setPromoterTemplate(deepEmptyPromoter);
+          console.log('Promoter Template:', deepEmptyPromoter);
+        }
+
+        // Only show real promoters in the UI (those with any file present)
+        const realPromoters = promoterEntries.filter((entry: any) => {
+          // If ANY file array in ANY document is non-empty, it's a real promoter
+          return entry.documentsByCategory.some((cat: any) =>
+            cat.documents.some((doc: any) => Array.isArray(doc.files) && doc.files.length > 0)
+          );
+        });
+        setPromoters(
+          realPromoters.map((entry: any, idx: number) => ({
+            id: Date.now() + idx,
+            categories: entry.documentsByCategory,
+            details: {},
+          }))
         );
 
         if (org) {
@@ -92,23 +131,10 @@ const DocumentUpload = () => {
           setOrgCategories(individual.documentsByCategory);
           setPromoterCategories([]);
         }
-
-        // Initialize promoters state from API response
-        if (promoterEntries.length > 0) {
-          const initialPromoters = promoterEntries.map((entry: any, idx: number) => ({
-            id: Date.now() + idx, // or use a better unique id if available
-            categories: entry.documentsByCategory,
-            details: {}, // You can fill this if you have promoter details
-          }));
-          setPromoters(initialPromoters);
-        } else {
-          setPromoters([]);
-        }
       } catch (error) {
         console.error("Error fetching document masters:", error);
       }
     };
-
     fetchDocumentMasters();
   }, []);
 
@@ -149,7 +175,7 @@ const DocumentUpload = () => {
     syncUploadedFiles();
   }, [token, orgCategories, promoterCategories, getFolderDocuments, promoters.length]);
 
-  const handleFileUpload = async (documentId: string, files: FileList, year?: number) => {
+  const handleFileUpload = async (documentId: string, files: FileList, year?: number, promoterLabel?: string) => {
     if (!token) return;
 
     try {
@@ -162,7 +188,7 @@ const DocumentUpload = () => {
 
       const metadata = {
         documentMasterId: originalDocumentId,
-        promoter: currentPage > 0 ? `promoter${currentPage}` : "",
+        promoter: promoterLabel || (currentPage > 0 ? `Promoter ${currentPage}` : ""),
         year: year || "",
         section: ""
       };
@@ -233,10 +259,11 @@ const DocumentUpload = () => {
 
   // Add promoter handler
   const handleAddPromoter = () => {
-    // No API call, just add a new promoter with empty categories for now
+    if (promoters.length >= maxPromoters) return;
     const newPromoter = {
       id: Date.now(),
-      categories: [] // Placeholder, user will provide logic later
+      categories: promoterTemplate ? JSON.parse(JSON.stringify(promoterTemplate.documentsByCategory)) : [],
+      details: {},
     };
     setPromoters((prev) => [...prev, newPromoter]);
     setCurrentPage(promoters.length + 1);
@@ -297,6 +324,7 @@ const DocumentUpload = () => {
               currentPage={currentPage}
               handleAddPromoter={handleAddPromoter}
               handleRemovePromoter={handleRemovePromoter}
+              disableAdd={promoters.length >= maxPromoters}
             />
           </div>
           {/* Main Documents Page (Page 0) */}
@@ -310,7 +338,7 @@ const DocumentUpload = () => {
               selectedYears={selectedYears}
               setSelectedYears={setSelectedYears}
               currentYear={currentYear}
-              handleFileUpload={handleFileUpload}
+              handleFileUpload={(documentId, files, year) => handleFileUpload(documentId, files, year)}
               getApiFilesForDocument={getApiFilesForDocument}
               uploadingDocuments={uploadingDocuments}
             />
@@ -327,7 +355,7 @@ const DocumentUpload = () => {
               selectedYears={selectedYears}
               setSelectedYears={setSelectedYears}
               currentYear={currentYear}
-              handleFileUpload={handleFileUpload}
+              handleFileUpload={(documentId, files, year) => handleFileUpload(documentId, files, year, `Promoter ${currentPage}`)}
               getApiFilesForDocument={getApiFilesForDocument}
               uploadingDocuments={uploadingDocuments}
               currentPage={currentPage}

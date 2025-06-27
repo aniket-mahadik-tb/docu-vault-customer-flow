@@ -7,9 +7,10 @@ interface PromoterActionsProps {
   currentPage: number;
   handleAddPromoter: () => void;
   handleRemovePromoter: (index: number) => void;
+  disableAdd?: boolean;
 }
 
-const PromoterActions: React.FC<PromoterActionsProps> = ({ customerType, currentPage, handleAddPromoter, handleRemovePromoter }) => (
+const PromoterActions: React.FC<PromoterActionsProps> = ({ customerType, currentPage, handleAddPromoter, handleRemovePromoter, disableAdd }) => (
   <div className="flex gap-2 items-center">
     {customerType === 'Organization' && (
       <Button
@@ -18,6 +19,7 @@ const PromoterActions: React.FC<PromoterActionsProps> = ({ customerType, current
         variant="default"
         type="button"
         style={{ borderRadius: 0 }}
+        disabled={disableAdd}
       >
         <Plus className="h-5 w-5" />
         Add Promoter

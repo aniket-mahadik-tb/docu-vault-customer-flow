@@ -37,6 +37,9 @@ const PromoterSection: React.FC<PromoterSectionProps> = ({
       {categories.map((category, categoryIndex) => {
         const isMultipleSection = category.isMultipleSection;
         const instances = isMultipleSection ? (sectionInstances[`promoter${currentPage - 1}_${categoryIndex}`] || 1) : 1;
+        const handlePromoterFileUpload = (documentId: string, files: FileList, year?: number) => {
+          handleFileUpload(documentId, files, year, `Promoter ${currentPage}`);
+        };
         return (
           <DocumentTable
             key={categoryIndex}
@@ -52,7 +55,7 @@ const PromoterSection: React.FC<PromoterSectionProps> = ({
             selectedYears={selectedYears}
             setSelectedYears={setSelectedYears}
             currentYear={currentYear}
-            handleFileUpload={handleFileUpload}
+            handleFileUpload={handlePromoterFileUpload}
             getApiFilesForDocument={getApiFilesForDocument}
             uploadingDocuments={uploadingDocuments}
             isPromoter={true}

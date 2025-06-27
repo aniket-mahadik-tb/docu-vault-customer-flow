@@ -44,6 +44,8 @@ interface CustomerContextType {
   deleteCustomer: (id: string) => void;
   addCustomerDocument: (customerId: string, document: Omit<CustomerDocument, 'id' | 'uploadedAt'>) => void;
   updateCustomerDocument: (customerId: string, documentId: string, document: Partial<CustomerDocument>) => void;
+  promoterTemplate: any;
+  setPromoterTemplate: (template: any) => void;
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined);
@@ -54,6 +56,7 @@ const STORAGE_KEY = "admin_customers";
 
 export const CustomerProvider = ({ children }: { children: ReactNode }) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [promoterTemplate, setPromoterTemplate] = useState<any>(null);
   const { documents } = useDocuments();
 
   // Load customers from localStorage on mount
@@ -274,6 +277,8 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
         deleteCustomer,
         addCustomerDocument,
         updateCustomerDocument,
+        promoterTemplate,
+        setPromoterTemplate,
       }}
     >
       {children}
