@@ -169,7 +169,7 @@ const CustomerDetail = () => {
           setCustomer(tempCustomer);
           // console.log(tempCustomer)
           const documents: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
-
+          console.log(documents)
 
           setAllDocuments(documents);
         } else {
@@ -458,19 +458,19 @@ const CustomerDetail = () => {
                                     {doc.files.length} {doc.files.length === 1 ? 'file' : 'files'}
                                   </span>
                                   <span className="ml-2 text-gray-400">#{idx + 1}</span>
-                                  {doc.year ? (
-                                    <span
-                                      className="ml-2 rounded px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-400"
-                                      title={`Year: ${doc.year}`}
-                                    >
-                                      {doc.year}
-                                    </span>
-                                  ) : null}
                                   {doc.customerType && String(doc.customerType).toLowerCase().includes('promoter') && (
                                     null
                                   )}
                                 </>
                               )}
+                              {doc.year ? (
+                                <span
+                                  className="ml-2 rounded px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-400"
+                                  title={`Year: ${doc.year}`}
+                                >
+                                  {doc.year}
+                                </span>
+                              ) : null}
                             </TableCell>
                             <TableCell className="px-4">
                               {file ? (

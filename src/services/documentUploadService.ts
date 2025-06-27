@@ -64,16 +64,7 @@ export function useDocumentUploadService() {
   };
 
   service.uploadDocuments = async (formData: FormData): Promise<ApiResponse<DocumentUploadResponse>> => {
-    // try {
-    //   const response = await api.post("documents", formData, {
-    //     headers: { 'Content-Type': 'multipart/form-data' }
-    //   });
-    //   return response.data;
-    // } catch (error: any) {
-    //   console.error("Failed to upload documents:", error);
-    //   throw error;
-    // }
-
+   
     try {
       const response = await api.post("/documents", formData, {
         headers: {
@@ -95,6 +86,16 @@ export function useDocumentUploadService() {
       return response.data;
     } catch (error: any) {
       console.error("Failed to fetch uploaded documents:", error);
+      throw error;
+    }
+  };
+
+  service.getPromoterDocumentMasters = async (): Promise<ApiResponse<DocumentMastersResponse>> => {
+    try {
+      const response = await api.get(`document/master/promoter`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Failed to fetch promoter document masters:", error);
       throw error;
     }
   };
