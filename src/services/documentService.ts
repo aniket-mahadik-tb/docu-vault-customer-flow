@@ -16,7 +16,7 @@ export function useDocumentService() {
     service.addDocuments = async (userId: string, folder: string, file: File) => {
         try {
             await delay(300);
-            
+
 
             const { panCard: pan } = await customerService.getCustomerById(userId);
             if (!pan) throw new Error("User Not Found");
@@ -70,14 +70,11 @@ export function useDocumentService() {
         }
     }
 
-    service.getFile=async(url:string)=>{
-        try{
-            const res=await api.get(url,{responseType:"blob"})
-            console.log(res)
-            const type = res.headers["content-type"];
-            const blob=new Blob([res.data],{type})
-            return blob;
-        }catch(e:any){
+    service.getFile = async (url: string) => {
+        try {
+            const res = await api.get(url, { responseType: "blob" })
+            return res.data;
+        } catch (e: any) {
             console.error(e)
             throw e;
         }

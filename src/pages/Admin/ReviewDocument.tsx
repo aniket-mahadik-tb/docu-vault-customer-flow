@@ -3,10 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { Customer, useCustomers } from "@/contexts/CustomerContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, X, Clock, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowLeft, Check, X, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  TransformWrapper,
+  TransformComponent,
+  useControls,
+} from "react-zoom-pan-pinch";
 import {
   Card,
   CardContent,
@@ -21,6 +26,9 @@ import { useCustomerService } from "@/services/customerService";
 import { CustomerType, DocumentResponseType, FileResponseType } from "@/utils/types";
 import { useTempCustomer } from "@/utils/TempContext";
 import { useDocumentService } from "@/services/documentService";
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import { zoomPlugin } from '@react-pdf-viewer/zoom';
+import '@react-pdf-viewer/core/lib/styles/index.css';
 
 // Updated PDF.js worker with a direct path (using cdnjs instead of unpkg)
 const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -72,52 +80,116 @@ const ReviewDocument = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [remarks, setRemarks] = useState("");
-  const [zoomLevel, setZoomLevel] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
-  const [pageNum, setPageNum] = useState(1);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [documentBlobUrl, setDocumentBlobUrl] = useState<string | null>(null);
+  const [documentBlobType, setDocumentBlobType] = useState<string | null>(null);
 
-  const [customer, setCustomer] = useState<CustomerType | null>(null);// getCustomer(customerId || "");
-  // const document = customer?.documents.find((doc) => doc.id === documentId);
-  // const [customer, setCustomer] = useState<CustomerType | null>(null);
+  const [customer, setCustomer] = useState<CustomerType | null>(null);
   const { tempCustomer, setTempCustomer } = useTempCustomer();
   const [document, setDocument] = useState<any | null>(null);
   const customerService = useCustomerService();
   const [rejectLoading, setRejectLoading] = useState<boolean>(false);
   const [onHoldLoading, setOnHoldLoading] = useState<boolean>(false);
   const [approveLoding, setApproveLoding] = useState<boolean>(false);
-  // const [currentDoc, setCurrentDoc] = useState<DocumentResponseType | null>(null);
   const documentService = useDocumentService();
 
+  const [zoom, setZoom] = useState(1);
+  const zoomPluginInstance = zoomPlugin();
+
+
+  const handleZoom = async (action: "IN" | "OUT") => {
+    if (action == "IN") {
+      setZoom(prev => prev + 0.1)
+    } else {
+      if (zoom > 1) setZoom(prev => prev - 0.1)
+    }
+  }
+
+  const Controls = () => {
+    const { zoomIn, zoomOut, resetTransform } = useControls();
+    return (
+      <div className="flex items-center gap-2 mt-4">
+        <div className="inline-flex rounded-md shadow-sm border border-gray-200 bg-white/80 backdrop-blur-md overflow-hidden" role="group">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { zoomOut(); handleZoom("OUT"); }}
+            title="Zoom Out"
+            aria-label="Zoom Out"
+            className="rounded-none border-0 transition-transform duration-150 hover:scale-105 hover:bg-gray-100"
+          >
+            <ZoomOut className="h-4 w-4 drop-shadow" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="rounded-none border-0 bg-white text-gray-700 cursor-default select-none"
+            style={{ pointerEvents: "none" }}
+            tabIndex={-1}
+            aria-label="Current Zoom Percentage"
+            title="Current Zoom Percentage"
+          >
+            {Math.round(zoom * 100)}%
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { zoomIn(); handleZoom("IN"); }}
+            title="Zoom In"
+            aria-label="Zoom In"
+            className="rounded-none border-0 transition-transform duration-150 hover:scale-105 hover:bg-gray-100"
+          >
+            <ZoomIn className="h-4 w-4 drop-shadow" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { resetTransform(); setZoom(1); }}
+            title="Reset Zoom"
+            aria-label="Reset Zoom"
+            className="rounded-none border-0 transition-transform duration-150 hover:scale-105 hover:bg-gray-100"
+          >
+            <RotateCcw className="h-4 w-4 drop-shadow" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
 
   // Clean up created Blob URL on unmount
   useEffect(() => {
     (async function fetchCustomer() {
       try {
-        if (true) {
-          if (tempCustomer) {
-            setCustomer(tempCustomer);
-            // // Use flattenDocuments to find the correct document
-            // const allDocs: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
-            // const docObj: DocumentResponseType = allDocs.find((doc: DocumentResponseType) => doc.documentMasterId === masterId);
-            // // setCurrentDoc(docObj);
-            // const doc: FileResponseType = docObj.files.find((doc: FileResponseType) => doc.docId === documentId)
-            const res = await documentService.getDocumentByDocumentID(documentId);
-            // const file = await documentService.getFile(res.data.url);
-            // console.log(file)
-            setDocument(res.data);
-          } else {
-            toast({
-              title: `failed to fetch customer details`,
-              description: "Something went wrong please try again",
-              variant: "destructive",
-            });
-            navigate("/admin/customers");
+        if (tempCustomer) {
+          setCustomer(tempCustomer);
+          const res = await documentService.getDocumentByDocumentID(documentId);
+          setDocument(res.data);
+          // Fetch the file as a Blob and create an object URL
+          setIsLoading(true);
+          setError(null);
+          try {
+            const fileBlob = await documentService.getFile(res.data.url); // fileBlob is a Blob
+            if (documentBlobUrl) {
+              URL.revokeObjectURL(documentBlobUrl);
+            }
+            const url = URL.createObjectURL(fileBlob);
+            setDocumentBlobUrl(url);
+            setDocumentBlobType(fileBlob.type);
+          } catch (err) {
+            setError("Failed to load document preview.");
+          } finally {
+            setIsLoading(false);
           }
+        } else {
+          toast({
+            title: `failed to fetch customer details`,
+            description: "Something went wrong please try again",
+            variant: "destructive",
+          });
+          navigate("/admin/customers");
         }
       } catch (error) {
         console.error("Error fetching customer:", error);
@@ -137,133 +209,15 @@ const ReviewDocument = () => {
     };
   }, []);
 
-
   useEffect(() => {
-    if (document) {
-      if (usingSamplePreviews()) {
-        // Use sample preview based on document name
-        const sampleUrl = getSamplePreviewUrl(document.fileName, document.fileName.slice(document.fileName.indexOf(".")));
-
-        if (isPdfPreview(sampleUrl)) {
-          loadPdf(sampleUrl);
-        } else {
-          // For non-PDF samples, just set the URL without conversion
-          setDocumentBlobUrl(sampleUrl);
-        }
-      } else {
-        if (document.fileName?.toLowerCase().endsWith('.pdf')) {
-          loadPdf("/placeholder.svg");
-        }
-      }
+    // Only apply zoom for PDFs
+    if (
+      (documentBlobType === "application/pdf" || (document?.fileName && document.fileName.toLowerCase().endsWith('.pdf')))
+      && typeof zoomPluginInstance.zoomTo === 'function'
+    ) {
+      zoomPluginInstance.zoomTo(zoom);
     }
-  }, [document]);
-
-
-
-
-  useEffect(() => {
-    if (pdfDoc && canvasRef.current) {
-      renderPage();
-    }
-  }, [pdfDoc, pageNum, zoomLevel]);
-
-  const loadPdf = async (url: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Handle placeholder URLs
-      if (url === "/placeholder.svg" || !url) {
-        // Use a sample PDF for demo purposes
-        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
-      }
-
-      // Create document loading task without dynamic imports
-      const loadingTask = pdfjs.getDocument({
-        url: url,
-        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist/cmaps/',
-        cMapPacked: true,
-      });
-
-      try {
-        const pdf = await loadingTask.promise;
-        setPdfDoc(pdf);
-        setPageNum(1);
-      } catch (err) {
-        console.error("Error loading PDF:", err);
-        setError("Failed to load PDF. Using image fallback.");
-      }
-    } catch (err) {
-      console.error("Error in PDF loading process:", err);
-      setError("Failed to load PDF. Using image fallback.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const renderPage = async () => {
-    if (!pdfDoc || !canvasRef.current) return;
-
-    try {
-      const page = await pdfDoc.getPage(pageNum);
-      const viewport = page.getViewport({ scale: zoomLevel });
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-
-      if (!context) {
-        console.error("Could not get canvas context");
-        return;
-      }
-
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-
-      const renderContext = {
-        canvasContext: context,
-        viewport: viewport
-      };
-
-      await page.render(renderContext).promise;
-    } catch (err) {
-      console.error("Error rendering PDF page:", err);
-      setError("Failed to render PDF page. Using image fallback.");
-    }
-  };
-
-  const isPdf = document?.fileName.toLowerCase().endsWith('.pdf') ||
-    getSamplePreviewUrl(document?.fileName || '').toLowerCase().endsWith('.pdf');
-  const isImage = document?.fileName.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/);
-
-  // Get a usable document URL or fallback
-  const getDocumentUrl = () => {
-    // If we're using sample previews, return the appropriate sample
-    if (usingSamplePreviews() && document) {
-      return getSamplePreviewUrl(document.fileName);
-    }
-
-    // First try the blob URL if we created one
-    if (documentBlobUrl) {
-      return documentBlobUrl;
-    }
-
-    // If document has a data URL, use it directly
-    // if (document?.fileUrl && document.fileUrl.startsWith('data:')) {
-    //   return document.fileUrl;
-    // }
-
-    // Use the original URL or fallback
-    if (/*!document?.fileUrl || document.fileUrl*/ "/placeholder.svg" === "/placeholder.svg") {
-      // Return appropriate fallback based on document type
-      if (isPdf) {
-        return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
-      } else if (isImage) {
-        return "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80";
-      }
-      return "/placeholder.svg";
-    }
-    return "/placeholder.svg";
-    // return document.fileUrl;
-  };
+  }, [zoom, documentBlobType, document?.fileName]);
 
   if (!customer || !document) {
     return (
@@ -281,19 +235,15 @@ const ReviewDocument = () => {
   const handleUpdateStatus = async (status: "APPROVED" | "REJECTED" | "UPLOADED") => {
     if (rejectLoading || onHoldLoading || approveLoding) return;
     try {
-      // updateDocumentStatus(customer.id, document.id, status, remarks);
       await customerService.updateDocumentStatus(customer.pan, document.documentId, status, remarks)
-
       const statusMessage =
         status === "APPROVED" ? "Document approved successfully" :
           status === "REJECTED" ? "Document rejected - customer notified" :
             "Document put on hold";
-
       toast({
         title: statusMessage,
         description: remarks ? `Remarks: ${remarks}` : undefined,
       });
-
       const response = await customerService.getCustomerDocuments(customer.pan);
       const customers: CustomerType = { ...customer, documents: response }
       await setTempCustomer(customers);
@@ -315,7 +265,157 @@ const ReviewDocument = () => {
     setApproveLoding(false)
     setRejectLoading(false)
     setOnHoldLoading(false)
+  };
 
+  // Document preview rendering
+  const renderPreview = () => {
+    console.log('documentBlobType:', documentBlobType, 'fileName:', document?.fileName);
+    if (isLoading) {
+      return (
+        <div className="space-y-4 w-full">
+          <Skeleton className="h-[350px] w-full rounded-md" />
+          <Skeleton className="h-4 w-3/4 mx-auto" />
+        </div>
+      );
+    }
+    if (error) {
+      return <p className="text-sm text-red-500 mt-2">{error}</p>;
+    }
+    if (documentBlobUrl) {
+      // 1. If type is image/*
+      if (documentBlobType && documentBlobType.startsWith("image/")) {
+        return (
+          <div style={{ width: '100%', height: '400px', overflow: 'hidden', background: '#f9fafb', borderRadius: '0.375rem', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* <img
+              src={documentBlobUrl}
+              alt={document?.fileName}
+              style={{ transform: `scale(${zoom})`, transformOrigin: 'center', display: 'block' }}
+            /> */}
+            {/* <ReactPanZoom
+              image={documentBlobUrl}
+              alt={document?.fileName}
+            /> */}
+            <CardContent className="flex flex-col justify-center items-center min-h-[400px] bg-muted/40 relative">
+
+              <TransformWrapper
+                initialScale={1}
+                wheel={{ disabled: true }}          // disables zoom via mouse wheel / touchpad
+                pinch={{ disabled: true }}         // disables pinch-to-zoom gesture (touchscreens/touchpad)
+                doubleClick={{ disabled: true }}   // disables double-click to zoom
+                panning={{ disabled: false }}
+              >
+                {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
+                  <>
+
+                    <TransformComponent>
+                      <img src={documentBlobUrl} alt={document?.fileName} />
+                    </TransformComponent>
+                    <Controls />
+                  </>
+                )}
+              </TransformWrapper>
+            </CardContent>
+          </div>
+        );
+      }
+      // 2. If type is PDF
+      if (documentBlobType === "application/pdf" || (document?.fileName && document.fileName.toLowerCase().endsWith('.pdf'))) {
+        return (
+          <div style={{ width: '100%', height: '400px' }}>
+            <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js`}>
+              <Viewer fileUrl={documentBlobUrl} plugins={[zoomPluginInstance]} />
+            </Worker>
+          </div>
+        );
+      }
+      // 3. If type is generic or missing, use file extension
+      if (
+        (!documentBlobType || documentBlobType === "application/octet-stream" || documentBlobType === "") &&
+        document?.fileName
+      ) {
+        const ext = document.fileName.split('.').pop()?.toLowerCase();
+        console.log('Fallback extension:', ext);
+        if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext || "")) {
+          return (
+            <div style={{ width: '100%', height: '400px', overflow: 'hidden', background: '#f9fafb', borderRadius: '0.375rem', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {/* <img
+                src={documentBlobUrl}
+                alt={document.fileName}
+                style={{ transform: `scale(${zoom})`, transformOrigin: 'center', display: 'block' }}
+              /> */}
+              {/* <ReactPanZoom
+                image={documentBlobUrl}
+                alt={document?.fileName}
+              /> */}
+              <CardContent className="flex flex-col justify-center items-center min-h-[400px] bg-muted/40 relative">
+
+                <TransformWrapper
+                  initialScale={1}
+                  wheel={{ disabled: true }}          // disables zoom via mouse wheel / touchpad
+                  pinch={{ disabled: true }}         // disables pinch-to-zoom gesture (touchscreens/touchpad)
+                  doubleClick={{ disabled: true }}   // disables double-click to zoom
+                  panning={{ disabled: false }}
+                >
+                  {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
+                    <>
+
+                      <TransformComponent>
+                        <img src={documentBlobUrl} alt={document?.fileName} />
+                      </TransformComponent>
+                      <Controls />
+                    </>
+                  )}
+                </TransformWrapper>
+              </CardContent>
+            </div>
+          );
+        }
+        if (ext === "pdf") {
+          return (
+            <div style={{ width: '100%', height: '400px' }}>
+              <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js`}>
+                <Viewer fileUrl={documentBlobUrl} plugins={[zoomPluginInstance]} />
+              </Worker>
+            </div>
+          );
+        }
+      }
+      // 4. As a last resort, try to render as image
+      return (
+        <div style={{ width: '100%', height: '400px', overflow: 'hidden', background: '#f9fafb', borderRadius: '0.375rem', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* <img
+            src={documentBlobUrl}
+            alt={document?.fileName}
+            style={{ transform: `scale(${zoom})`, transformOrigin: 'center', display: 'block' }}
+          /> */}
+          {/* <ReactPanZoom
+            image={documentBlobUrl}
+            alt={document?.fileName}
+          /> */}
+          <CardContent className="flex flex-col justify-center items-center min-h-[400px] bg-muted/40 relative">
+
+            <TransformWrapper
+              initialScale={1}
+              wheel={{ disabled: true }}          // disables zoom via mouse wheel / touchpad
+              pinch={{ disabled: true }}         // disables pinch-to-zoom gesture (touchscreens/touchpad)
+              doubleClick={{ disabled: true }}   // disables double-click to zoom
+              panning={{ disabled: false }}
+            >
+              {({ zoomIn, zoomOut, resetTransform }) => (
+                <>
+
+                  <TransformComponent>
+                    <img src={documentBlobUrl} alt={document?.fileName} />
+                  </TransformComponent>
+                  <Controls />
+                </>
+              )}
+            </TransformWrapper>
+          </CardContent>
+        </div>
+      );
+    }
+    return <p>No preview available.</p>;
   };
 
   return (
@@ -329,7 +429,6 @@ const ReviewDocument = () => {
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customer
         </Button>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
@@ -356,13 +455,6 @@ const ReviewDocument = () => {
                     {new Date(document.uploadedOn).toLocaleDateString()}
                   </p>
                 </div>
-                {/* <div>
-                  <p className="text-sm text-muted-foreground">Uploaded On</p>
-                  <p className="font-medium capitalize">
-                    {new Date(document?.uploadedOn).toLocaleDateString()}{" "}
-                    {new Date(document?.uploadedOn).toLocaleTimeString()}
-                  </p>
-                </div> */}
                 <div>
                   <p className="text-sm text-muted-foreground">Current Status</p>
                   <p className="font-medium capitalize">
@@ -403,7 +495,6 @@ const ReviewDocument = () => {
                   ) : (
                     <><Check className="mr-2 h-4 w-4" /> Approve</>
                   )}
-
                 </Button>
                 <Button
                   variant="destructive"
@@ -431,105 +522,71 @@ const ReviewDocument = () => {
                   ) : (
                     <><X className="mr-2 h-4 w-4" /> Reject</>
                   )}
-
                 </Button>
-                {/* <Button
-                  variant="outline"
-                  onClick={() => { handleUpdateStatus("UPLOADED"); setOnHoldLoading(true) }}
-                >
-                  {onHoldLoading ? (
-                    <span className="flex items-center gap-2">
-                      <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                      </svg>
-                      Holding
-                    </span>
-                  ) : (
-                    <><Clock className="mr-2 h-4 w-4" /> On Hold</>
-                  )}
-
-                </Button> */}
               </div>
             </CardFooter>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Document Preview</CardTitle>
-              {usingSamplePreviews() && (
-                <CardDescription className="text-yellow-500">
-                  Showing sample preview - original content not displayed
-                </CardDescription>
-              )}
             </CardHeader>
-            <CardContent className="flex flex-col justify-center items-center min-h-[400px] bg-muted/40 relative">
-              {isLoading ? (
-                <div className="space-y-4 w-full">
-                  <Skeleton className="h-[350px] w-full rounded-md" />
-                  <Skeleton className="h-4 w-3/4 mx-auto" />
-                </div>
-              ) : isPdf && !error ? (
-                <div className="flex flex-col items-center w-full">
-                  <canvas
-                    ref={canvasRef}
-                    className="max-w-full max-h-[350px] border border-muted rounded shadow-sm"
-                  />
-                  <div className="flex items-center gap-2 mt-4">
+
+            {documentBlobType !== "application/pdf" ? (
+              <>
+                {renderPreview()}
+              </>
+            ) : (
+              <CardContent className="flex flex-col justify-center items-center min-h-[400px] bg-muted/40 relative">
+                {renderPreview()}
+                <div className="flex items-center gap-2 mt-4">
+                  <div className="inline-flex rounded-md shadow-sm border border-gray-200 bg-white/80 backdrop-blur-md overflow-hidden" role="group">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setZoomLevel(prev => Math.max(prev - 0.1, 0.5))}
+                      onClick={() => setZoom(z => Math.max(z - 0.1, 0.2))}
+                      title="Zoom Out"
+                      aria-label="Zoom Out"
+                      className="rounded-none border-0 transition-transform duration-150 hover:scale-105 hover:bg-gray-100"
                     >
-                      <ZoomOut className="h-4 w-4" />
+                      <ZoomOut className="h-4 w-4 drop-shadow" />
                     </Button>
-                    <span className="text-xs w-16 text-center">
-                      {Math.round(zoomLevel * 100)}%
-                    </span>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setZoomLevel(prev => Math.min(prev + 0.1, 2))}
+                      disabled
+                      className="rounded-none border-0 bg-white text-gray-700 cursor-default select-none"
+                      style={{ pointerEvents: "none" }}
+                      tabIndex={-1}
+                      aria-label="Current Zoom Percentage"
+                      title="Current Zoom Percentage"
                     >
-                      <ZoomIn className="h-4 w-4" />
+                      {Math.round(zoom * 100)}%
                     </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <img
-                    src={getDocumentUrl()}
-                    alt={document.fileName + ``}
-                    className="max-w-full max-h-[350px] object-contain mx-auto"
-                    style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center' }}
-                    onError={(e) => {
-                      // Fallback to placeholder if image fails to load
-                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80";
-                    }}
-                  />
-                  <div className="mt-4 flex items-center gap-2 justify-center">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setZoomLevel(prev => Math.max(prev - 0.1, 0.5))}
+                      onClick={() => setZoom(z => Math.min(z + 0.1, 3))}
+                      title="Zoom In"
+                      aria-label="Zoom In"
+                      className="rounded-none border-0 transition-transform duration-150 hover:scale-105 hover:bg-gray-100"
                     >
-                      <ZoomOut className="h-4 w-4" />
+                      <ZoomIn className="h-4 w-4 drop-shadow" />
                     </Button>
-                    <span className="text-xs w-16 text-center">
-                      {Math.round(zoomLevel * 100)}%
-                    </span>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setZoomLevel(prev => Math.min(prev + 0.1, 2))}
+                      onClick={() => setZoom(0.5)}
+                      title="Reset Zoom"
+                      aria-label="Reset Zoom"
+                      className="rounded-none border-0 transition-transform duration-150 hover:scale-105 hover:bg-gray-100"
                     >
-                      <ZoomIn className="h-4 w-4" />
+                      <RotateCcw className="h-4 w-4 drop-shadow" />
                     </Button>
                   </div>
                 </div>
-              )}
-              {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
-            </CardContent>
+              </CardContent>
+            )}
+
           </Card>
         </div>
       </div>
