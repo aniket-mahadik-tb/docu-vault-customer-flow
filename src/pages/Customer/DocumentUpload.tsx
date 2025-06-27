@@ -490,9 +490,17 @@ const DocumentUpload = () => {
                                                 }}
                                                 className="border rounded px-2 py-1 text-sm ml-2"
                                               >
-                                                {Array.from({ length: 6 }).map((_, i) => (
-                                                  <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
-                                                ))}
+                                                {Array.from({ length: 6 }).map((_, i) => {
+                                                  const optionYear = currentYear - i;
+                                                  // Get all years selected for this docKey except the current row
+                                                  const selectedYears = (documentYears[docKey] || [currentYear]).filter((_, idx) => idx !== yearIdx);
+                                                  const isDisabled = selectedYears.includes(optionYear);
+                                                  return (
+                                                    <option key={optionYear} value={optionYear} disabled={isDisabled}>
+                                                      {optionYear}
+                                                    </option>
+                                                  );
+                                                })}
                                               </select>
                                             </>
                                           )}
@@ -668,10 +676,17 @@ const DocumentUpload = () => {
                                           <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setDocumentYears(prev => ({
-                                              ...prev,
-                                              [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
-                                            }))}
+                                            onClick={() => {
+                                              // Find the first available year not already selected
+                                              const selectedYears = (documentYears[docKey] || [currentYear]);
+                                              const availableYear = Array.from({ length: 6 })
+                                                .map((_, i) => currentYear - i)
+                                                .find(y => !selectedYears.includes(y));
+                                              setDocumentYears(prev => ({
+                                                ...prev,
+                                                [docKey]: [...selectedYears, availableYear !== undefined ? availableYear : currentYear]
+                                              }));
+                                            }}
                                             className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${document.isMultipleYears && yearIdx === years.length - 1 ? '' : 'invisible'}`}
                                             aria-label="Add Year"
                                           >
@@ -783,9 +798,17 @@ const DocumentUpload = () => {
                                                 }}
                                                 className="border rounded px-2 py-1 text-sm ml-2"
                                               >
-                                                {Array.from({ length: 6 }).map((_, i) => (
-                                                  <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
-                                                ))}
+                                                {Array.from({ length: 6 }).map((_, i) => {
+                                                  const optionYear = currentYear - i;
+                                                  // Get all years selected for this docKey except the current row
+                                                  const selectedYears = (documentYears[docKey] || [currentYear]).filter((_, idx) => idx !== yearIdx);
+                                                  const isDisabled = selectedYears.includes(optionYear);
+                                                  return (
+                                                    <option key={optionYear} value={optionYear} disabled={isDisabled}>
+                                                      {optionYear}
+                                                    </option>
+                                                  );
+                                                })}
                                               </select>
                                             </>
                                           )}
@@ -963,10 +986,17 @@ const DocumentUpload = () => {
                                           <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setDocumentYears(prev => ({
-                                              ...prev,
-                                              [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
-                                            }))}
+                                            onClick={() => {
+                                              // Find the first available year not already selected
+                                              const selectedYears = (documentYears[docKey] || [currentYear]);
+                                              const availableYear = Array.from({ length: 6 })
+                                                .map((_, i) => currentYear - i)
+                                                .find(y => !selectedYears.includes(y));
+                                              setDocumentYears(prev => ({
+                                                ...prev,
+                                                [docKey]: [...selectedYears, availableYear !== undefined ? availableYear : currentYear]
+                                              }));
+                                            }}
                                             className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${document.isMultipleYears && yearIdx === years.length - 1 ? '' : 'invisible'}`}
                                             aria-label="Add Year"
                                           >

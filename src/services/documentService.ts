@@ -16,53 +16,7 @@ export function useDocumentService() {
     service.addDocuments = async (userId: string, folder: string, file: File) => {
         try {
             await delay(300);
-            // const { panCard: pan } = await customerService.getCustomerById(userId);
-            // if (!pan) throw new Error("User Not Found");
-
-            // if (!mockDocumentRoot.find(d => d.userId === userId)) throw new Error("User Not Found");
-
-
-            // mockDocumentRoot.map((root) => {
-            //     if (root.userId == userId) {
-            //         // let Boolean isAdded = false;
-            //         if (root.folders[pan].find(folderObj => folderObj.name = folder)) {
-            //             root.folders[pan].map((folderObj) => {
-            //                 if (folderObj.name = folder) {
-            //                     return [...folderObj.files, {
-            //                         id: `DOC${Date.now()}`,
-            //                         name: file.name,
-            //                         lastModified: file.lastModified,
-            //                         url: file.webkitRelativePath || file.name,
-            //                         size: file.size,
-            //                         uploaded: new Date(),
-            //                         type: folder,
-            //                         isBlobUrl: false,
-            //                     }]
-            //                 } else return folderObj;
-            //             })
-            //         }
-            //         else {
-            //             return [...root.folders[pan], {
-            //                 name: folder,
-            //                 files: [{
-            //                     id: `DOC${Date.now()}`,
-            //                     name: file.name,
-            //                     lastModified: file.lastModified,
-            //                     url: file.webkitRelativePath || file.name,
-            //                     size: file.size,
-            //                     uploaded: new Date(),
-            //                     type: folder,
-            //                     isBlobUrl: false,
-            //                 }],
-            //                 submitted: false,
-            //             }]
-            //         }
-
-            //     } else return root;
-            // });
-            // const docFiles: DocumentFile[] = mockDocumentRoot.find(d => d.userId === userId).folders[pan].find(d => d.name = folder).files;
-            // return docFiles[docFiles.length - 1];
-
+            
 
             const { panCard: pan } = await customerService.getCustomerById(userId);
             if (!pan) throw new Error("User Not Found");
@@ -111,6 +65,19 @@ export function useDocumentService() {
             console.log(res)
             return res.data
         } catch (e: any) {
+            console.error(e)
+            throw e;
+        }
+    }
+
+    service.getFile=async(url:string)=>{
+        try{
+            const res=await api.get(url,{responseType:"blob"})
+            console.log(res)
+            const type = res.headers["content-type"];
+            const blob=new Blob([res.data],{type})
+            return blob;
+        }catch(e:any){
             console.error(e)
             throw e;
         }

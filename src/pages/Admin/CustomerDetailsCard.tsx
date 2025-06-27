@@ -167,8 +167,10 @@ const CustomerDetail = () => {
 
         if (tempCustomer) {
           setCustomer(tempCustomer);
+          // console.log(tempCustomer)
           const documents: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
-          console.log(documents)
+
+
           setAllDocuments(documents);
         } else {
           // If customer not found, redirect to customer list
@@ -190,141 +192,6 @@ const CustomerDetail = () => {
       navigate("/admin/customers");
     }
   }
-
-  if (!customer) {
-    return (
-      <MainLayout showSidebar={true}>
-        <div >
-          <div className="py-6">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate("/admin/customers")}
-                  className="mb-4"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to Customer List
-                </Button>
-                <h1 className="text-2xl font-bold">Customer Details</h1>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={() => { }} variant="outline">
-                  <RefreshCw className="mr-2 h-4 w-4" /> Sync Documents
-                </Button>
-                <Button onClick={() => { }}>
-                  <Send className="mr-2 h-4 w-4" /> Send Upload Link
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="md:col-span-1">
-                <CardHeader>
-                  <CardTitle>Customer Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Customer ID</p>
-                    <p className="font-medium mt-1"><ShimmerTitle line={1} variant="secondary" /></p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Name</p>
-                    <p className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">PAN Card</p>
-                    <p className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-muted-foreground">Registration Date</p>
-                    <p className="font-medium">
-                      <p className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></p>
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle>Submitted Documents</CardTitle>
-                  <CardDescription>
-                    <p className="font-medium mt-2  "><ShimmerTitle variant="secondary" line={1} /></p>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-
-                  <div className="space-y-6">
-
-
-                    <div className="rounded-md">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Document Type</TableHead>
-                            <TableHead>Document Name</TableHead>
-                            <TableHead>Uploaded</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-
-                          {[1].map((item) => {
-                            return (<TableRow >
-                              <TableCell >
-                                <p className="mt-3 mb-0">
-                                  <ShimmerThumbnail height={20} />
-                                </p>
-                              </TableCell>
-                              <TableCell>
-                                <p className="mt-3 mb-0">
-                                  <ShimmerThumbnail height={20} />
-                                </p>
-                              </TableCell>
-                              <TableCell>
-                                <p className="mt-3 mb-0">
-                                  <ShimmerThumbnail height={20} />
-                                </p>
-                              </TableCell>
-                              <TableCell>
-                                <p className="mt-3 mb-0">
-                                  <ShimmerThumbnail height={20} />
-                                </p>
-                              </TableCell>
-                              <TableCell>
-                                <p className="mt-3 mb-0">
-                                  <ShimmerThumbnail height={20} />
-                                </p>
-                              </TableCell>
-                            </TableRow>)
-                          })}
-
-                        </TableBody>
-                      </Table>
-                    </div>
-
-                  </div>
-
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-
 
   const handleSendLink = async (documentId?: string, remarks?: string) => {
     if (generatingLink) return;
@@ -466,186 +333,227 @@ const CustomerDetail = () => {
         {/* Customer Info Card */}
         <Card className="mb-8 shadow-sm border-0 bg-white max-w-full w-full mx-auto">
           <CardContent className="flex flex-row flex-wrap items-center gap-x-4 gap-y-2 py-2 px-3 min-h-0 text-sm w-full">
-            <div className="flex flex-col min-w-[90px]">
-              <span className="text-[11px] text-gray-400 font-medium">PAN</span>
-              <span className="font-semibold text-gray-900">{customer.pan}</span>
-            </div>
-            <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
-            <div className="flex flex-col min-w-[90px]">
-              <span className="text-[11px] text-gray-400 font-medium">Name</span>
-              <span className="font-semibold text-gray-900">{customer.name}</span>
-            </div>
-            <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
-            <div className="flex flex-col min-w-[120px]">
-              <span className="text-[11px] text-gray-400 font-medium">Email</span>
-              <span className="font-semibold text-gray-900">{customer.email}</span>
-            </div>
-            <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
-            <div className="flex flex-col min-w-[90px]">
-              <span className="text-[11px] text-gray-400 font-medium">Phone</span>
-              <span className="font-semibold text-gray-900">{customer.phone}</span>
-            </div>
-            <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
-            <div className="flex flex-col min-w-[70px]">
-              <span className="text-[11px] text-gray-400 font-medium">Type</span>
-              <span className="font-semibold text-gray-900">{customer.clientType}</span>
-            </div>
+            {customer ? (
+              <>
+                <div className="flex flex-col min-w-[90px]">
+                  <span className="text-[11px] text-gray-400 font-medium">PAN</span>
+                  <span className="font-semibold text-gray-900">{customer.pan}</span>
+                </div>
+                <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
+                <div className="flex flex-col min-w-[90px]">
+                  <span className="text-[11px] text-gray-400 font-medium">Name</span>
+                  <span className="font-semibold text-gray-900">{customer.name}</span>
+                </div>
+                <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
+                <div className="flex flex-col min-w-[120px]">
+                  <span className="text-[11px] text-gray-400 font-medium">Email</span>
+                  <span className="font-semibold text-gray-900">{customer.email}</span>
+                </div>
+                <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
+                <div className="flex flex-col min-w-[90px]">
+                  <span className="text-[11px] text-gray-400 font-medium">Phone</span>
+                  <span className="font-semibold text-gray-900">{customer.phone}</span>
+                </div>
+                <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
+                <div className="flex flex-col min-w-[70px]">
+                  <span className="text-[11px] text-gray-400 font-medium">Type</span>
+                  <span className="font-semibold text-gray-900">{customer.clientType}</span>
+                </div>
+              </>
+            ) : (
+              // Loading skeleton for customer info
+              <>
+                <div className="flex flex-col min-w-[90px]">
+                  <span className="text-[11px] text-gray-400 font-medium">Customer ID</span>
+                  <span className="font-medium mt-1"><ShimmerTitle line={1} variant="secondary" /></span>
+                </div>
+                <div className="flex flex-col min-w-[90px]">
+                  <span className="text-[11px] text-gray-400 font-medium">Name</span>
+                  <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
+                </div>
+                <div className="flex flex-col min-w-[120px]">
+                  <span className="text-[11px] text-gray-400 font-medium">Email</span>
+                  <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
+                </div>
+                <div className="flex flex-col min-w-[90px]">
+                  <span className="text-[11px] text-gray-400 font-medium">Phone</span>
+                  <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
+                </div>
+                <div className="flex flex-col min-w-[70px]">
+                  <span className="text-[11px] text-gray-400 font-medium">Type</span>
+                  <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
-        {/* Documents Table - now grouped by category in cards */}
-        <div className="mb-6">
-          {currentCustomerType === "organization" && (
-            <h2 className="text-xl font-bold">Organization Documents</h2>
-          )}
-          {currentCustomerType === "individual" && (
-            <h2 className="text-xl font-bold">Individual Documents</h2>
-          )}
-          {/^promoter\d+$/i.test(currentCustomerType) && (
-            <h2 className="text-xl font-bold">
-              Promoter {currentCustomerType.match(/\d+/)?.[0]} Documents
-            </h2>
-          )}
-          {!["organization", "individual"].includes(currentCustomerType) &&
-            !/^promoter\d+$/i.test(currentCustomerType) && (
-              <h2 className="text-xl font-bold">
-                {currentCustomerType.charAt(0).toUpperCase() + currentCustomerType.slice(1)} Documents
-              </h2>
-            )}
-        </div>
-        {Object.entries(groupedDocs).map(([category, docs]) => (
-          <Card key={category} className="mb-8">
-            <CardHeader className="py-2 px-4">
-              <CardTitle className="text-base font-semibold">{category}</CardTitle>
-              <p className="text-xs text-muted-foreground">
-                {docs.reduce((sum, doc) => sum + (doc.files?.length || 0), 0)} files in this category
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[35%] pl-6">Document Type</TableHead>
-                      <TableHead className="w-[15%] px-4">Files</TableHead>
-                      <TableHead className="w-[15%] px-4">Status</TableHead>
-                      <TableHead className="w-[15%] px-4">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {docs.flatMap((doc, docIdx) =>
-                      (doc.files && doc.files.length > 0
-                        ? doc.files.map((file, idx) => ({
-                            doc,
-                            file,
-                            idx,
-                            docIdx,
-                          }))
-                        : [{ doc, file: null, idx: 0, docIdx }])
-                    ).map(({ doc, file, idx, docIdx }) => (
-                      <TableRow key={file?.docId ? String(file.docId) : `${String(doc.documentMasterId)}-${idx}`}>
-                        <TableCell className="font-medium pl-6">
-                          {doc.documentType}
-                          {doc.files && doc.files.length > 1 && (
-                            <>
-                              <span className={`ml-2 rounded px-2 py-0.5 text-xs font-semibold badge-nowrap ${badgeColors[docIdx % badgeColors.length]}`}>
-                                {doc.files.length} {doc.files.length === 1 ? 'file' : 'files'}
-                              </span>
-                              <span className="ml-2 text-gray-400">#{idx + 1}</span>
-                              {doc.year ? (
-                                <span
-                                  className="ml-2 rounded px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-400"
-                                  title={`Year: ${doc.year}`}
-                                >
-                                  {doc.year}
-                                </span>
-                              ) : null}
-                              {doc.customerType && String(doc.customerType).toLowerCase().includes('promoter') && (
-                                null
-                              )}
-                            </>
-                          )}
-                        </TableCell>
-                        <TableCell className="px-4">
-                          {file ? (
-                            <span>{file.docName}</span>
-                          ) : (
-                            <span className="text-sm text-gray-400">No files</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {file ? (
-                            <span
-                              title={
-                                file.docStatus === 'UPLOADED' ? 'File uploaded, pending review' :
-                                file.docStatus === 'REJECTED' ? 'File was rejected' :
-                                file.docStatus === 'SUBMITTED' ? 'File submitted, awaiting approval' :
-                                'File approved'
-                              }
-                            >
-                              {file.docStatus === "UPLOADED" ? (
-                                <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>
-                              ) : file.docStatus === "REJECTED" ? (
-                                <Badge variant="outline" className="bg-red-100 text-red-800">Rejected</Badge>
-                              ) : file.docStatus === "SUBMITTED" ? (
-                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Submitted</Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-green-100 text-green-800">Approved</Badge>
-                              )}
-                            </span>
-                          ) : null}
-                        </TableCell>
-                        <TableCell>
-                          {file ? (
-                            <Button
-                              key={file.docId ? String(file.docId) : `${String(doc.documentMasterId)}-action-${idx}`}
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigate(`/admin/customers/details/review/${doc.documentMasterId}/${file.docId}`)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" /> Review
-                            </Button>
-                          ) : null}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+        {/* Documents Table or No Documents Message */}
+        {allDocuments && allDocuments.length === 0 ? (
+          <Card className="mb-8 shadow-sm border-0 bg-white max-w-full w-full mx-auto">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <h2 className="text-xl font-bold mb-2">No Documents Found</h2>
+              <p className="text-gray-500">This customer has not uploaded any documents yet.</p>
             </CardContent>
           </Card>
-        ))}
-
-        {/* Pagination Controls */}
-        {sortedCustomerTypes.length > 1 && (
-          <div className="flex justify-end items-center gap-2 mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={docPage === 0}
-              onClick={() => setDocPage(docPage - 1)}
-            >
-              Previous
-            </Button>
-            {sortedCustomerTypes.map((type, i) => (
-              <Button
-                key={type}
-                variant={docPage === i ? "default" : "outline"}
-                size="sm"
-                onClick={() => setDocPage(i)}
-              >
-                {i + 1}
-              </Button>
+        ) : (
+          <>
+            {/* Documents Table - now grouped by category in cards */}
+            <div className="mb-6">
+              {currentCustomerType === "organization" && (
+                <h2 className="text-xl font-bold">Organization Documents</h2>
+              )}
+              {currentCustomerType === "individual" && (
+                <h2 className="text-xl font-bold">Individual Client Documents</h2>
+              )}
+              {/^promoter\d+$/i.test(currentCustomerType) && (
+                <h2 className="text-xl font-bold">
+                  Promoter {currentCustomerType.match(/\d+/)?.[0]} Documents
+                </h2>
+              )}
+              {currentCustomerType &&
+                !["organization", "individual"].includes(currentCustomerType) &&
+                !/^promoter\d+$/i.test(currentCustomerType) && (
+                  <h2 className="text-xl font-bold">
+                    {currentCustomerType.charAt(0).toUpperCase() + currentCustomerType.slice(1)} Documents
+                  </h2>
+                )}
+            </div>
+            {Object.entries(groupedDocs).map(([category, docs]) => (
+              <Card key={category} className="mb-8">
+                <CardHeader className="py-2 px-4">
+                  <CardTitle className="text-base font-semibold">{category}</CardTitle>
+                  <p className="text-xs text-muted-foreground">
+                    {docs.reduce((sum, doc) => sum + (doc.files?.length || 0), 0)} files in this category
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[35%] pl-6">Document Type</TableHead>
+                          <TableHead className="w-[15%] px-4">Files</TableHead>
+                          <TableHead className="w-[15%] px-4">Status</TableHead>
+                          <TableHead className="w-[15%] px-4">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {docs.flatMap((doc, docIdx) =>
+                          (doc.files && doc.files.length > 0
+                            ? doc.files.map((file, idx) => ({
+                                doc,
+                                file,
+                                idx,
+                                docIdx,
+                              }))
+                            : [{ doc, file: null, idx: 0, docIdx }])
+                        ).map(({ doc, file, idx, docIdx }) => (
+                          <TableRow key={file?.docId ? String(file.docId) : `${String(doc.documentMasterId)}-${idx}`}>
+                            <TableCell className="font-medium pl-6">
+                              {doc.documentType}
+                              {doc.files && doc.files.length > 1 && (
+                                <>
+                                  <span className={`ml-2 rounded px-2 py-0.5 text-xs font-semibold badge-nowrap ${badgeColors[docIdx % badgeColors.length]}`}>
+                                    {doc.files.length} {doc.files.length === 1 ? 'file' : 'files'}
+                                  </span>
+                                  <span className="ml-2 text-gray-400">#{idx + 1}</span>
+                                  {doc.year ? (
+                                    <span
+                                      className="ml-2 rounded px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-400"
+                                      title={`Year: ${doc.year}`}
+                                    >
+                                      {doc.year}
+                                    </span>
+                                  ) : null}
+                                  {doc.customerType && String(doc.customerType).toLowerCase().includes('promoter') && (
+                                    null
+                                  )}
+                                </>
+                              )}
+                            </TableCell>
+                            <TableCell className="px-4">
+                              {file ? (
+                                <span>{file.docName}</span>
+                              ) : (
+                                <span className="text-sm text-gray-400">No files</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {file ? (
+                                <span
+                                  title={
+                                    file.docStatus === 'UPLOADED' ? 'File uploaded, pending review' :
+                                    file.docStatus === 'REJECTED' ? 'File was rejected' :
+                                    file.docStatus === 'SUBMITTED' ? 'File submitted, awaiting approval' :
+                                    'File approved'
+                                  }
+                                >
+                                  {file.docStatus === "UPLOADED" ? (
+                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>
+                                  ) : file.docStatus === "REJECTED" ? (
+                                    <Badge variant="outline" className="bg-red-100 text-red-800">Rejected</Badge>
+                                  ) : file.docStatus === "SUBMITTED" ? (
+                                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Submitted</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="bg-green-100 text-green-800">Approved</Badge>
+                                  )}
+                                </span>
+                              ) : null}
+                            </TableCell>
+                            <TableCell>
+                              {file ? (
+                                <Button
+                                  key={file.docId ? String(file.docId) : `${String(doc.documentMasterId)}-action-${idx}`}
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => navigate(`/admin/customers/details/review/${doc.documentMasterId}/${file.docId}`)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" /> Review
+                                </Button>
+                              ) : null}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={docPage === sortedCustomerTypes.length - 1}
-              onClick={() => setDocPage(docPage + 1)}
-            >
-              Next
-            </Button>
-          </div>
+
+            {/* Pagination Controls */}
+            {sortedCustomerTypes.length > 1 && (
+              <div className="flex justify-end items-center gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={docPage === 0}
+                  onClick={() => setDocPage(docPage - 1)}
+                >
+                  Previous
+                </Button>
+                {sortedCustomerTypes.map((type, i) => (
+                  <Button
+                    key={type}
+                    variant={docPage === i ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setDocPage(i)}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={docPage === sortedCustomerTypes.length - 1}
+                  onClick={() => setDocPage(docPage + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
         )}
 
         {/* Dialog for Upload Link */}

@@ -107,7 +107,8 @@ const ReviewDocument = () => {
             // // setCurrentDoc(docObj);
             // const doc: FileResponseType = docObj.files.find((doc: FileResponseType) => doc.docId === documentId)
             const res = await documentService.getDocumentByDocumentID(documentId);
-
+            // const file = await documentService.getFile(res.data.url);
+            // console.log(file)
             setDocument(res.data);
           } else {
             toast({

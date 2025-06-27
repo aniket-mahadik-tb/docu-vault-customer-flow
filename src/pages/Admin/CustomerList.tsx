@@ -78,6 +78,7 @@ const CustomerList = () => {
     // setViewDialogOpen(true);
     // setSelectedCustomer(customer);
     const response = await customerService.getCustomerDocuments(customer.pan);
+  
     customer.documents = response;
     // customer.clientType = response.customerType;
     setTempCustomer(customer);
