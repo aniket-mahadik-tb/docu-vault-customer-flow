@@ -48,32 +48,50 @@ export const getApiFilesForDocument = (
   promoterIndex?: number
 ) => {
   if (!Array.isArray(apiDocumentMasters)) return [];
+  
   let customerTypeObj;
   if (promoterIndex !== undefined) {
-    customerTypeObj = apiDocumentMasters.find((d) =>
-      d.customerType?.toLowerCase() === `promoter${promoterIndex + 1}`
-    );
+    // Handle promoter types - normalize by removing spaces and converting to lowercase
+    customerTypeObj = apiDocumentMasters.find((d) => {
+      if (!d.customerType) return false;
+      const normalizedApiType = d.customerType.replace(/\s+/g, '').toLowerCase();
+      const normalizedExpectedType = `promoter${promoterIndex + 1}`.toLowerCase();
+      return normalizedApiType === normalizedExpectedType;
+    });
   } else {
+    // Handle main customer types (Organization/Individual)
     customerTypeObj = apiDocumentMasters.find((d) =>
       d.customerType?.toUpperCase() === customerType?.toUpperCase()
     );
   }
-  if (!customerTypeObj) return [];
+  
+  if (!customerTypeObj) {
+    console.log('Customer type not found:', { customerType, promoterIndex, availableTypes: apiDocumentMasters.map(d => d.customerType) });
+    return [];
+  }
+  
   const categoryObj = customerTypeObj.documentsByCategory.find(
     (cat: any) => cat.category === category
   );
-  if (!categoryObj) return [];
+  if (!categoryObj) {
+    console.log('Category not found:', { category, availableCategories: customerTypeObj.documentsByCategory.map((cat: any) => cat.category) });
+    return [];
+  }
+  
   let docObjs = categoryObj.documents.filter(
     (doc: any) => doc.documentMasterId === documentMasterId
   );
   if (year !== undefined && year !== null) {
     docObjs = docObjs.filter((doc: any) => String(doc.year) === String(year));
   }
+  
   let files: any[] = [];
   docObjs.forEach((doc: any) => {
     if (doc.files && doc.files.length > 0) {
       files = files.concat(doc.files);
     }
   });
+  
+  
   return files;
 }; 

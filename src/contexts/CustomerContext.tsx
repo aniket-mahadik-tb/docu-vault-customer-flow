@@ -46,6 +46,9 @@ interface CustomerContextType {
   updateCustomerDocument: (customerId: string, documentId: string, document: Partial<CustomerDocument>) => void;
   promoterTemplate: any;
   setPromoterTemplate: (template: any) => void;
+  sectionTemplates: Record<string, any>;
+  setSectionTemplates: (templates: Record<string, any>) => void;
+  getSectionTemplate: (categoryName: string) => any;
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined);
@@ -57,6 +60,7 @@ const STORAGE_KEY = "admin_customers";
 export const CustomerProvider = ({ children }: { children: ReactNode }) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [promoterTemplate, setPromoterTemplate] = useState<any>(null);
+  const [sectionTemplates, setSectionTemplates] = useState<Record<string, any>>({});
   const { documents } = useDocuments();
 
   // Load customers from localStorage on mount
@@ -262,6 +266,11 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  // Helper function to get a specific section template
+  const getSectionTemplate = (categoryName: string) => {
+    return sectionTemplates[categoryName] || null;
+  };
+
   return (
     <CustomerContext.Provider
       value={{
@@ -279,6 +288,9 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
         updateCustomerDocument,
         promoterTemplate,
         setPromoterTemplate,
+        sectionTemplates,
+        setSectionTemplates,
+        getSectionTemplate,
       }}
     >
       {children}

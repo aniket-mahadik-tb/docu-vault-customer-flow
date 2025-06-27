@@ -32,13 +32,14 @@ import {
   getStatusBadgeInfo,
   getApiFilesForDocument
 } from "./DocumentUploadParts/documentUploadHelpers";
+import { extractAllTemplates } from "@/lib/templateUtils";
 
 const DocumentUpload = () => {
   const navigate = useNavigate();
   const { getValueFromLocalStorage, setValueToLocalStorage } = useLocalStorage();
   const token = getValueFromLocalStorage("token");
   const { addDocument, removeDocument, submitFolder, getFolderDocuments, isFolderSubmitted } = useDocuments();
-  const { syncCustomerDocuments, promoterTemplate, setPromoterTemplate } = useCustomers();
+  const { syncCustomerDocuments, promoterTemplate, setPromoterTemplate, setSectionTemplates } = useCustomers();
   const documentUploadService = useDocumentUploadService();
 
   const [customerType, setCustomerType] = useState<'Individual' | 'Organization'>();
@@ -69,6 +70,14 @@ const DocumentUpload = () => {
         const response = await documentUploadService.getDocumentMasters();
         setApiDocumentMasters(response.data); // <-- Store API data
         setMaxPromoters(response.data.length - 1); // 1 org, rest promoters
+        
+        // Extract all templates using the new helper function
+        const { promoterTemplate: extractedPromoterTemplate, sectionTemplates: extractedSectionTemplates } = extractAllTemplates(response.data);
+        
+        // Store templates in context
+        setPromoterTemplate(extractedPromoterTemplate);
+        setSectionTemplates(extractedSectionTemplates);
+        
         // response.data is an array
         const org = response.data.find(
           (item: any) => item.customerType?.toUpperCase() === "ORGANIZATION"
@@ -83,26 +92,6 @@ const DocumentUpload = () => {
             typeof item.customerType === 'string' &&
             item.customerType.replace(/\s+/g, '').toLowerCase().startsWith('promoter')
         );
-
-        // Always use promoter 1 (first promoter entry) as the template for blank promoters
-        const promoter1Obj = promoterEntries.find(
-          (item: any) =>
-            item.customerType &&
-            item.customerType.replace(/\s+/g, '').toLowerCase() === 'promoter1'
-        );
-        if (promoter1Obj) {
-          // Deep copy and empty all files arrays for template
-          const deepEmptyPromoter = JSON.parse(JSON.stringify(promoter1Obj));
-          deepEmptyPromoter.documentsByCategory = deepEmptyPromoter.documentsByCategory.map((cat: any) => ({
-            ...cat,
-            documents: cat.documents.map((doc: any) => ({
-              ...doc,
-              files: []
-            }))
-          }));
-          setPromoterTemplate(deepEmptyPromoter);
-          console.log('Promoter Template:', deepEmptyPromoter);
-        }
 
         // Only show real promoters in the UI (those with any file present)
         const realPromoters = promoterEntries.filter((entry: any) => {
@@ -339,7 +328,9 @@ const DocumentUpload = () => {
               setSelectedYears={setSelectedYears}
               currentYear={currentYear}
               handleFileUpload={(documentId, files, year) => handleFileUpload(documentId, files, year)}
-              getApiFilesForDocument={getApiFilesForDocument}
+              getApiFilesForDocument={(documentMasterId, category, year) => 
+                getApiFilesForDocument(apiDocumentMasters, customerType || '', documentMasterId, category, year)
+              }
               uploadingDocuments={uploadingDocuments}
             />
           )}
@@ -356,7 +347,9 @@ const DocumentUpload = () => {
               setSelectedYears={setSelectedYears}
               currentYear={currentYear}
               handleFileUpload={(documentId, files, year) => handleFileUpload(documentId, files, year, `Promoter ${currentPage}`)}
-              getApiFilesForDocument={getApiFilesForDocument}
+              getApiFilesForDocument={(documentMasterId, category, year) => 
+                getApiFilesForDocument(apiDocumentMasters, `Promoter ${currentPage}`, documentMasterId, category, year, currentPage - 1)
+              }
               uploadingDocuments={uploadingDocuments}
               currentPage={currentPage}
             />
