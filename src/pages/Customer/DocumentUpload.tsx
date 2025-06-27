@@ -26,6 +26,12 @@ import Pagination from "./DocumentUploadParts/Pagination";
 import MainSection from "./DocumentUploadParts/MainSection";
 import PromoterSection from "./DocumentUploadParts/PromoterSection";
 import PromoterActions from "./DocumentUploadParts/PromoterActions";
+import {
+  isDocumentSubmitted,
+  getDocumentStatus,
+  getStatusBadgeInfo,
+  getApiFilesForDocument
+} from "./DocumentUploadParts/documentUploadHelpers";
 
 const DocumentUpload = () => {
   const navigate = useNavigate();
@@ -225,70 +231,15 @@ const DocumentUpload = () => {
     });
   };
 
-  const isDocumentSubmitted = (documentId: string): boolean => {
-    if (!token) return false;
-    const folderId = `documents_${documentId}`;
-    return isFolderSubmitted(token, folderId);
-  };
-
-  const getDocumentStatus = (documentId: string) => {
-    const isSubmitted = isDocumentSubmitted(documentId);
-    const hasFiles = uploadedFiles[documentId] && uploadedFiles[documentId].length > 0;
-    if (!hasFiles) {
-      return { status: 'pending', icon: <AlertCircle className="h-4 w-4 text-yellow-600" />, label: 'Pending' };
-    }
-    if (isSubmitted) {
-      return { status: 'submitted', icon: <CheckCircle className="h-4 w-4 text-green-600" />, label: 'Submitted' };
-    } else if (hasFiles) {
-      return { status: 'uploaded', icon: <FileText className="h-4 w-4 text-blue-600" />, label: 'Uploaded' };
-    } else {
-      return { status: 'pending', icon: <AlertCircle className="h-4 w-4 text-yellow-600" />, label: 'Pending' };
-    }
-  };
-
-  const getStatusBadge = (documentId: string) => {
-    const status = getDocumentStatus(documentId);
-    switch (status.status) {
-      case 'submitted':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
-      case 'uploaded':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>;
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      default:
-        return <Badge variant="outline">Pending</Badge>;
-    }
-  };
-
   // Add promoter handler
-  const handleAddPromoter = async () => {
-    try {
-      // Fetch promoter documents from specific promoter API
-      const response = await documentUploadService.getPromoterDocumentMasters();
-
-      if (response.data) {
-        const newPromoter = {
-          id: Date.now(),
-          categories: response.data.documentsByCategory
-        };
-        setPromoters((prev) => [...prev, newPromoter]);
-        // Navigate to the new promoter's documents page
-        setCurrentPage(promoters.length + 1);
-      } else {
-        toast({
-          title: "Error",
-          description: "Could not fetch promoter document requirements",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching promoter documents:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch promoter document requirements",
-        variant: "destructive",
-      });
-    }
+  const handleAddPromoter = () => {
+    // No API call, just add a new promoter with empty categories for now
+    const newPromoter = {
+      id: Date.now(),
+      categories: [] // Placeholder, user will provide logic later
+    };
+    setPromoters((prev) => [...prev, newPromoter]);
+    setCurrentPage(promoters.length + 1);
   };
 
   // Remove promoter handler
@@ -321,43 +272,6 @@ const DocumentUpload = () => {
 
   // Get total pages (main page + promoter pages)
   const totalPages = promoters.length + 1;
-
-  // Helper to get files for a document from API response
-  const getApiFilesForDocument = (
-    documentMasterId: string,
-    category: string,
-    year?: number | string,
-    promoterIndex?: number
-  ) => {
-    let customerTypeObj;
-    if (promoterIndex !== undefined) {
-      customerTypeObj = apiDocumentMasters.find((d) =>
-        d.customerType?.toLowerCase() === `promoter${promoterIndex + 1}`
-      );
-    } else {
-      customerTypeObj = apiDocumentMasters.find((d) =>
-        d.customerType?.toUpperCase() === customerType?.toUpperCase()
-      );
-    }
-    if (!customerTypeObj) return [];
-    const categoryObj = customerTypeObj.documentsByCategory.find(
-      (cat: any) => cat.category === category
-    );
-    if (!categoryObj) return [];
-    let docObjs = categoryObj.documents.filter(
-      (doc: any) => doc.documentMasterId === documentMasterId
-    );
-    if (year !== undefined && year !== null) {
-      docObjs = docObjs.filter((doc: any) => String(doc.year) === String(year));
-    }
-    let files: any[] = [];
-    docObjs.forEach((doc: any) => {
-      if (doc.files && doc.files.length > 0) {
-        files = files.concat(doc.files);
-      }
-    });
-    return files;
-  };
 
   if (!customerType) {
     return (
