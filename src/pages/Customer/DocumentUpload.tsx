@@ -258,22 +258,13 @@ const DocumentUpload = () => {
   // Add promoter handler
   const handleAddPromoter = async () => {
     try {
-      // Fetch promoter documents from API
-      const response = await documentUploadService.getDocumentMasters();
+      // Fetch promoter documents from specific promoter API
+      const response = await documentUploadService.getPromoterDocumentMasters();
 
-      // const promoterData = response.data.find(
-      //   (item: any) => item.customerType?.toUpperCase() === "PROMOTER"
-      // );
-
-
-      const promoterData = response.data.find((item: any) =>
-        item.customerType?.toLowerCase().startsWith("promoter")
-      );
-
-      if (promoterData) {
+      if (response.data) {
         const newPromoter = {
           id: Date.now(),
-          categories: promoterData.documentsByCategory
+          categories: response.data.documentsByCategory
         };
         setPromoters((prev) => [...prev, newPromoter]);
         // Navigate to the new promoter's documents page
@@ -281,7 +272,7 @@ const DocumentUpload = () => {
       } else {
         toast({
           title: "Error",
-          description: "Could not fetch promoter document requirements hiii",
+          description: "Could not fetch promoter document requirements",
           variant: "destructive",
         });
       }
@@ -997,7 +988,6 @@ const DocumentUpload = () => {
                                             multiple
                                             onChange={(e) => {
                                               const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
-                                              console.log("FILE uplod",selectedYear)
                                               e.target.files && handleFileUpload(docKey, e.target.files, selectedYear);
                                             }}
                                             className="hidden"
