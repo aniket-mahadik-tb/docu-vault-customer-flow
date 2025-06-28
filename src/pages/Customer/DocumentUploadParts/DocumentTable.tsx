@@ -21,11 +21,13 @@ interface DocumentTableProps {
   setSelectedYears: any;
   currentYear: number;
   handleFileUpload: any;
-  getApiFilesForDocument: any;
+  getApiFilesForDocument: (documentMasterId: string, category: string, year?: number | string, promoterIndex?: number, section?: any) => any[];
   uploadingDocuments: any;
   isPromoter?: boolean;
   currentPage?: number;
   handleAddSection: (categoryName: string) => void;
+  beSections: { [category: string]: string[] };
+  temporarySections: { [category: string]: { name: string; instance: any } | null };
 }
 
 const DocumentTable: React.FC<DocumentTableProps> = ({
@@ -47,6 +49,8 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
   isPromoter = false,
   currentPage = 0,
   handleAddSection,
+  beSections,
+  temporarySections,
 }) => {
   const { sectionTemplates } = useCustomers();
 
@@ -157,7 +161,8 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                                   document.documentMasterId,
                                   section.category,
                                   document.isMultipleYears ? years[yearIdx] : undefined,
-                                  isPromoter ? currentPage - 1 : undefined
+                                  isPromoter ? currentPage - 1 : undefined,
+                                  section
                                 );
                                 if (files.length === 0) {
                                   return <span className="text-gray-400 text-sm">NA</span>;
@@ -196,7 +201,8 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                                   document.documentMasterId,
                                   section.category,
                                   document.isMultipleYears ? years[yearIdx] : undefined,
-                                  isPromoter ? currentPage - 1 : undefined
+                                  isPromoter ? currentPage - 1 : undefined,
+                                  section
                                 );
                                 if (files.length === 0) {
                                   return (
@@ -247,7 +253,8 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                                               multiple
                                               onChange={(e) => {
                                                 const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
-                                                e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear);
+                                                const sectionName = instanceIdx === 0 ? category.section : section.section || "";
+                                                e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear, sectionName);
                                               }}
                                               className="hidden"
                                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -301,7 +308,8 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                                   multiple
                                   onChange={(e) => {
                                     const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
-                                    e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear);
+                                    const sectionName = instanceIdx === 0 ? category.section : section.section || "";
+                                    e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear, sectionName);
                                   }}
                                   className="hidden"
                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -369,4 +377,4 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
   );
 };
 
-export default DocumentTable; 
+export default DocumentTable;

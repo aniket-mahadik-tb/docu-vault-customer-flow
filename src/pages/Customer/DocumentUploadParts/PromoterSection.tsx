@@ -12,10 +12,12 @@ interface PromoterSectionProps {
   setSelectedYears: any;
   currentYear: number;
   handleFileUpload: any;
-  getApiFilesForDocument: any;
+  getApiFilesForDocument: (documentMasterId: string, category: string, year?: number | string, promoterIndex?: number, section?: any) => any[];
   uploadingDocuments: any;
   currentPage: number;
   handleAddSection: (categoryName: string) => void;
+  beSections: { [category: string]: string[] };
+  temporarySections: { [category: string]: { name: string; instance: any } | null };
 }
 
 const PromoterSection: React.FC<PromoterSectionProps> = ({
@@ -33,6 +35,8 @@ const PromoterSection: React.FC<PromoterSectionProps> = ({
   uploadingDocuments,
   currentPage,
   handleAddSection,
+  beSections,
+  temporarySections,
 }) => {
   return (
     <>
@@ -69,6 +73,8 @@ const PromoterSection: React.FC<PromoterSectionProps> = ({
             isPromoter={true}
             currentPage={currentPage}
             handleAddSection={handleAddSection}
+            beSections={beSections}
+            temporarySections={temporarySections}
           />
         );
       })}

@@ -11,9 +11,11 @@ interface MainSectionProps {
   setSelectedYears: any;
   currentYear: number;
   handleFileUpload: any;
-  getApiFilesForDocument: any;
+  getApiFilesForDocument: (documentMasterId: string, category: string, year?: number | string, promoterIndex?: number, section?: any) => any[];
   uploadingDocuments: any;
   handleAddSection: (categoryName: string) => void;
+  beSections: { [category: string]: string[] };
+  temporarySections: { [category: string]: { name: string; instance: any } | null };
 }
 
 const MainSection: React.FC<MainSectionProps> = ({
@@ -29,15 +31,27 @@ const MainSection: React.FC<MainSectionProps> = ({
   getApiFilesForDocument,
   uploadingDocuments,
   handleAddSection,
+  beSections,
+  temporarySections,
 }) => {
   return (
     <>
       {orgCategories.map((category, categoryIndex) => {
         const isMultipleSection = category.isMultipleSection;
-        // Get the sections array for this category, or use the original category if no instances exist
-        const sections = isMultipleSection && sectionInstances[category.category] 
-          ? sectionInstances[category.category] 
-          : [category];
+        // Get the sections array for this category
+        let sections;
+        if (isMultipleSection) {
+          if (sectionInstances[category.category]) {
+            // If we have section instances, include the original category + new instances
+            sections = [category, ...sectionInstances[category.category]];
+          } else {
+            // If no instances yet, just use the original category
+            sections = [category];
+          }
+        } else {
+          // For non-multiple sections, just use the category
+          sections = [category];
+        }
         
         return (
           <DocumentTable
@@ -57,6 +71,8 @@ const MainSection: React.FC<MainSectionProps> = ({
             getApiFilesForDocument={getApiFilesForDocument}
             uploadingDocuments={uploadingDocuments}
             handleAddSection={handleAddSection}
+            beSections={beSections}
+            temporarySections={temporarySections}
           />
         );
       })}

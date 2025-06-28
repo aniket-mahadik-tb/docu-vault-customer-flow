@@ -45,9 +45,30 @@ export const getApiFilesForDocument = (
   documentMasterId: string,
   category: string,
   year?: number | string,
-  promoterIndex?: number
+  promoterIndex?: number,
+  section?: any
 ) => {
   if (!Array.isArray(apiDocumentMasters)) return [];
+  
+  // If this is a temporary section (has _instanceId), return empty files
+  // until files are actually uploaded to it
+  if (section && section._instanceId) {
+    console.log('Temporary section detected, returning empty files:', {
+      sectionName: section.section,
+      instanceId: section._instanceId,
+      category: section.category
+    });
+    return [];
+  }
+  
+  console.log('Regular section, checking API for files:', {
+    customerType,
+    category,
+    documentMasterId,
+    year,
+    promoterIndex,
+    sectionName: section?.section
+  });
   
   let customerTypeObj;
   if (promoterIndex !== undefined) {
@@ -92,6 +113,6 @@ export const getApiFilesForDocument = (
     }
   });
   
-  
+  console.log('Files found:', files.length);
   return files;
 }; 

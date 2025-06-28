@@ -63,6 +63,10 @@ const DocumentUpload = () => {
   const [apiDocumentMasters, setApiDocumentMasters] = useState<any[]>([]); // <-- New state
   const [maxPromoters, setMaxPromoters] = useState(0);
 
+  // New state for section management
+  const [beSections, setBeSections] = useState<{ [category: string]: string[] }>({}); // BE sections from API
+  const [temporarySections, setTemporarySections] = useState<{ [category: string]: { name: string; instance: any } | null }>({}); // Temporary sections in UI
+
   // Call document masters API on page render
   useEffect(() => {
     const fetchDocumentMasters = async () => {
@@ -77,6 +81,22 @@ const DocumentUpload = () => {
         // Store templates in context
         setPromoterTemplate(extractedPromoterTemplate);
         setSectionTemplates(extractedSectionTemplates);
+        
+        // Extract BE sections from API response
+        const newBeSections: { [category: string]: string[] } = {};
+        response.data.forEach((customerTypeObj: any) => {
+          if (customerTypeObj.documentsByCategory) {
+            customerTypeObj.documentsByCategory.forEach((cat: any) => {
+              if (cat.isMultipleSection && cat.section) {
+                if (!newBeSections[cat.category]) {
+                  newBeSections[cat.category] = [];
+                }
+                newBeSections[cat.category].push(cat.section);
+              }
+            });
+          }
+        });
+        setBeSections(newBeSections);
         
         // response.data is an array
         const org = response.data.find(
@@ -164,7 +184,7 @@ const DocumentUpload = () => {
     syncUploadedFiles();
   }, [token, orgCategories, promoterCategories, getFolderDocuments, promoters.length]);
 
-  const handleFileUpload = async (documentId: string, files: FileList, year?: number, promoterLabel?: string) => {
+  const handleFileUpload = async (documentId: string, files: FileList, year?: number, promoterLabel?: string, sectionName?: string) => {
     if (!token) return;
 
     try {
@@ -179,7 +199,7 @@ const DocumentUpload = () => {
         documentMasterId: originalDocumentId,
         promoter: promoterLabel || (currentPage > 0 ? `Promoter ${currentPage}` : ""),
         year: year || "",
-        section: ""
+        section: sectionName || ""
       };
 
       const formData = new FormData();
@@ -211,6 +231,30 @@ const DocumentUpload = () => {
       try {
         const response = await documentUploadService.getDocumentMasters();
         setApiDocumentMasters(response.data);
+        
+        // Update BE sections after successful upload
+        const newBeSections: { [category: string]: string[] } = {};
+        response.data.forEach((customerTypeObj: any) => {
+          if (customerTypeObj.documentsByCategory) {
+            customerTypeObj.documentsByCategory.forEach((cat: any) => {
+              if (cat.isMultipleSection && cat.section) {
+                if (!newBeSections[cat.category]) {
+                  newBeSections[cat.category] = [];
+                }
+                newBeSections[cat.category].push(cat.section);
+              }
+            });
+          }
+        });
+        setBeSections(newBeSections);
+        
+        // Clear temporary section if it was uploaded to
+        if (sectionName && temporarySections[sectionName]) {
+          setTemporarySections(prev => ({
+            ...prev,
+            [sectionName]: null
+          }));
+        }
       } catch (err) {
         // Optionally handle error
         console.error("Error refreshing document masters after upload", err);
@@ -296,13 +340,45 @@ const DocumentUpload = () => {
       console.warn('No template found for', categoryName);
       return;
     }
+
+    // Check if there's already a temporary section for this category
+    if (temporarySections[categoryName]) {
+      toast({
+        title: "Section already exists",
+        description: "First add files to this section before creating a new one",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Calculate next section number
+    const existingSections = beSections[categoryName] || [];
+    const nextSectionNumber = existingSections.length + 1;
+    const sectionName = `Section ${nextSectionNumber}`;
+
     // Deep clone and add a unique instance ID
-    const newSection = { ...JSON.parse(JSON.stringify(template)), _instanceId: Date.now() + Math.random() };
+    const newSection = { 
+      ...JSON.parse(JSON.stringify(template)), 
+      _instanceId: Date.now() + Math.random(),
+      section: sectionName // Add section name to the instance
+    };
+
+    // Add to section instances (these are additional sections, not including the original)
     setSectionInstances(prev => ({
       ...prev,
       [categoryName]: [...(prev[categoryName] || []), newSection]
     }));
-    console.log('New section instance created from template:', newSection);
+
+    // Mark as temporary section
+    setTemporarySections(prev => ({
+      ...prev,
+      [categoryName]: {
+        name: sectionName,
+        instance: newSection
+      }
+    }));
+
+    console.log('New temporary section created:', sectionName, newSection);
   };
 
   if (!customerType) {
@@ -343,12 +419,14 @@ const DocumentUpload = () => {
               selectedYears={selectedYears}
               setSelectedYears={setSelectedYears}
               currentYear={currentYear}
-              handleFileUpload={(documentId, files, year) => handleFileUpload(documentId, files, year)}
-              getApiFilesForDocument={(documentMasterId, category, year) => 
-                getApiFilesForDocument(apiDocumentMasters, customerType || '', documentMasterId, category, year)
+              handleFileUpload={(documentId, files, year, sectionName) => handleFileUpload(documentId, files, year, undefined, sectionName)}
+              getApiFilesForDocument={(documentMasterId, category, year, promoterIndex, section) => 
+                getApiFilesForDocument(apiDocumentMasters, customerType || '', documentMasterId, category, year, promoterIndex, section)
               }
               uploadingDocuments={uploadingDocuments}
               handleAddSection={handleAddSection}
+              beSections={beSections}
+              temporarySections={temporarySections}
             />
           )}
           {/* Promoter Documents Page (Page 1+) */}
@@ -363,13 +441,15 @@ const DocumentUpload = () => {
               selectedYears={selectedYears}
               setSelectedYears={setSelectedYears}
               currentYear={currentYear}
-              handleFileUpload={(documentId, files, year) => handleFileUpload(documentId, files, year, `Promoter ${currentPage}`)}
-              getApiFilesForDocument={(documentMasterId, category, year) => 
-                getApiFilesForDocument(apiDocumentMasters, `Promoter ${currentPage}`, documentMasterId, category, year, currentPage - 1)
+              handleFileUpload={(documentId, files, year, sectionName) => handleFileUpload(documentId, files, year, `Promoter ${currentPage}`, sectionName)}
+              getApiFilesForDocument={(documentMasterId, category, year, promoterIndex, section) => 
+                getApiFilesForDocument(apiDocumentMasters, `Promoter ${currentPage}`, documentMasterId, category, year, promoterIndex, section)
               }
               uploadingDocuments={uploadingDocuments}
               currentPage={currentPage}
               handleAddSection={handleAddSection}
+              beSections={beSections}
+              temporarySections={temporarySections}
             />
           )}
         </div>
