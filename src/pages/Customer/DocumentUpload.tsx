@@ -39,7 +39,7 @@ const DocumentUpload = () => {
   const { getValueFromLocalStorage, setValueToLocalStorage } = useLocalStorage();
   const token = getValueFromLocalStorage("token");
   const { addDocument, removeDocument, submitFolder, getFolderDocuments, isFolderSubmitted } = useDocuments();
-  const { syncCustomerDocuments, promoterTemplate, setPromoterTemplate, setSectionTemplates } = useCustomers();
+  const { syncCustomerDocuments, promoterTemplate, setPromoterTemplate, setSectionTemplates, sectionTemplates } = useCustomers();
   const documentUploadService = useDocumentUploadService();
 
   const [customerType, setCustomerType] = useState<'Individual' | 'Organization'>();
@@ -50,7 +50,7 @@ const DocumentUpload = () => {
   const [uploadingDocuments, setUploadingDocuments] = useState<Record<string, boolean>>({});
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, DocumentFile[]>>({});
   // Add state to track multiple section instances
-  const [sectionInstances, setSectionInstances] = useState<{ [key: string]: number }>({});
+  const [sectionInstances, setSectionInstances] = useState<{ [category: string]: any[] }>({});
   // Add state to track years for each document with isMultipleYear
   const [documentYears, setDocumentYears] = useState<{ [key: string]: number[] }>({});
   // Add state to track selected year for each document/yearIdx
@@ -289,6 +289,22 @@ const DocumentUpload = () => {
   // Get total pages (main page + promoter pages)
   const totalPages = promoters.length + 1;
 
+  // Add section handler using section templates
+  const handleAddSection = (categoryName: string) => {
+    const template = sectionTemplates[categoryName];
+    if (!template) {
+      console.warn('No template found for', categoryName);
+      return;
+    }
+    // Deep clone and add a unique instance ID
+    const newSection = { ...JSON.parse(JSON.stringify(template)), _instanceId: Date.now() + Math.random() };
+    setSectionInstances(prev => ({
+      ...prev,
+      [categoryName]: [...(prev[categoryName] || []), newSection]
+    }));
+    console.log('New section instance created from template:', newSection);
+  };
+
   if (!customerType) {
     return (
       <MainLayout showSidebar={true}>
@@ -332,6 +348,7 @@ const DocumentUpload = () => {
                 getApiFilesForDocument(apiDocumentMasters, customerType || '', documentMasterId, category, year)
               }
               uploadingDocuments={uploadingDocuments}
+              handleAddSection={handleAddSection}
             />
           )}
           {/* Promoter Documents Page (Page 1+) */}
@@ -352,6 +369,7 @@ const DocumentUpload = () => {
               }
               uploadingDocuments={uploadingDocuments}
               currentPage={currentPage}
+              handleAddSection={handleAddSection}
             />
           )}
         </div>

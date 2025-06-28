@@ -5,12 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Trash2, Info, X, Upload } from "lucide-react";
+import { useCustomers } from "@/contexts/CustomerContext";
 
 interface DocumentTableProps {
   category: any;
   categoryIndex: number | string;
   isMultipleSection: boolean;
-  instances: number;
+  sections: any[];
   sectionInstances: any;
   setSectionInstances: any;
   CardKeyPrefix?: string;
@@ -24,13 +25,14 @@ interface DocumentTableProps {
   uploadingDocuments: any;
   isPromoter?: boolean;
   currentPage?: number;
+  handleAddSection: (categoryName: string) => void;
 }
 
 const DocumentTable: React.FC<DocumentTableProps> = ({
   category,
   categoryIndex,
   isMultipleSection,
-  instances,
+  sections,
   sectionInstances,
   setSectionInstances,
   CardKeyPrefix = '',
@@ -44,13 +46,16 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
   uploadingDocuments,
   isPromoter = false,
   currentPage = 0,
+  handleAddSection,
 }) => {
+  const { sectionTemplates } = useCustomers();
+
   return (
     <div key={categoryIndex}>
-      {Array.from({ length: instances }).map((_, instanceIdx) => {
+      {sections.map((section, instanceIdx) => {
         const sectionKey = CardKeyPrefix ? `${CardKeyPrefix}_${categoryIndex}` : categoryIndex;
         return (
-          <div key={instanceIdx} className="relative">
+          <div key={section._instanceId || instanceIdx} className="relative">
             <Card className="mb-6">
               {/* Cross icon for extra sections */}
               {isMultipleSection && instanceIdx > 0 && (
@@ -59,8 +64,9 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                   onClick={() => {
                     setSectionInstances((prev: any) => {
                       const updated = { ...prev };
-                      if (updated[sectionKey] > 1) {
-                        updated[sectionKey] = updated[sectionKey] - 1;
+                      const categoryKey = CardKeyPrefix ? `${CardKeyPrefix}_${category.category}` : category.category;
+                      if (updated[categoryKey] && updated[categoryKey].length > 1) {
+                        updated[categoryKey] = updated[categoryKey].filter((s: any) => s._instanceId !== section._instanceId);
                       }
                       return updated;
                     });
@@ -73,7 +79,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
               )}
               <CardHeader>
                 <CardTitle className="text-lg font-semibold text-gray-800">
-                  {category.category} {isMultipleSection && instances > 1 ? `(${instanceIdx + 1})` : null}
+                  {section.category} {isMultipleSection && sections.length > 1 ? `(${instanceIdx + 1})` : null}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -88,7 +94,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {category.documents.map((document: any) => {
+                    {section.documents.map((document: any) => {
                       const docKey = isPromoter
                         ? `${document.documentMasterId}_promoter${currentPage - 1}_${instanceIdx}`
                         : `${document.documentMasterId}_${instanceIdx}`;
@@ -149,12 +155,12 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                               {(() => {
                                 const files = getApiFilesForDocument(
                                   document.documentMasterId,
-                                  category.category,
+                                  section.category,
                                   document.isMultipleYears ? years[yearIdx] : undefined,
                                   isPromoter ? currentPage - 1 : undefined
                                 );
                                 if (files.length === 0) {
-                                  return <span className="text-gray-400 text-sm">No files</span>;
+                                  return <span className="text-gray-400 text-sm">NA</span>;
                                 }
                                 return (
                                   <div className="space-y-1 flex flex-col">
@@ -188,7 +194,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                               {(() => {
                                 const files = getApiFilesForDocument(
                                   document.documentMasterId,
-                                  category.category,
+                                  section.category,
                                   document.isMultipleYears ? years[yearIdx] : undefined,
                                   isPromoter ? currentPage - 1 : undefined
                                 );
@@ -352,10 +358,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setSectionInstances((prev: any) => ({
-              ...prev,
-              [CardKeyPrefix ? `${CardKeyPrefix}_${categoryIndex}` : categoryIndex]: (prev[CardKeyPrefix ? `${CardKeyPrefix}_${categoryIndex}` : categoryIndex] || 1) + 1
-            }))}
+            onClick={() => handleAddSection(category.category)}
             className="flex items-center gap-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
           >
             <Plus className="h-4 w-4" /> Add Section

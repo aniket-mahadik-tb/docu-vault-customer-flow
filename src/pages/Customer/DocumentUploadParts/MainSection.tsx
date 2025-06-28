@@ -13,6 +13,7 @@ interface MainSectionProps {
   handleFileUpload: any;
   getApiFilesForDocument: any;
   uploadingDocuments: any;
+  handleAddSection: (categoryName: string) => void;
 }
 
 const MainSection: React.FC<MainSectionProps> = ({
@@ -27,19 +28,24 @@ const MainSection: React.FC<MainSectionProps> = ({
   handleFileUpload,
   getApiFilesForDocument,
   uploadingDocuments,
+  handleAddSection,
 }) => {
   return (
     <>
       {orgCategories.map((category, categoryIndex) => {
         const isMultipleSection = category.isMultipleSection;
-        const instances = isMultipleSection ? (sectionInstances[categoryIndex] || 1) : 1;
+        // Get the sections array for this category, or use the original category if no instances exist
+        const sections = isMultipleSection && sectionInstances[category.category] 
+          ? sectionInstances[category.category] 
+          : [category];
+        
         return (
           <DocumentTable
             key={categoryIndex}
             category={category}
             categoryIndex={categoryIndex}
             isMultipleSection={isMultipleSection}
-            instances={instances}
+            sections={sections}
             sectionInstances={sectionInstances}
             setSectionInstances={setSectionInstances}
             documentYears={documentYears}
@@ -50,6 +56,7 @@ const MainSection: React.FC<MainSectionProps> = ({
             handleFileUpload={handleFileUpload}
             getApiFilesForDocument={getApiFilesForDocument}
             uploadingDocuments={uploadingDocuments}
+            handleAddSection={handleAddSection}
           />
         );
       })}
