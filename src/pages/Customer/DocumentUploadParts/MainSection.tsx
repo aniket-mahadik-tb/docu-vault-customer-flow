@@ -45,11 +45,14 @@ const MainSection: React.FC<MainSectionProps> = ({
         // Get the sections array for this category
         let sections;
         if (isMultipleSection) {
-          if (sectionInstances[category.category]) {
-            // If we have section instances, include the original category + new instances
-            sections = [category, ...sectionInstances[category.category]];
+          // First check if this category has any temporary sections
+          const hasTemporarySection = temporarySections[category.category] !== null;
+          
+          if (hasTemporarySection) {
+            // If we have a temporary section, include it
+            sections = [category, ...sectionInstances[category.category] || []];
           } else {
-            // If no instances yet, just use the original category
+            // If no temporary section, just use the category as is from API
             sections = [category];
           }
         } else {

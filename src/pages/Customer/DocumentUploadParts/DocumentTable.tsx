@@ -55,14 +55,9 @@ const DocumentTable: React.FC<DocumentTableProps> =React.memo( ({
   const { sectionTemplates } = useCustomers();
 
   React.useEffect(() => {
-    if (category.category === "DETAILS OF THE COLLATERAL SECURITY") {
-      // console.log(
-      //   "COLLATERAL SECURITY sections rendered:",
-      //   JSON.stringify(sections, null, 2)
-      // );
+    if(category.category === "DETAILS OF THE COLLATERAL SECURITY") {
+      console.log("category.category",category);
     }
-
-    // console.log("Sections",sections);
   }, [sections, category.category]);
   
 

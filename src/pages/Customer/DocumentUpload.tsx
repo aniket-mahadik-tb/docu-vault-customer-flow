@@ -267,12 +267,36 @@ const DocumentUpload = () => {
           setOrgCategories(individual.documentsByCategory);
         }
         
-        // Clear temporary section if it was uploaded to
-        if (sectionName && temporarySections[sectionName]) {
-          setTemporarySections(prev => ({
-            ...prev,
-            [sectionName]: null
-          }));
+        // Clear temporary section and section instances if it was uploaded to
+        if (sectionName) {
+          // Find the category this section belongs to
+          const categoryForSection = Object.keys(temporarySections).find(
+            cat => temporarySections[cat]?.name === sectionName
+          );
+
+          if (categoryForSection) {
+            // Clear from temporarySections
+            setTemporarySections(prev => ({
+              ...prev,
+              [categoryForSection]: null
+            }));
+
+            // Clear from sectionInstances
+            setSectionInstances(prev => {
+              const updated = { ...prev };
+              if (updated[categoryForSection]) {
+                // Remove the section instance that matches this section name
+                updated[categoryForSection] = updated[categoryForSection].filter(
+                  (instance: any) => instance.section !== sectionName
+                );
+                // If no more instances, delete the category key
+                if (updated[categoryForSection].length === 0) {
+                  delete updated[categoryForSection];
+                }
+              }
+              return updated;
+            });
+          }
         }
       } catch (err) {
         // Optionally handle error
