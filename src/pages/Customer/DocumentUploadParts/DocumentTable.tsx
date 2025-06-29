@@ -119,13 +119,11 @@ const DocumentTable: React.FC<DocumentTableProps> =React.memo( ({
                       const docKey = isPromoter
                         ? `${document.documentMasterId}_promoter${currentPage - 1}_${section.section}_${instanceIdx}`
                         : `${document.documentMasterId}_${section.section}_${instanceIdx}`;
-                        console.log('122 dockey',docKey)
                       const years = document.isMultipleYears
                         ? documentYears[docKey] || [currentYear]
                         : [undefined];
                         const sectionName = section.section;  // Use the actual section name from the data
-                    console.log(`127 sectionName',${sectionName} + ${section.category}`)
-                        const isMultipleFiles = document.isMultipleFiles;
+                          const isMultipleFiles = document.isMultipleFiles;
                       return years.map((year: any, yearIdx: number) => {
                         const yearKey = `${docKey}_${yearIdx}`;
                         return (

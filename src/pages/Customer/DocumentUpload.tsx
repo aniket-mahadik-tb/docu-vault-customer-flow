@@ -252,6 +252,20 @@ const DocumentUpload = () => {
           }
         });
         setBeSections(newBeSections);
+
+        // Update orgCategories with latest data based on customer type
+        const org = response.data.find(
+          (item: any) => item.customerType?.toUpperCase() === "ORGANIZATION"
+        );
+        const individual = response.data.find(
+          (item: any) => item.customerType?.toUpperCase() === "INDIVIDUAL"
+        );
+
+        if (customerType === "Organization" && org) {
+          setOrgCategories(org.documentsByCategory);
+        } else if (customerType === "Individual" && individual) {
+          setOrgCategories(individual.documentsByCategory);
+        }
         
         // Clear temporary section if it was uploaded to
         if (sectionName && temporarySections[sectionName]) {
