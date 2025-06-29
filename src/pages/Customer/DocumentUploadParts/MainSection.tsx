@@ -31,9 +31,13 @@ const MainSection: React.FC<MainSectionProps> = ({
   getApiFilesForDocument,
   uploadingDocuments,
   handleAddSection,
-  beSections,
+  beSections,  //that one which is going to repeat
   temporarySections,
 }) => {
+
+
+  //console.log("orgCategories", orgCategories);
+
   return (
     <>
       {orgCategories.map((category, categoryIndex) => {

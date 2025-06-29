@@ -131,6 +131,7 @@ const DocumentUpload = () => {
         if (org) {
           setCustomerType("Organization");
           setValueToLocalStorage("customerType", "Organization");
+
           setOrgCategories(org.documentsByCategory);
           // If you want to use the first promoter's categories as the template for new promoters:
           setPromoterCategories(promoterEntries[0]?.documentsByCategory || []);
@@ -378,7 +379,7 @@ const DocumentUpload = () => {
       }
     }));
 
-    console.log('New temporary section created:', sectionName, newSection);
+    // console.log('New temporary section created:', sectionName, newSection);
   };
 
   if (!customerType) {

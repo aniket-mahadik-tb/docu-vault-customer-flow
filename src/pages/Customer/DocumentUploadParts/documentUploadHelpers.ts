@@ -53,22 +53,8 @@ export const getApiFilesForDocument = (
   // If this is a temporary section (has _instanceId), return empty files
   // until files are actually uploaded to it
   if (section && section._instanceId) {
-    console.log('Temporary section detected, returning empty files:', {
-      sectionName: section.section,
-      instanceId: section._instanceId,
-      category: section.category
-    });
     return [];
   }
-  
-  console.log('Regular section, checking API for files:', {
-    customerType,
-    category,
-    documentMasterId,
-    year,
-    promoterIndex,
-    sectionName: section?.section
-  });
   
   let customerTypeObj;
   if (promoterIndex !== undefined) {
@@ -87,7 +73,6 @@ export const getApiFilesForDocument = (
   }
   
   if (!customerTypeObj) {
-    console.log('Customer type not found:', { customerType, promoterIndex, availableTypes: apiDocumentMasters.map(d => d.customerType) });
     return [];
   }
   
@@ -95,7 +80,6 @@ export const getApiFilesForDocument = (
     (cat: any) => cat.category === category
   );
   if (!categoryObj) {
-    console.log('Category not found:', { category, availableCategories: customerTypeObj.documentsByCategory.map((cat: any) => cat.category) });
     return [];
   }
   
@@ -106,6 +90,14 @@ export const getApiFilesForDocument = (
     docObjs = docObjs.filter((doc: any) => String(doc.year) === String(year));
   }
   
+  // Add section filtering
+  if (section && section.section) {
+    docObjs = docObjs.filter((doc: any) => {
+      const docSection = doc.section || categoryObj.section;
+      return docSection === section.section;
+    });
+  }
+  
   let files: any[] = [];
   docObjs.forEach((doc: any) => {
     if (doc.files && doc.files.length > 0) {
@@ -113,6 +105,5 @@ export const getApiFilesForDocument = (
     }
   });
   
-  console.log('Files found:', files.length);
   return files;
 }; 

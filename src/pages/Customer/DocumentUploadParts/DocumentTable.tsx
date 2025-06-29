@@ -54,11 +54,25 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
 }) => {
   const { sectionTemplates } = useCustomers();
 
+  React.useEffect(() => {
+    if (category.category === "DETAILS OF THE COLLATERAL SECURITY") {
+      // console.log(
+      //   "COLLATERAL SECURITY sections rendered:",
+      //   JSON.stringify(sections, null, 2)
+      // );
+    }
+  }, [sections, category.category]);
+  
+
   return (
     <div key={categoryIndex}>
       {sections.map((section, instanceIdx) => {
         const sectionKey = CardKeyPrefix ? `${CardKeyPrefix}_${categoryIndex}` : categoryIndex;
-        return (
+        // console.log(
+        //   `Section Key: ${sectionKey}, Instance Index: ${instanceIdx}`,
+        //   JSON.stringify(section, null, 2)
+        // );
+              return (
           <div key={section._instanceId || instanceIdx} className="relative">
             <Card className="mb-6">
               {/* Cross icon for extra sections */}
@@ -83,7 +97,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
               )}
               <CardHeader>
                 <CardTitle className="text-lg font-semibold text-gray-800">
-                  {section.category} {isMultipleSection && sections.length > 1 ? `(${instanceIdx + 1})` : null}
+                  {section.category} {isMultipleSection ? `(${section.section})` : null}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -97,6 +111,8 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                       <TableHead className="w-[10%]">Action</TableHead>
                     </TableRow>
                   </TableHeader>
+
+                  {/* issue in table body */}
                   <TableBody>
                     {section.documents.map((document: any) => {
                       const docKey = isPromoter
@@ -105,6 +121,8 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                       const years = document.isMultipleYears
                         ? documentYears[docKey] || [currentYear]
                         : [undefined];
+                        const sectionName = section.section;  // Use the actual section name from the data
+                        console.log("sectionName", sectionName);
                       const isMultipleFiles = document.isMultipleFiles;
                       return years.map((year: any, yearIdx: number) => {
                         const yearKey = `${docKey}_${yearIdx}`;
@@ -253,7 +271,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                                               multiple
                                               onChange={(e) => {
                                                 const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
-                                                const sectionName = instanceIdx === 0 ? category.section : section.section || "";
+                                                const sectionName = section.section;
                                                 e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear, sectionName);
                                               }}
                                               className="hidden"
@@ -308,7 +326,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                                   multiple
                                   onChange={(e) => {
                                     const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
-                                    const sectionName = instanceIdx === 0 ? category.section : section.section || "";
+                                    const sectionName = section.section;
                                     e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear, sectionName);
                                   }}
                                   className="hidden"
