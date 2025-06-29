@@ -33,7 +33,6 @@ export function extractPromoterTemplate(apiData: any[]) {
     }))
   }));
   
-  console.log('Promoter Template extracted:', deepEmptyPromoter);
   return deepEmptyPromoter;
 }
 
@@ -63,7 +62,6 @@ export function extractSectionTemplates(apiData: any[]) {
       });
   });
   
-  console.log('Section Templates extracted:', sectionTemplates);
   return sectionTemplates;
 }
 

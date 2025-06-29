@@ -31,38 +31,75 @@ const MainSection: React.FC<MainSectionProps> = ({
   getApiFilesForDocument,
   uploadingDocuments,
   handleAddSection,
-  beSections,  //that one which is going to repeat
+  beSections,
   temporarySections,
 }) => {
 
+  console.log("=== MainSection Render ===");
+  console.log("sectionInstances:", sectionInstances);
+  console.log("temporarySections:", temporarySections);
+  console.log("beSections:", beSections);
 
-  console.log("orgCategories", orgCategories);
+  // Deduplicate categories based on category name
+  const uniqueCategories = React.useMemo(() => {
+    const seen = new Set();
+    return orgCategories.filter(category => {
+      const duplicate = seen.has(category.category);
+      seen.add(category.category);
+      return !duplicate;
+    });
+  }, [orgCategories]);
+
+  console.log("Unique categories length:", uniqueCategories.length);
+  console.log("Unique categories:", uniqueCategories.map(cat => ({
+    category: cat.category,
+    isMultipleSection: cat.isMultipleSection,
+    section: cat.section
+  })));
 
   return (
     <>
-      {orgCategories.map((category, categoryIndex) => {
+      {uniqueCategories.map((category, categoryIndex) => {
         const isMultipleSection = category.isMultipleSection;
-        // Get the sections array for this category
         let sections;
+
         if (isMultipleSection) {
-          // First check if this category has any temporary sections
-          const hasTemporarySection = temporarySections[category.category] !== null;
+          // Get existing sections from BE
+          const existingSections = beSections[category.category] || [];
           
-          if (hasTemporarySection) {
-            // If we have a temporary section, include it
-            sections = [category, ...sectionInstances[category.category] || []];
-          } else {
-            // If no temporary section, just use the category as is from API
-            sections = [category];
+          // Get sections from instances
+          const instanceSections = sectionInstances[category.category] || [];
+          
+          // Start with the base category for Section 1
+          sections = [{
+            ...category,
+            section: "Section 1"
+          }];
+
+          // Add additional sections from BE sections (starting from 2)
+          existingSections.slice(1).forEach((sectionName, idx) => {
+            // Find matching instance or create from template
+            const instance = instanceSections.find(s => s.section === sectionName) || {
+              ...category,
+              section: sectionName
+            };
+            sections.push(instance);
+          });
+
+          // Add temporary section if it exists
+          const tempSection = temporarySections[category.category]?.instance;
+          if (tempSection) {
+            sections.push(tempSection);
           }
+
+          console.log(`Sections for ${category.category}:`, sections.map(s => s.section));
         } else {
-          // For non-multiple sections, just use the category
           sections = [category];
         }
         
         return (
           <DocumentTable
-            key={categoryIndex}
+            key={`${category.category}_${categoryIndex}`}
             category={category}
             categoryIndex={categoryIndex}
             isMultipleSection={isMultipleSection}

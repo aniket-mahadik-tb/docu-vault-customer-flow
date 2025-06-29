@@ -30,7 +30,7 @@ interface DocumentTableProps {
   temporarySections: { [category: string]: { name: string; instance: any } | null };
 }
 
-const DocumentTable: React.FC<DocumentTableProps> =React.memo( ({
+const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
   category,
   categoryIndex,
   isMultipleSection,
@@ -56,17 +56,72 @@ const DocumentTable: React.FC<DocumentTableProps> =React.memo( ({
 
   React.useEffect(() => {
     if(category.category === "DETAILS OF THE COLLATERAL SECURITY") {
-      console.log("category.category",category);
+      console.log("=== DocumentTable Render for Collateral Security ===");
+      console.log("sections:", sections);
+      console.log("sectionInstances:", sectionInstances);
+      console.log("temporarySections:", temporarySections);
+      console.log("beSections:", beSections);
     }
-  }, [sections, category.category]);
-  
+  }, [sections, category.category, sectionInstances, temporarySections, beSections]);
+
+  // Get all sections for this category without duplicates
+  const getAllSectionsForCategory = () => {
+    const allSections = new Set([
+      ...(beSections[category.category] || []),
+      ...(sectionInstances[category.category] || []).map(s => s.section),
+      ...sections.map(s => s.section)
+    ]);
+    
+    if(category.category === "DETAILS OF THE COLLATERAL SECURITY") {
+      console.log("All unique sections for category:", Array.from(allSections));
+    }
+    return Array.from(allSections);
+  };
+
+  // Get highest section number for this category
+  const getHighestSectionNumber = () => {
+    const allSections = getAllSectionsForCategory();
+    const highest = Math.max(...allSections.map(section => {
+      const match = section?.match(/Section (\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    }), 0);
+    
+    if(category.category === "DETAILS OF THE COLLATERAL SECURITY") {
+      console.log("Highest section number:", highest);
+    }
+    return highest;
+  };
+
+  // Get section number for a specific section
+  const getSectionNumber = (section: any) => {
+    const match = section.section?.match(/Section (\d+)/);
+    return match ? parseInt(match[1]) : 0;
+  };
+
+  const highestSectionNumber = getHighestSectionNumber();
 
   return (
     <div key={categoryIndex}>
       {sections.map((section, instanceIdx) => {
-       // console.log("section 69",section);
         const sectionKey = CardKeyPrefix ? `${CardKeyPrefix}_${categoryIndex}` : categoryIndex;
-        // console.log(`section key = ${sectionKey}, section = ${JSON.stringify(section, null, 2)}`);
+        const currentSectionNumber = getSectionNumber(section);
+        
+        // A section is the last section if:
+        // 1. It's a multiple section category AND
+        // 2. It's the highest numbered section AND
+        // 3. It's not a temporary section
+        const isLastSection = isMultipleSection && 
+          currentSectionNumber === highestSectionNumber && 
+          !temporarySections[category.category];
+        
+        if(category.category === "DETAILS OF THE COLLATERAL SECURITY") {
+          console.log("Rendering section:", {
+            sectionNumber: currentSectionNumber,
+            isLastSection,
+            hasTemporarySection: temporarySections[category.category] !== null
+          });
+        }
+        
         return (
           <div key={section._instanceId || instanceIdx} className="relative">
             <Card className="mb-6">
@@ -92,8 +147,7 @@ const DocumentTable: React.FC<DocumentTableProps> =React.memo( ({
               )}
               <CardHeader>
                 <CardTitle className="text-lg font-semibold text-gray-800">
-                  {/* {section.category} {isMultipleSection ? `(${section.section})` : null} */}
-                  {section.section}
+                  {section.category} {isMultipleSection ? `(${section.section})` : null}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -108,7 +162,6 @@ const DocumentTable: React.FC<DocumentTableProps> =React.memo( ({
                     </TableRow>
                   </TableHeader>
 
-                  {/* issue in table body */}
                   <TableBody>
                     {section.documents.map((document: any) => {
                       const docKey = isPromoter
@@ -323,7 +376,6 @@ const DocumentTable: React.FC<DocumentTableProps> =React.memo( ({
                                     const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
                                     const sectionName = section.section;
                                     e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear, sectionName);
-                                  console.log("Section name 331",sectionName);
                                   }}
                                   className="hidden"
                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -371,22 +423,23 @@ const DocumentTable: React.FC<DocumentTableProps> =React.memo( ({
                 </Table>
               </CardContent>
             </Card>
+
+            {/* Add Section button - only show if this is the last section and no temporary section exists */}
+            {isMultipleSection && isLastSection && !temporarySections[category.category] && (
+              <div className="flex justify-start mb-6 -mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddSection(category.category)}
+                  className="flex items-center gap-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                >
+                  <Plus className="h-4 w-4" /> Add Section
+                </Button>
+              </div>
+            )}
           </div>
         );
       })}
-      {/* +Add button for multiple sections, outside and below the last card, left-aligned */}
-      {isMultipleSection && (
-        <div className="flex justify-start mb-6 -mt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleAddSection(category.category)}
-            className="flex items-center gap-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-          >
-            <Plus className="h-4 w-4" /> Add Section
-          </Button>
-        </div>
-      )}
     </div>
   );
 });

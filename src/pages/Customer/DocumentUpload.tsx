@@ -187,7 +187,6 @@ const DocumentUpload = () => {
 
   const handleFileUpload = async (documentId: string, files: FileList, year?: number, promoterLabel?: string, sectionName?: string) => {
     if (!token) return;
-// console.log("sectionName", sectionName);
 
     try {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
@@ -378,7 +377,13 @@ const DocumentUpload = () => {
 
   // Add section handler using section templates
   const handleAddSection = (categoryName: string) => {
+    console.log("=== handleAddSection START ===");
+    console.log("Current sectionInstances:", sectionInstances);
+    console.log("Current temporarySections:", temporarySections);
+    console.log("Current beSections:", beSections);
+    
     const template = sectionTemplates[categoryName];
+
     if (!template) {
       console.warn('No template found for', categoryName);
       return;
@@ -399,29 +404,42 @@ const DocumentUpload = () => {
     const nextSectionNumber = existingSections.length + 1;
     const sectionName = `Section ${nextSectionNumber}`;
 
+    console.log("Creating new section:", {
+      categoryName,
+      nextSectionNumber,
+      sectionName
+    });
+
     // Deep clone and add a unique instance ID
     const newSection = { 
       ...JSON.parse(JSON.stringify(template)), 
-      _instanceId: Date.now() + Math.random(),
       section: sectionName // Add section name to the instance
     };
 
-    // Add to section instances (these are additional sections, not including the original)
-    setSectionInstances(prev => ({
-      ...prev,
-      [categoryName]: [...(prev[categoryName] || []), newSection]
-    }));
+    // Add to section instances
+    setSectionInstances(prev => {
+      const updated = {
+        ...prev,
+        [categoryName]: [...(prev[categoryName] || []), newSection]
+      };
+      console.log("Updated sectionInstances:", updated);
+      return updated;
+    });
 
     // Mark as temporary section
-    setTemporarySections(prev => ({
-      ...prev,
-      [categoryName]: {
-        name: sectionName,
-        instance: newSection
-      }
-    }));
+    setTemporarySections(prev => {
+      const updated = {
+        ...prev,
+        [categoryName]: {
+          name: sectionName,
+          instance: newSection
+        }
+      };
+      console.log("Updated temporarySections:", updated);
+      return updated;
+    });
 
-    // console.log('New temporary section created:', sectionName, newSection);
+    console.log("=== handleAddSection END ===");
   };
 
   if (!customerType) {
