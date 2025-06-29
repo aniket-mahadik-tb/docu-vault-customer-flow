@@ -76,9 +76,11 @@ export const getApiFilesForDocument = (
     return [];
   }
   
+  // Find the category object that matches both category name and section
   const categoryObj = customerTypeObj.documentsByCategory.find(
-    (cat: any) => cat.category === category
+    (cat: any) => cat.category === category && (!section || cat.section === section.section)
   );
+  
   if (!categoryObj) {
     return [];
   }
@@ -86,16 +88,9 @@ export const getApiFilesForDocument = (
   let docObjs = categoryObj.documents.filter(
     (doc: any) => doc.documentMasterId === documentMasterId
   );
+  
   if (year !== undefined && year !== null) {
     docObjs = docObjs.filter((doc: any) => String(doc.year) === String(year));
-  }
-  
-  // Add section filtering
-  if (section && section.section) {
-    docObjs = docObjs.filter((doc: any) => {
-      const docSection = doc.section || categoryObj.section;
-      return docSection === section.section;
-    });
   }
   
   let files: any[] = [];

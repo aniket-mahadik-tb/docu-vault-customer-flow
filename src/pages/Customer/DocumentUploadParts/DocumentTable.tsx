@@ -30,7 +30,7 @@ interface DocumentTableProps {
   temporarySections: { [category: string]: { name: string; instance: any } | null };
 }
 
-const DocumentTable: React.FC<DocumentTableProps> = ({
+const DocumentTable: React.FC<DocumentTableProps> =React.memo( ({
   category,
   categoryIndex,
   isMultipleSection,
@@ -61,18 +61,18 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
       //   JSON.stringify(sections, null, 2)
       // );
     }
+
+    // console.log("Sections",sections);
   }, [sections, category.category]);
   
 
   return (
     <div key={categoryIndex}>
       {sections.map((section, instanceIdx) => {
+       // console.log("section 69",section);
         const sectionKey = CardKeyPrefix ? `${CardKeyPrefix}_${categoryIndex}` : categoryIndex;
-        // console.log(
-        //   `Section Key: ${sectionKey}, Instance Index: ${instanceIdx}`,
-        //   JSON.stringify(section, null, 2)
-        // );
-              return (
+        // console.log(`section key = ${sectionKey}, section = ${JSON.stringify(section, null, 2)}`);
+        return (
           <div key={section._instanceId || instanceIdx} className="relative">
             <Card className="mb-6">
               {/* Cross icon for extra sections */}
@@ -97,7 +97,8 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
               )}
               <CardHeader>
                 <CardTitle className="text-lg font-semibold text-gray-800">
-                  {section.category} {isMultipleSection ? `(${section.section})` : null}
+                  {/* {section.category} {isMultipleSection ? `(${section.section})` : null} */}
+                  {section.section}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -116,14 +117,15 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                   <TableBody>
                     {section.documents.map((document: any) => {
                       const docKey = isPromoter
-                        ? `${document.documentMasterId}_promoter${currentPage - 1}_${instanceIdx}`
-                        : `${document.documentMasterId}_${instanceIdx}`;
+                        ? `${document.documentMasterId}_promoter${currentPage - 1}_${section.section}_${instanceIdx}`
+                        : `${document.documentMasterId}_${section.section}_${instanceIdx}`;
+                        console.log('122 dockey',docKey)
                       const years = document.isMultipleYears
                         ? documentYears[docKey] || [currentYear]
                         : [undefined];
                         const sectionName = section.section;  // Use the actual section name from the data
-                        console.log("sectionName", sectionName);
-                      const isMultipleFiles = document.isMultipleFiles;
+                    console.log(`127 sectionName',${sectionName} + ${section.category}`)
+                        const isMultipleFiles = document.isMultipleFiles;
                       return years.map((year: any, yearIdx: number) => {
                         const yearKey = `${docKey}_${yearIdx}`;
                         return (
@@ -328,6 +330,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                                     const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
                                     const sectionName = section.section;
                                     e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear, sectionName);
+                                  console.log("Section name 331",sectionName);
                                   }}
                                   className="hidden"
                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -393,6 +396,6 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
       )}
     </div>
   );
-};
+});
 
 export default DocumentTable;

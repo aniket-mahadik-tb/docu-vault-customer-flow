@@ -36,7 +36,7 @@ const MainSection: React.FC<MainSectionProps> = ({
 }) => {
 
 
-  //console.log("orgCategories", orgCategories);
+  console.log("orgCategories", orgCategories);
 
   return (
     <>

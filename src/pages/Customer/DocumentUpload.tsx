@@ -187,6 +187,7 @@ const DocumentUpload = () => {
 
   const handleFileUpload = async (documentId: string, files: FileList, year?: number, promoterLabel?: string, sectionName?: string) => {
     if (!token) return;
+// console.log("sectionName", sectionName);
 
     try {
       setUploadingDocuments(prev => ({ ...prev, [documentId]: true }));
@@ -202,6 +203,9 @@ const DocumentUpload = () => {
         year: year || "",
         section: sectionName || ""
       };
+
+      console.log("metadata", metadata);
+     // return;
 
       const formData = new FormData();
       formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
