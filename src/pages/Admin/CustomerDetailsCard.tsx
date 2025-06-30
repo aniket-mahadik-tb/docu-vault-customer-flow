@@ -96,12 +96,13 @@ function getFileTypeColor(fileName: string) {
 
 // Utility to flatten the new tempCustomer.documents format
 const flattenDocuments = (documentsArr) => {
+  console.log(documentsArr)
   if (!Array.isArray(documentsArr)) return [];
   return documentsArr.flatMap((customer) =>
     (customer.documentsByCategory || []).flatMap((cat) =>
       (cat.documents || []).map((doc) => ({
         ...doc,
-        category: cat.category,
+        category: cat.category + " " + cat.section,
         customerType: customer.customerType,
       }))
     )
@@ -163,10 +164,12 @@ const CustomerDetail = () => {
       if (true) {
 
         if (tempCustomer) {
+          // console.log(tempCustomer.documents)
           setCustomer(tempCustomer);
-        
+          console.log(tempCustomer.documents)
+
           const documents: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
-          
+
 
           setAllDocuments(documents);
         } else {
@@ -260,12 +263,12 @@ const CustomerDetail = () => {
   // Identify all unique customer types
   const allCustomerTypes = allDocuments
     ? Array.from(
-        new Set(
-          allDocuments.map((doc) =>
-            doc.customerType ? doc.customerType.toLowerCase() : "organization"
-          )
+      new Set(
+        allDocuments.map((doc) =>
+          doc.customerType ? doc.customerType.toLowerCase() : "organization"
         )
       )
+    )
     : [];
 
   // Move main customer (organization/individual) to the front, promoters after
@@ -278,13 +281,14 @@ const CustomerDetail = () => {
   // Get the customer type for the current page
   const currentCustomerType = sortedCustomerTypes[docPage];
 
+
   // Filter documents for the current customer type
   const docsForCurrentType = allDocuments
     ? allDocuments.filter(
-        (doc) =>
-          (doc.customerType ? doc.customerType.toLowerCase() : "organization") ===
-          currentCustomerType
-      )
+      (doc) =>
+        (doc.customerType ? doc.customerType.toLowerCase() : "organization") ===
+        currentCustomerType
+    )
     : [];
 
   // Group filtered documents by category
@@ -416,108 +420,120 @@ const CustomerDetail = () => {
                   </h2>
                 )}
             </div>
-            {Object.entries(groupedDocs).map(([category, docs]) => (
-              <Card key={category} className="mb-8">
-                <CardHeader className="py-2 px-4">
-                  <CardTitle className="text-base font-semibold">{category}</CardTitle>
-                  <p className="text-xs text-muted-foreground">
-                    {docs.reduce((sum, doc) => sum + (doc.files?.length || 0), 0)} files in this category
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[35%] pl-6">Document Type</TableHead>
-                          <TableHead className="w-[15%] px-4">Files</TableHead>
-                          <TableHead className="w-[15%] px-4">Status</TableHead>
-                          <TableHead className="w-[15%] px-4">Action</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {docs.flatMap((doc, docIdx) =>
-                          (doc.files && doc.files.length > 0
-                            ? doc.files.map((file, idx) => ({
+            {Object.entries(groupedDocs).map(([category, docs]) => {
+
+              return (
+                <Card key={category} className="mb-8">
+                  <CardHeader className="py-2 px-4">
+                    <CardTitle className="text-base font-semibold">{category}</CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      {docs.reduce((sum, doc) => sum + (doc.files?.length || 0), 0)} files in this category
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[35%] pl-6">Document Type</TableHead>
+                            <TableHead className="w-[15%] px-4">Files</TableHead>
+                            <TableHead className="w-[15%] px-4">Status</TableHead>
+                            <TableHead className="w-[15%] px-4">Action</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {docs.flatMap((doc, docIdx) => {
+                            // console.log(docs)
+                            return (doc.files && doc.files.length > 0
+                              ? doc.files.map((file, idx) => ({
                                 doc,
                                 file,
                                 idx,
                                 docIdx,
                               }))
-                            : [{ doc, file: null, idx: 0, docIdx }])
-                        ).map(({ doc, file, idx, docIdx }) => (
-                          <TableRow key={file?.docId ? String(file.docId) : `${String(doc.documentMasterId)}-${idx}`}>
-                            <TableCell className="font-medium pl-6">
-                              {doc.documentType}
-                              {doc.files && doc.files.length > 1 && (
-                                <>
-                                  <span className={`ml-2 rounded px-2 py-0.5 text-xs font-semibold badge-nowrap ${badgeColors[docIdx % badgeColors.length]}`}>
-                                    {doc.files.length} {doc.files.length === 1 ? 'file' : 'files'}
+                              : [{ doc, file: null, idx: 0, docIdx }])
+                          }).map(({ doc, file, idx, docIdx }) => (
+                            <TableRow key={file?.docId ? String(file.docId) : `${String(doc.documentMasterId)}-${idx}`}>
+                              <TableCell className="font-medium pl-6">
+                                {doc.documentType}
+                                {doc.files && doc.files.length > 1 && (
+                                  <>
+                                    <span className={`ml-2 rounded px-2 py-0.5 text-xs font-semibold badge-nowrap ${badgeColors[docIdx % badgeColors.length]}`}>
+                                      {doc.files.length} {doc.files.length === 1 ? 'file' : 'files'}
+                                    </span>
+                                    <span className="ml-2 text-gray-400">#{idx + 1}</span>
+                                    {doc.customerType && String(doc.customerType).toLowerCase().includes('promoter') && (
+                                      null
+                                    )}
+                                  </>
+                                )}
+                                {doc.year ? (
+                                  <span
+                                    className="ml-2 rounded px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-400"
+                                    title={`Year: ${doc.year}`}
+                                  >
+                                    {doc.year}
                                   </span>
-                                  <span className="ml-2 text-gray-400">#{idx + 1}</span>
-                                  {doc.customerType && String(doc.customerType).toLowerCase().includes('promoter') && (
-                                    null
-                                  )}
-                                </>
-                              )}
-                              {doc.year ? (
-                                <span
-                                  className="ml-2 rounded px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-400"
-                                  title={`Year: ${doc.year}`}
-                                >
-                                  {doc.year}
-                                </span>
-                              ) : null}
-                            </TableCell>
-                            <TableCell className="px-4">
-                              {file ? (
-                                <span>{file.docName}</span>
-                              ) : (
-                                <span className="text-sm text-gray-400">No files</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {file ? (
-                                <span
-                                  title={
-                                    file.docStatus === 'UPLOADED' ? 'File uploaded, pending review' :
-                                    file.docStatus === 'REJECTED' ? 'File was rejected' :
-                                    file.docStatus === 'SUBMITTED' ? 'File submitted, awaiting approval' :
-                                    'File approved'
-                                  }
-                                >
-                                  {file.docStatus === "UPLOADED" ? (
-                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>
-                                  ) : file.docStatus === "REJECTED" ? (
-                                    <Badge variant="outline" className="bg-red-100 text-red-800">Rejected</Badge>
-                                  ) : file.docStatus === "SUBMITTED" ? (
-                                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Submitted</Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="bg-green-100 text-green-800">Approved</Badge>
-                                  )}
-                                </span>
-                              ) : null}
-                            </TableCell>
-                            <TableCell>
-                              {file ? (
-                                <Button
-                                  key={file.docId ? String(file.docId) : `${String(doc.documentMasterId)}-action-${idx}`}
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => navigate(`/admin/customers/details/review/${doc.documentMasterId}/${file.docId}`)}
-                                >
-                                  <Eye className="h-4 w-4 mr-1" /> Review
-                                </Button>
-                              ) : null}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                                ) : null}
+                                {/* {docs ? (
+                                  <span
+                                    className="ml-2 rounded px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-400"
+                                    title={`Year: ${doc.year}`}
+                                  >
+                                    {doc.year}
+                                  </span>
+                                ) : null} */}
+                              </TableCell>
+                              <TableCell className="px-4">
+                                {file ? (
+                                  <span>{file.docName}</span>
+                                ) : (
+                                  <span className="text-sm text-gray-400">No files</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {file ? (
+                                  <span
+                                    title={
+                                      file.docStatus === 'UPLOADED' ? 'File uploaded, pending review' :
+                                        file.docStatus === 'REJECTED' ? 'File was rejected' :
+                                          file.docStatus === 'SUBMITTED' ? 'File submitted, awaiting approval' :
+                                            'File approved'
+                                    }
+                                  >
+                                    {file.docStatus === "UPLOADED" ? (
+                                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>
+                                    ) : file.docStatus === "REJECTED" ? (
+                                      <Badge variant="outline" className="bg-red-100 text-red-800">Rejected</Badge>
+                                    ) : file.docStatus === "SUBMITTED" ? (
+                                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Submitted</Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="bg-green-100 text-green-800">Approved</Badge>
+                                    )}
+                                  </span>
+                                ) : null}
+                              </TableCell>
+                              <TableCell>
+                                {file ? (
+                                  <Button
+                                    key={file.docId ? String(file.docId) : `${String(doc.documentMasterId)}-action-${idx}`}
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => navigate(`/admin/customers/details/review/${doc.documentMasterId}/${file.docId}`)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" /> Review
+                                  </Button>
+                                ) : null}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
 
             {/* Pagination Controls */}
             {sortedCustomerTypes.length > 1 && (

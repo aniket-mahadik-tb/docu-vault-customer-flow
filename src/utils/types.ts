@@ -31,7 +31,8 @@ export interface GetDocumentByPanCardResponseType {
 
 export interface DocumentsByCategoryType {
     category: String,
-    documents: DocumentResponseType[]
+    documents: DocumentResponseType[],
+    section:string
 }
 
 export interface DocumentResponseType {
