@@ -55,6 +55,8 @@ const DocumentUpload = () => {
   const [documentYears, setDocumentYears] = useState<{ [key: string]: number[] }>({});
   // Add state to track selected year for each document/yearIdx
   const [selectedYears, setSelectedYears] = useState<{ [key: string]: number }>({});
+  // Add state to track year row templates for multi-year documents
+  const [yearRowTemplates, setYearRowTemplates] = useState<{ [key: string]: { year: number | null; files: any[] }[] }>({});
   const currentYear = new Date().getFullYear();
 
   // Pagination state
@@ -479,6 +481,8 @@ const DocumentUpload = () => {
               setDocumentYears={setDocumentYears}
               selectedYears={selectedYears}
               setSelectedYears={setSelectedYears}
+              yearRowTemplates={yearRowTemplates}
+              setYearRowTemplates={setYearRowTemplates}
               currentYear={currentYear}
               handleFileUpload={(documentId, files, year, sectionName) => handleFileUpload(documentId, files, year, undefined, sectionName)}
               getApiFilesForDocument={(documentMasterId, category, year, promoterIndex, section) => 
@@ -501,6 +505,8 @@ const DocumentUpload = () => {
               setDocumentYears={setDocumentYears}
               selectedYears={selectedYears}
               setSelectedYears={setSelectedYears}
+              yearRowTemplates={yearRowTemplates}
+              setYearRowTemplates={setYearRowTemplates}
               currentYear={currentYear}
               handleFileUpload={(documentId, files, year, sectionName) => handleFileUpload(documentId, files, year, `Promoter ${currentPage}`, sectionName)}
               getApiFilesForDocument={(documentMasterId, category, year, promoterIndex, section) => 

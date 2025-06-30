@@ -9,6 +9,8 @@ interface MainSectionProps {
   setDocumentYears: any;
   selectedYears: any;
   setSelectedYears: any;
+  yearRowTemplates: any;
+  setYearRowTemplates: any;
   currentYear: number;
   handleFileUpload: any;
   getApiFilesForDocument: (documentMasterId: string, category: string, year?: number | string, promoterIndex?: number, section?: any) => any[];
@@ -26,6 +28,8 @@ const MainSection: React.FC<MainSectionProps> = ({
   setDocumentYears,
   selectedYears,
   setSelectedYears,
+  yearRowTemplates,
+  setYearRowTemplates,
   currentYear,
   handleFileUpload,
   getApiFilesForDocument,
@@ -110,6 +114,8 @@ const MainSection: React.FC<MainSectionProps> = ({
             setDocumentYears={setDocumentYears}
             selectedYears={selectedYears}
             setSelectedYears={setSelectedYears}
+            yearRowTemplates={yearRowTemplates}
+            setYearRowTemplates={setYearRowTemplates}
             currentYear={currentYear}
             handleFileUpload={handleFileUpload}
             getApiFilesForDocument={getApiFilesForDocument}

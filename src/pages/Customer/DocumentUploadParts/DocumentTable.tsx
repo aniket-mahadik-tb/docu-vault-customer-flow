@@ -20,6 +20,8 @@ interface DocumentTableProps {
   setDocumentYears: any;
   selectedYears: any;
   setSelectedYears: any;
+  yearRowTemplates: any;
+  setYearRowTemplates: any;
   currentYear: number;
   handleFileUpload: any;
   getApiFilesForDocument: (documentMasterId: string, category: string, year?: number | string, promoterIndex?: number, section?: any) => any[];
@@ -31,7 +33,7 @@ interface DocumentTableProps {
   temporarySections: { [category: string]: { name: string; instance: any } | null };
 }
 
-const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
+const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
   category,
   categoryIndex,
   isMultipleSection,
@@ -43,6 +45,8 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
   setDocumentYears,
   selectedYears,
   setSelectedYears,
+  yearRowTemplates,
+  setYearRowTemplates,
   currentYear,
   handleFileUpload,
   getApiFilesForDocument,
@@ -56,7 +60,7 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
   const { sectionTemplates } = useCustomers();
 
   React.useEffect(() => {
-    if(category.category === "DETAILS OF THE COLLATERAL SECURITY") {
+    if (category.category === "DETAILS OF THE COLLATERAL SECURITY") {
       console.log("=== DocumentTable Render for Collateral Security ===");
       console.log("sections:", sections);
       console.log("sectionInstances:", sectionInstances);
@@ -72,8 +76,8 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
       ...(sectionInstances[category.category] || []).map(s => s.section),
       ...sections.map(s => s.section)
     ]);
-    
-    if(category.category === "DETAILS OF THE COLLATERAL SECURITY") {
+
+    if (category.category === "DETAILS OF THE COLLATERAL SECURITY") {
       console.log("All unique sections for category:", Array.from(allSections));
     }
     return Array.from(allSections);
@@ -86,8 +90,8 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
       const match = section?.match(/Section (\d+)/);
       return match ? parseInt(match[1]) : 0;
     }), 0);
-    
-    if(category.category === "DETAILS OF THE COLLATERAL SECURITY") {
+
+    if (category.category === "DETAILS OF THE COLLATERAL SECURITY") {
       console.log("Highest section number:", highest);
     }
     return highest;
@@ -102,10 +106,10 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
   const highestSectionNumber = getHighestSectionNumber();
 
   // Handler to add an additional (blank) year row for a given document key
-  const handleAddMultipleYearRowbtn = (key: string) => {
-    setDocumentYears((prev: any) => ({
+  const handleAddMultipleYearRowbtn = (key: string, document: any) => {
+    setYearRowTemplates((prev: any) => ({
       ...prev,
-      [key]: [...(prev[key] || []), undefined],
+      [key]: [...(prev[key] || []), { ...JSON.parse(JSON.stringify(document)), year: null, files: [] }],
     }));
   };
 
@@ -114,23 +118,16 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
       {sections.map((section, instanceIdx) => {
         const sectionKey = CardKeyPrefix ? `${CardKeyPrefix}_${categoryIndex}` : categoryIndex;
         const currentSectionNumber = getSectionNumber(section);
-        
+
         // A section is the last section if:
         // 1. It's a multiple section category AND
         // 2. It's the highest numbered section AND
         // 3. It's not a temporary section
-        const isLastSection = isMultipleSection && 
-          currentSectionNumber === highestSectionNumber && 
+        const isLastSection = isMultipleSection &&
+          currentSectionNumber === highestSectionNumber &&
           !temporarySections[category.category];
-        
-        if(category.category === "DETAILS OF THE COLLATERAL SECURITY") {
-          console.log("Rendering section:", {
-            sectionNumber: currentSectionNumber,
-            isLastSection,
-            hasTemporarySection: temporarySections[category.category] !== null
-          });
-        }
-        
+
+       
         return (
           <div key={section._instanceId || instanceIdx} className="relative">
             <Card className="mb-6">
@@ -182,22 +179,44 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                         const apiYear = document.year ? parseInt(document.year, 10) : undefined;
                         const localYears = documentYears[docKey] || [];
                         years = [...new Set([apiYear, ...localYears].filter((y) => y !== undefined))] as number[];
-                        if (years.length === 0) years.push(undefined);
+                        if (years.length === 0) years = [];
                       } else {
                         years = [undefined];
                       }
                       const sectionName = section.section;  // Use the actual section name from the data
                       const isMultipleFiles = document.isMultipleFiles;
 
-                      // Build a Set of years already chosen/uploaded for this document
+                      // Build a Set of years already chosen/uploaded for this document (API only)
                       const usedYears = new Set<number>();
                       if (document.year) {
                         usedYears.add(parseInt(document.year, 10));
                       }
                       (documentYears[docKey] || []).forEach((y: number) => usedYears.add(y));
                       years.forEach((y) => { if (y !== undefined) usedYears.add(y); });
+                      // Add years from yearRowTemplates (template rows)
+                      (yearRowTemplates[docKey] || []).forEach((row: any) => {
+                        if (row.year !== null && row.year !== undefined) usedYears.add(row.year);
+                      });
 
-                      return years.map((year: any, yearIdx: number) => {
+                      // Sort years in descending order to ensure proper "+" button placement
+                      const sortedYears = [...years].sort((a, b) => (b || 0) - (a || 0));
+                      
+                      // Find which rows have disabled dropdowns (files uploaded)
+                      const disabledRowIndices = sortedYears.map((year, idx) => {
+                        const files = getApiFilesForDocument(
+                          document.documentMasterId,
+                          section.category,
+                          document.isMultipleYears ? year : undefined,
+                          isPromoter ? currentPage - 1 : undefined,
+                          section
+                        );
+                        return files.length > 0 ? idx : -1;
+                      }).filter(idx => idx !== -1);
+                      
+                      const lastDisabledRowIndex = disabledRowIndices.length > 0 ? Math.max(...disabledRowIndices) : -1;
+                      
+                      // Render API years and then template rows
+                      const apiRows = sortedYears.map((year: any, yearIdx: number) => {
                         const yearKey = `${docKey}_${yearIdx}`;
 
                         // Files already uploaded for this document + year
@@ -349,38 +368,6 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                                         <span className="truncate max-w-[120px]" title={file.docName}>
                                           {file.docName}
                                         </span>
-                                        {/* Show plus icon for uploading more files */}
-                                        {isMultipleFiles && fileIndex === filesRef2.length - 1 && (
-                                          <>
-                                            <input
-                                              key={`file-${document.documentMasterId}-${docKey}-${yearIdx}-${selectedYears[`${docKey}_${yearIdx}`] ?? year}`}
-                                              type="file"
-                                              id={`file-${document.documentMasterId}-${docKey}-${yearIdx}`}
-                                              multiple
-                                              onChange={(e) => {
-                                                const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
-                                                if (document.isMultipleYears && !selectedYear) {
-                                                  toast({ title: "Select year", description: "Please choose a year before uploading", variant: "destructive" });
-                                                  e.target.value = "";
-                                                  return;
-                                                }
-                                                const sectionName = section.section;
-                                                e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear, sectionName);
-                                              }}
-                                              className="hidden"
-                                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                            />
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-6 w-6 p-0 text-blue-600 ml-2 rounded-full border border-blue-200 bg-blue-50"
-                                              aria-label="Add more files"
-                                              onClick={() => window.document.getElementById(`file-${document.documentMasterId}-${docKey}-${yearIdx}`)?.click()}
-                                            >
-                                              <Plus className="h-4 w-4" />
-                                            </Button>
-                                          </>
-                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -435,6 +422,11 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                                     variant="outline"
                                     size="sm"
                                     disabled={uploadingDocuments[document.documentMasterId]}
+                                    // className={`cursor-pointer min-w-[140px] flex items-center justify-center border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${
+                                    //   document.isMultipleYears && 
+                                    //   yearIdx === years.length - 1 && 
+                                    //   (yearRowTemplates[docKey] || []).length === 0 ? '' : 'invisible'
+                                    // }`}
                                     className="cursor-pointer min-w-[140px] flex items-center justify-center border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                                     asChild
                                   >
@@ -450,12 +442,19 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                                     </span>
                                   </Button>
                                 </label>
-                                {/* Always render the + button, but hide it if not needed for consistent spacing */}
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleAddMultipleYearRowbtn(docKey)}
-                                  className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${(document.isMultipleYears && yearIdx === years.length - 1) ? '' : 'invisible'}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleAddMultipleYearRowbtn(docKey, document);
+                                  }}
+                                  className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${
+                                    document.isMultipleYears &&
+                                    yearIdx === lastDisabledRowIndex &&
+                                    lastDisabledRowIndex !== -1 &&
+                                    (yearRowTemplates[docKey] || []).length === 0 ? '' : 'invisible'
+                                  }`}
                                   aria-label="Add Year"
                                 >
                                   +
@@ -465,6 +464,257 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                           </TableRow>
                         );
                       });
+                      const templateRows = (yearRowTemplates[docKey] || []).map((row: any, templateIdx: number) => {
+                        const yearKey = `${docKey}_template_${templateIdx}`;
+                        const dropdownLocked = false;
+                        const effectiveYear = selectedYears[yearKey] ?? row.year;
+                        return (
+                          <TableRow key={docKey + "_template_" + templateIdx}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2" style={{ textAlign: 'start' }}>
+                                {document.documentType}
+                                <select
+                                  value={effectiveYear ?? ''}
+                                  onChange={e => {
+                                    const newYear = parseInt(e.target.value, 10);
+                                    setSelectedYears((prev: any) => ({
+                                      ...prev,
+                                      [yearKey]: newYear
+                                    }));
+                                    setYearRowTemplates((prev: any) => ({
+                                      ...prev,
+                                      [docKey]: (prev[docKey] || []).map((r: any, idx: number) => idx === templateIdx ? { ...r, year: newYear } : r)
+                                    }));
+                                  }}
+                                  className={`border rounded px-2 py-1 text-sm ml-2`}
+                                >
+                                  <option value="" disabled>Year</option>
+                                  {Array.from({ length: 6 }).map((_, i) => {
+                                    const optionYear = currentYear - i;
+                                    const disableOption = usedYears.has(optionYear) && optionYear !== effectiveYear;
+                                    return (
+                                      <option key={optionYear} value={optionYear} disabled={disableOption}>
+                                        {optionYear}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-gray-400 text-sm">NA</span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-gray-400 text-sm">No files uploaded yet</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                {document.isMandatory ? (
+                                  <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
+                                )}
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span style={{ display: 'inline-flex', width: 20, justifyContent: 'center' }}>
+                                        <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <span>This document supports multiple files.</span>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2 justify-center" style={{ minWidth: 80 }}>
+                                <input
+                                  key={`file-${document.documentMasterId}-${docKey}-template-${templateIdx}-${selectedYears[yearKey] ?? row.year}`}
+                                  type="file"
+                                  id={`file-${document.documentMasterId}-${docKey}-template-${templateIdx}`}
+                                  multiple
+                                  onChange={(e) => {
+                                    const selectedYear = selectedYears[yearKey] ?? row.year;
+                                    if (!selectedYear) {
+                                      toast({ title: "Select year", description: "Please choose a year before uploading", variant: "destructive" });
+                                      e.target.value = "";
+                                      return;
+                                    }
+                                    const sectionName = section.section;
+                                    e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear, sectionName);
+                                    // Remove template row after upload (parent should handle this)
+                                    setYearRowTemplates((prev: any) => {
+                                      const updated = { ...prev };
+                                      updated[docKey] = (updated[docKey] || []).filter((_, idx) => idx !== templateIdx);
+                                      return updated;
+                                    });
+                                    setSelectedYears((prev: any) => {
+                                      const updated = { ...prev };
+                                      delete updated[yearKey];
+                                      return updated;
+                                    });
+                                  }}
+                                  className="hidden"
+                                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                />
+                                <label htmlFor={`file-${document.documentMasterId}-${docKey}-template-${templateIdx}`}>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="cursor-pointer min-w-[140px] flex items-center justify-center border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                                    asChild
+                                  >
+                                    <span>
+                                      <Upload className="h-4 w-4" />
+                                      <span className="ml-1 block truncate">
+                                        Upload Document
+                                      </span>
+                                    </span>
+                                  </Button>
+                                </label>
+                                {/* Show + button only on the last template row */}
+                                {templateIdx === (yearRowTemplates[docKey] || []).length - 1 && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      handleAddMultipleYearRowbtn(docKey, document);
+                                    }}
+                                    className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                                    aria-label="Add Year"
+                                  >
+                                    +
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      });
+
+                      // If no API years and no template rows, render a single blank template row (not in state)
+                      if (document.isMultipleYears && apiRows.length === 0 && templateRows.length === 0) {
+                        const yearKey = `${docKey}_template_initial`;
+                        return [
+                          <TableRow key={docKey + "_template_initial"}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2" style={{ textAlign: 'start' }}>
+                                {document.documentType}
+                                <select
+                                  value={selectedYears[yearKey] ?? ''}
+                                  onChange={e => {
+                                    const newYear = parseInt(e.target.value, 10);
+                                    setSelectedYears((prev: any) => ({
+                                      ...prev,
+                                      [yearKey]: newYear
+                                    }));
+                                  }}
+                                  className={`border rounded px-2 py-1 text-sm ml-2`}
+                                >
+                                  <option value="" disabled>Year</option>
+                                  {Array.from({ length: 6 }).map((_, i) => {
+                                    const optionYear = currentYear - i;
+                                    const disableOption = usedYears.has(optionYear);
+                                    return (
+                                      <option key={optionYear} value={optionYear} disabled={disableOption}>
+                                        {optionYear}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-gray-400 text-sm">NA</span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-gray-400 text-sm">No files uploaded yet</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                {document.isMandatory ? (
+                                  <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
+                                )}
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span style={{ display: 'inline-flex', width: 20, justifyContent: 'center' }}>
+                                        <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <span>This document supports multiple files.</span>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2 justify-center" style={{ minWidth: 80 }}>
+                                <input
+                                  key={`file-${document.documentMasterId}-${docKey}-template-initial-${selectedYears[yearKey] ?? ''}`}
+                                  type="file"
+                                  id={`file-${document.documentMasterId}-${docKey}-template-initial`}
+                                  multiple
+                                  onChange={(e) => {
+                                    const selectedYear = selectedYears[yearKey];
+                                    if (!selectedYear) {
+                                      toast({ title: "Select year", description: "Please choose a year before uploading", variant: "destructive" });
+                                      e.target.value = "";
+                                      return;
+                                    }
+                                    const sectionName = section.section;
+                                    e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear, sectionName);
+                                    setSelectedYears((prev: any) => {
+                                      const updated = { ...prev };
+                                      delete updated[yearKey];
+                                      return updated;
+                                    });
+                                  }}
+                                  className="hidden"
+                                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                />
+                                <label htmlFor={`file-${document.documentMasterId}-${docKey}-template-initial`}>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="cursor-pointer min-w-[140px] flex items-center justify-center border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                                    asChild
+                                  >
+                                    <span>
+                                      <Upload className="h-4 w-4" />
+                                      <span className="ml-1 block truncate">
+                                        Upload Document
+                                      </span>
+                                    </span>
+                                  </Button>
+                                </label>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleAddMultipleYearRowbtn(docKey, document);
+                                  }}
+                                  className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                                  aria-label="Add Year"
+                                >
+                                  +
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ];
+                      }
+                      return [
+                        ...apiRows,
+                        ...templateRows
+                      ];
                     })}
                   </TableBody>
                 </Table>
