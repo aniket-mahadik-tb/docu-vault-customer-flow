@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Trash2, Info, X, Upload } from "lucide-react";
 import { useCustomers } from "@/contexts/CustomerContext";
+import { toast } from "@/components/ui/use-toast";
 
 interface DocumentTableProps {
   category: any;
@@ -99,6 +100,14 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
   };
 
   const highestSectionNumber = getHighestSectionNumber();
+
+  // Handler to add an additional (blank) year row for a given document key
+  const handleAddMultipleYearRowbtn = (key: string) => {
+    setDocumentYears((prev: any) => ({
+      ...prev,
+      [key]: [...(prev[key] || []), undefined],
+    }));
+  };
 
   return (
     <div key={categoryIndex}>
@@ -350,6 +359,11 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                                               multiple
                                               onChange={(e) => {
                                                 const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
+                                                if (document.isMultipleYears && !selectedYear) {
+                                                  toast({ title: "Select year", description: "Please choose a year before uploading", variant: "destructive" });
+                                                  e.target.value = "";
+                                                  return;
+                                                }
                                                 const sectionName = section.section;
                                                 e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear, sectionName);
                                               }}
@@ -405,6 +419,11 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                                   multiple
                                   onChange={(e) => {
                                     const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
+                                    if (document.isMultipleYears && !selectedYear) {
+                                      toast({ title: "Select year", description: "Please choose a year before uploading", variant: "destructive" });
+                                      e.target.value = "";
+                                      return;
+                                    }
                                     const sectionName = section.section;
                                     e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear, sectionName);
                                   }}
@@ -435,11 +454,8 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => setDocumentYears((prev: any) => ({
-                                    ...prev,
-                                    [docKey]: [...(prev[docKey] || []), undefined]
-                                  }))}
-                                  className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${document.isMultipleYears && yearIdx === years.length - 1 ? '' : 'invisible'}`}
+                                  onClick={() => handleAddMultipleYearRowbtn(docKey)}
+                                  className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${(document.isMultipleYears && yearIdx === years.length - 1) ? '' : 'invisible'}`}
                                   aria-label="Add Year"
                                 >
                                   +
