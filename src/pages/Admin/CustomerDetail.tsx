@@ -145,10 +145,7 @@ const CustomerDetail = () => {
     effcts();
   }, [])
 
-  // useEffect(() => {
-  //   console.log(allDocuments)
-  // }, [allDocuments])
-
+  
   const effcts = async function fetchCustomer() {
     try {
       if (true) {
@@ -156,7 +153,7 @@ const CustomerDetail = () => {
         if (tempCustomer) {
           setCustomer(tempCustomer);
           const documents: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
-          console.log(documents)
+       
           setAllDocuments(documents);
         } else {
           // If customer not found, redirect to customer list

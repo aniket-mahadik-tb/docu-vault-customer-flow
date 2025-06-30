@@ -62,7 +62,6 @@ export function useDocumentService() {
     service.getDocumentByDocumentID = async (documentId: string) => {
         try {
             const res = await api.get<GenericApiResponse<any>>(`/documents/${documentId}`)
-            console.log(res)
             return res.data
         } catch (e: any) {
             console.error(e)

@@ -3,10 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 import { Customer, useCustomers } from "@/contexts/CustomerContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, X, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { ArrowLeft, Check, X, ZoomIn, ZoomOut, RotateCcw, Move } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fileTypeFromBlob } from 'file-type';
 import {
   TransformWrapper,
   TransformComponent,
@@ -100,7 +101,7 @@ const ReviewDocument = () => {
 
   const handleZoom = async (action: "IN" | "OUT") => {
     if (action == "IN") {
-      setZoom(prev => prev + 0.1)
+      if (zoom < 1.5) setZoom(prev => prev + 0.1)
     } else {
       if (zoom > 1) setZoom(prev => prev - 0.1)
     }
@@ -175,9 +176,10 @@ const ReviewDocument = () => {
             if (documentBlobUrl) {
               URL.revokeObjectURL(documentBlobUrl);
             }
+            const type = await fileTypeFromBlob(fileBlob);
             const url = URL.createObjectURL(fileBlob);
             setDocumentBlobUrl(url);
-            setDocumentBlobType(fileBlob.type);
+            setDocumentBlobType(type?.mime);
           } catch (err) {
             setError("Failed to load document preview.");
           } finally {
@@ -269,7 +271,7 @@ const ReviewDocument = () => {
 
   // Document preview rendering
   const renderPreview = () => {
-    console.log('documentBlobType:', documentBlobType, 'fileName:', document?.fileName);
+
     if (isLoading) {
       return (
         <div className="space-y-4 w-full">
@@ -285,37 +287,25 @@ const ReviewDocument = () => {
       // 1. If type is image/*
       if (documentBlobType && documentBlobType.startsWith("image/")) {
         return (
-          <div style={{ width: '100%', height: '400px', overflow: 'hidden', background: '#f9fafb', borderRadius: '0.375rem', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {/* <img
-              src={documentBlobUrl}
-              alt={document?.fileName}
-              style={{ transform: `scale(${zoom})`, transformOrigin: 'center', display: 'block' }}
-            /> */}
-            {/* <ReactPanZoom
-              image={documentBlobUrl}
-              alt={document?.fileName}
-            /> */}
-            <CardContent className="flex flex-col justify-center items-center min-h-[400px] bg-muted/40 relative">
 
-              <TransformWrapper
-                initialScale={1}
-                wheel={{ disabled: true }}          // disables zoom via mouse wheel / touchpad
-                pinch={{ disabled: true }}         // disables pinch-to-zoom gesture (touchscreens/touchpad)
-                doubleClick={{ disabled: true }}   // disables double-click to zoom
-                panning={{ disabled: false }}
-              >
-                {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
-                  <>
+          <TransformWrapper
+            initialScale={1}
+            wheel={{ disabled: true }}          // disables zoom via mouse wheel / touchpad
+            pinch={{ disabled: true }}         // disables pinch-to-zoom gesture (touchscreens/touchpad)
+            doubleClick={{ disabled: true }}   // disables double-click to zoom
+            panning={{ disabled: false }}
+          >
+            {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
+              <>
 
-                    <TransformComponent>
-                      <img src={documentBlobUrl} alt={document?.fileName} />
-                    </TransformComponent>
-                    <Controls />
-                  </>
-                )}
-              </TransformWrapper>
-            </CardContent>
-          </div>
+                <TransformComponent>
+                  <img src={documentBlobUrl} alt={document?.fileName} />
+                </TransformComponent>
+                <Controls />
+              </>
+            )}
+          </TransformWrapper>
+
         );
       }
       // 2. If type is PDF
@@ -328,90 +318,12 @@ const ReviewDocument = () => {
           </div>
         );
       }
-      // 3. If type is generic or missing, use file extension
-      if (
-        (!documentBlobType || documentBlobType === "application/octet-stream" || documentBlobType === "") &&
-        document?.fileName
-      ) {
-        const ext = document.fileName.split('.').pop()?.toLowerCase();
-        console.log('Fallback extension:', ext);
-        if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext || "")) {
-          return (
-            <div style={{ width: '100%', height: '400px', overflow: 'hidden', background: '#f9fafb', borderRadius: '0.375rem', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {/* <img
-                src={documentBlobUrl}
-                alt={document.fileName}
-                style={{ transform: `scale(${zoom})`, transformOrigin: 'center', display: 'block' }}
-              /> */}
-              {/* <ReactPanZoom
-                image={documentBlobUrl}
-                alt={document?.fileName}
-              /> */}
-              <CardContent className="flex flex-col justify-center items-center min-h-[400px] bg-muted/40 relative">
 
-                <TransformWrapper
-                  initialScale={1}
-                  wheel={{ disabled: true }}          // disables zoom via mouse wheel / touchpad
-                  pinch={{ disabled: true }}         // disables pinch-to-zoom gesture (touchscreens/touchpad)
-                  doubleClick={{ disabled: true }}   // disables double-click to zoom
-                  panning={{ disabled: false }}
-                >
-                  {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
-                    <>
 
-                      <TransformComponent>
-                        <img src={documentBlobUrl} alt={document?.fileName} />
-                      </TransformComponent>
-                      <Controls />
-                    </>
-                  )}
-                </TransformWrapper>
-              </CardContent>
-            </div>
-          );
-        }
-        if (ext === "pdf") {
-          return (
-            <div style={{ width: '100%', height: '400px' }}>
-              <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js`}>
-                <Viewer fileUrl={documentBlobUrl} plugins={[zoomPluginInstance]} />
-              </Worker>
-            </div>
-          );
-        }
-      }
       // 4. As a last resort, try to render as image
       return (
-        <div style={{ width: '100%', height: '400px', overflow: 'hidden', background: '#f9fafb', borderRadius: '0.375rem', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {/* <img
-            src={documentBlobUrl}
-            alt={document?.fileName}
-            style={{ transform: `scale(${zoom})`, transformOrigin: 'center', display: 'block' }}
-          /> */}
-          {/* <ReactPanZoom
-            image={documentBlobUrl}
-            alt={document?.fileName}
-          /> */}
-          <CardContent className="flex flex-col justify-center items-center min-h-[400px] bg-muted/40 relative">
-
-            <TransformWrapper
-              initialScale={1}
-              wheel={{ disabled: true }}          // disables zoom via mouse wheel / touchpad
-              pinch={{ disabled: true }}         // disables pinch-to-zoom gesture (touchscreens/touchpad)
-              doubleClick={{ disabled: true }}   // disables double-click to zoom
-              panning={{ disabled: false }}
-            >
-              {({ zoomIn, zoomOut, resetTransform }) => (
-                <>
-
-                  <TransformComponent>
-                    <img src={documentBlobUrl} alt={document?.fileName} />
-                  </TransformComponent>
-                  <Controls />
-                </>
-              )}
-            </TransformWrapper>
-          </CardContent>
+        <div>
+          <p>Preview not supported. <a href={documentBlobUrl} download="document" >Click here to download</a></p>
         </div>
       );
     }
@@ -476,6 +388,7 @@ const ReviewDocument = () => {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
+              
               <div className="grid grid-cols-3 gap-4 w-full">
                 <Button
                   className="bg-green-600 hover:bg-green-700"
@@ -483,6 +396,8 @@ const ReviewDocument = () => {
                     handleUpdateStatus("APPROVED")
                     setApproveLoding(true)
                   }}
+                  title={document.currentStatus == "APPROVED" ? "Cant change status once approved" : "Approve document"}
+                  disabled={document.currentStatus == "APPROVED"}
                 >
                   {approveLoding ? (
                     <span className="flex items-center gap-2">
@@ -510,6 +425,8 @@ const ReviewDocument = () => {
                     handleUpdateStatus("REJECTED");
                     setRejectLoading(true)
                   }}
+                  title={document.currentStatus == "APPROVED" ? "Cant change status once approved" : "Reject document"}
+                  disabled={document.currentStatus == "APPROVED"}
                 >
                   {rejectLoading ? (
                     <span className="flex items-center gap-2">
@@ -532,9 +449,11 @@ const ReviewDocument = () => {
             </CardHeader>
 
             {documentBlobType !== "application/pdf" ? (
-              <>
-                {renderPreview()}
-              </>
+              <div style={{ width: '100%', height: '400px', overflow: 'hidden', background: '#f9fafb', borderRadius: '0.375rem', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CardContent className="flex flex-col justify-center items-center min-h-[400px] bg-muted/40 relative " style={{ cursor: "move" }}>
+                  {renderPreview()}
+                </CardContent>
+              </div>
             ) : (
               <CardContent className="flex flex-col justify-center items-center min-h-[400px] bg-muted/40 relative">
                 {renderPreview()}

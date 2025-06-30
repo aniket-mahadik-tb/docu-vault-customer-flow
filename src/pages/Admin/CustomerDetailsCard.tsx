@@ -157,9 +157,6 @@ const CustomerDetail = () => {
     effcts();
   }, [])
 
-  // useEffect(() => {
-  //   console.log(allDocuments)
-  // }, [allDocuments])
 
   const effcts = async function fetchCustomer() {
     try {
@@ -167,9 +164,9 @@ const CustomerDetail = () => {
 
         if (tempCustomer) {
           setCustomer(tempCustomer);
-          // console.log(tempCustomer)
+        
           const documents: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
-          console.log(documents)
+          
 
           setAllDocuments(documents);
         } else {

@@ -13,7 +13,7 @@ export interface CustomerType {
 
 
 export interface DocumentStatusType {
-    total: number;
+    totalReqDoc: number;
     pending: number;
     submitted: number;
     approved: number;

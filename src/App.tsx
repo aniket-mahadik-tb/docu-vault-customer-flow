@@ -51,6 +51,8 @@ import { TempCustomerContextProvider } from "./utils/TempContext";
 
 const queryClient = new QueryClient();
 
+console.warn = () => {};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
