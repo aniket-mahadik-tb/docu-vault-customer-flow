@@ -171,8 +171,9 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                       let years: (number | undefined)[];
                       if (document.isMultipleYears) {
                         const apiYear = document.year ? parseInt(document.year, 10) : undefined;
-                        const localYears = documentYears[docKey] || [currentYear];
+                        const localYears = documentYears[docKey] || [];
                         years = [...new Set([apiYear, ...localYears].filter((y) => y !== undefined))] as number[];
+                        if (years.length === 0) years.push(undefined);
                       } else {
                         years = [undefined];
                       }
@@ -223,13 +224,13 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                                           }));
                                           setDocumentYears((prev: any) => ({
                                             ...prev,
-                                            [docKey]: (prev[docKey] || [currentYear]).map((y: any, idx: number) => idx === yearIdx ? year : y)
+                                            [docKey]: (prev[docKey] || []).map((y: any, idx: number) => idx === yearIdx ? year : y)
                                           }));
                                         }, 0);
                                       }
                                       return (
                                         <select
-                                          value={effectiveYear}
+                                          value={effectiveYear ?? ''}
                                           onChange={e => {
                                             if (dropdownLocked) return; // prevent change when locked
                                             const newYear = parseInt(e.target.value, 10);
@@ -239,16 +240,21 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                                             }));
                                             setDocumentYears((prev: any) => ({
                                               ...prev,
-                                              [docKey]: (prev[docKey] || [currentYear]).map((y: any, idx: number) => idx === yearIdx ? newYear : y)
+                                              [docKey]: (prev[docKey] || []).map((y: any, idx: number) => idx === yearIdx ? newYear : y)
                                             }));
                                           }}
                                           disabled={dropdownLocked}
                                           className={`border rounded px-2 py-1 text-sm ml-2 ${dropdownLocked ? 'bg-gray-100 cursor-not-allowed text-gray-600' : ''}`}
                                         >
+                                          <option value="" disabled>Year</option>
                                           {Array.from({ length: 6 }).map((_, i) => {
                                             const optionYear = currentYear - i;
-                                            if(!dropdownLocked && usedYears.has(optionYear)) return null;
-                                            return (<option key={optionYear} value={optionYear}>{optionYear}</option>);
+                                            const disableOption = !dropdownLocked && usedYears.has(optionYear) && optionYear !== effectiveYear;
+                                            return (
+                                              <option key={optionYear} value={optionYear} disabled={disableOption}>
+                                                {optionYear}
+                                              </option>
+                                            );
                                           })}
                                         </select>
                                       );
@@ -431,7 +437,7 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                                   size="sm"
                                   onClick={() => setDocumentYears((prev: any) => ({
                                     ...prev,
-                                    [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
+                                    [docKey]: [...(prev[docKey] || []), undefined]
                                   }))}
                                   className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${document.isMultipleYears && yearIdx === years.length - 1 ? '' : 'invisible'}`}
                                   aria-label="Add Year"
