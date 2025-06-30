@@ -379,11 +379,6 @@ const DocumentUpload = () => {
 
   // Add section handler using section templates
   const handleAddSection = (categoryName: string) => {
-    console.log("=== handleAddSection START ===");
-    console.log("Current sectionInstances:", sectionInstances);
-    console.log("Current temporarySections:", temporarySections);
-    console.log("Current beSections:", beSections);
-    
     const template = sectionTemplates[categoryName];
 
     if (!template) {
@@ -406,12 +401,6 @@ const DocumentUpload = () => {
     const nextSectionNumber = existingSections.length + 1;
     const sectionName = `Section ${nextSectionNumber}`;
 
-    console.log("Creating new section:", {
-      categoryName,
-      nextSectionNumber,
-      sectionName
-    });
-
     // Deep clone and add a unique instance ID
     const newSection = { 
       ...JSON.parse(JSON.stringify(template)), 
@@ -424,7 +413,6 @@ const DocumentUpload = () => {
         ...prev,
         [categoryName]: [...(prev[categoryName] || []), newSection]
       };
-      console.log("Updated sectionInstances:", updated);
       return updated;
     });
 
@@ -437,11 +425,9 @@ const DocumentUpload = () => {
           instance: newSection
         }
       };
-      console.log("Updated temporarySections:", updated);
       return updated;
     });
 
-    console.log("=== handleAddSection END ===");
   };
 
   if (!customerType) {
