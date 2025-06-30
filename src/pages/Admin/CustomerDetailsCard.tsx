@@ -96,7 +96,7 @@ function getFileTypeColor(fileName: string) {
 
 // Utility to flatten the new tempCustomer.documents format
 const flattenDocuments = (documentsArr) => {
-  console.log(documentsArr)
+
   if (!Array.isArray(documentsArr)) return [];
   return documentsArr.flatMap((customer) =>
     (customer.documentsByCategory || []).flatMap((cat) =>
@@ -259,6 +259,16 @@ const CustomerDetail = () => {
       });
     }
   };
+
+  const getCategoryContent = (category: string) =>
+    category.includes("Section") ? (
+      <>
+        {category.slice(0, category.indexOf("Section")) + " "}
+        <span className="text-gray-500">#{category.slice(category.indexOf("Section"))}</span>
+      </>
+    ) : (
+      category
+    );
 
   // Identify all unique customer types
   const allCustomerTypes = allDocuments
@@ -425,7 +435,7 @@ const CustomerDetail = () => {
               return (
                 <Card key={category} className="mb-8">
                   <CardHeader className="py-2 px-4">
-                    <CardTitle className="text-base font-semibold">{category}</CardTitle>
+                    <CardTitle className="text-base font-semibold">{getCategoryContent(category)}</CardTitle>
                     <p className="text-xs text-muted-foreground">
                       {docs.reduce((sum, doc) => sum + (doc.files?.length || 0), 0)} files in this category
                     </p>
@@ -475,14 +485,6 @@ const CustomerDetail = () => {
                                     {doc.year}
                                   </span>
                                 ) : null}
-                                {/* {docs ? (
-                                  <span
-                                    className="ml-2 rounded px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-400"
-                                    title={`Year: ${doc.year}`}
-                                  >
-                                    {doc.year}
-                                  </span>
-                                ) : null} */}
                               </TableCell>
                               <TableCell className="px-4">
                                 {file ? (
