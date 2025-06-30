@@ -167,13 +167,46 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                       const docKey = isPromoter
                         ? `${document.documentMasterId}_promoter${currentPage - 1}_${section.section}_${instanceIdx}`
                         : `${document.documentMasterId}_${section.section}_${instanceIdx}`;
-                      const years = document.isMultipleYears
-                        ? documentYears[docKey] || [currentYear]
-                        : [undefined];
-                        const sectionName = section.section;  // Use the actual section name from the data
-                          const isMultipleFiles = document.isMultipleFiles;
+                      // Build the list of years to render rows for
+                      let years: (number | undefined)[];
+                      if (document.isMultipleYears) {
+                        const apiYear = document.year ? parseInt(document.year, 10) : undefined;
+                        const localYears = documentYears[docKey] || [currentYear];
+                        years = [...new Set([apiYear, ...localYears].filter((y) => y !== undefined))] as number[];
+                      } else {
+                        years = [undefined];
+                      }
+                      const sectionName = section.section;  // Use the actual section name from the data
+                      const isMultipleFiles = document.isMultipleFiles;
+
+                      // Build a Set of years already chosen/uploaded for this document
+                      const usedYears = new Set<number>();
+                      if (document.year) {
+                        usedYears.add(parseInt(document.year, 10));
+                      }
+                      (documentYears[docKey] || []).forEach((y: number) => usedYears.add(y));
+                      years.forEach((y) => { if (y !== undefined) usedYears.add(y); });
+
                       return years.map((year: any, yearIdx: number) => {
                         const yearKey = `${docKey}_${yearIdx}`;
+
+                        // Files already uploaded for this document + year
+                        const files = getApiFilesForDocument(
+                          document.documentMasterId,
+                          section.category,
+                          document.isMultipleYears ? year : undefined,
+                          isPromoter ? currentPage - 1 : undefined,
+                          section
+                        );
+
+                        // Dropdown locked when BE already has at least one file
+                        const dropdownLocked = files.length > 0;
+
+                        // Determine the effective year for this row based on the latest selection
+                        const effectiveYear = dropdownLocked
+                          ? year
+                          : (selectedYears[yearKey] ?? year);
+
                         return (
                           <TableRow key={docKey + "_" + yearIdx}>
                             <TableCell className="font-medium">
@@ -196,8 +229,9 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                                       }
                                       return (
                                         <select
-                                          value={selectedYears[yearKey] ?? year}
+                                          value={effectiveYear}
                                           onChange={e => {
+                                            if (dropdownLocked) return; // prevent change when locked
                                             const newYear = parseInt(e.target.value, 10);
                                             setSelectedYears((prev: any) => ({
                                               ...prev,
@@ -208,11 +242,14 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                                               [docKey]: (prev[docKey] || [currentYear]).map((y: any, idx: number) => idx === yearIdx ? newYear : y)
                                             }));
                                           }}
-                                          className="border rounded px-2 py-1 text-sm ml-2"
+                                          disabled={dropdownLocked}
+                                          className={`border rounded px-2 py-1 text-sm ml-2 ${dropdownLocked ? 'bg-gray-100 cursor-not-allowed text-gray-600' : ''}`}
                                         >
-                                          {Array.from({ length: 6 }).map((_, i) => (
-                                            <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
-                                          ))}
+                                          {Array.from({ length: 6 }).map((_, i) => {
+                                            const optionYear = currentYear - i;
+                                            if(!dropdownLocked && usedYears.has(optionYear)) return null;
+                                            return (<option key={optionYear} value={optionYear}>{optionYear}</option>);
+                                          })}
                                         </select>
                                       );
                                     })()}
@@ -223,19 +260,13 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                             <TableCell>
                               {/* Status column: show status for each file from API */}
                               {(() => {
-                                const files = getApiFilesForDocument(
-                                  document.documentMasterId,
-                                  section.category,
-                                  document.isMultipleYears ? years[yearIdx] : undefined,
-                                  isPromoter ? currentPage - 1 : undefined,
-                                  section
-                                );
-                                if (files.length === 0) {
+                                const filesRef = files;
+                                if (filesRef.length === 0) {
                                   return <span className="text-gray-400 text-sm">NA</span>;
                                 }
                                 return (
                                   <div className="space-y-1 flex flex-col">
-                                    {files.map((file: any) => {
+                                    {filesRef.map((file: any) => {
                                       let badge;
                                       switch ((file.docStatus || '').toUpperCase()) {
                                         case 'SUBMITTED':
@@ -263,21 +294,15 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                             <TableCell>
                               {/* Uploaded Files column: only show file names and plus icon */}
                               {(() => {
-                                const files = getApiFilesForDocument(
-                                  document.documentMasterId,
-                                  section.category,
-                                  document.isMultipleYears ? years[yearIdx] : undefined,
-                                  isPromoter ? currentPage - 1 : undefined,
-                                  section
-                                );
-                                if (files.length === 0) {
+                                const filesRef2 = files;
+                                if (filesRef2.length === 0) {
                                   return (
                                     <span className="text-gray-400 text-sm">No files uploaded yet</span>
                                   );
                                 }
                                 return (
                                   <div className="space-y-1 flex flex-col">
-                                    {files.map((file: any, fileIndex: number) => (
+                                    {filesRef2.map((file: any, fileIndex: number) => (
                                       <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
                                         {/* Trash icon before file name, hidden if status is APPROVED */}
                                         {String(file.docStatus).toUpperCase() !== 'APPROVED' ? (
@@ -310,7 +335,7 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo( ({
                                           {file.docName}
                                         </span>
                                         {/* Show plus icon for uploading more files */}
-                                        {isMultipleFiles && fileIndex === files.length - 1 && (
+                                        {isMultipleFiles && fileIndex === filesRef2.length - 1 && (
                                           <>
                                             <input
                                               key={`file-${document.documentMasterId}-${docKey}-${yearIdx}-${selectedYears[`${docKey}_${yearIdx}`] ?? year}`}
