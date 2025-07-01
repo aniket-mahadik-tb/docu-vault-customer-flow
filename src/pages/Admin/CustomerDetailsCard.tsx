@@ -170,6 +170,8 @@ const CustomerDetail = () => {
   }
 
   const [customer, setCustomer] = useState<CustomerType | null>(null);
+  const [note, setNote] = useState<string>("");
+  const [isEditingNote, setIsEditingNote] = useState<boolean>(false);
   const { tempCustomer, setTempCustomer } = useTempCustomer();
   const [allDocuments, setAllDocuments] = useState<DocumentResponseType[] | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -415,6 +417,60 @@ const CustomerDetail = () => {
                   <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
                 </div>
               </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Admin Note Section */}
+        <Card className="mb-8 shadow-sm border-0 bg-white max-w-full w-full mx-auto">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Admin Note</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isEditingNote ? (
+              <div className="flex flex-col gap-2">
+                <textarea
+                  className="border rounded p-2 w-full min-h-[80px]"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setIsEditingNote(false);
+                      // Here, you would also call an API to save the note
+                      // e.g. await saveNoteForCustomer(customer.id, note)
+                    }}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditingNote(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-between items-center">
+                <div>
+                  {note ? (
+                    <span className="whitespace-pre-line">{note}</span>
+                  ) : (
+                    <span className="text-gray-400">No note added yet.</span>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsEditingNote(true)}
+                >
+                  {note ? "Edit Note" : "Add Note"}
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>

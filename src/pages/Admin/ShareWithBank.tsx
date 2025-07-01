@@ -56,7 +56,7 @@ const ShareWithBank = () => {
 
   // Compute eligible customers for selection (at least one doc and one bank)
   const eligibleCustomerPans = customers ? customers.filter(c =>
-    (selectedDocs[c.pan]?.length || 0) > 0 && (selectedBanks[c.pan]?.length || 0) > 0
+    (selectedDocs[c.pan]?.length || 0) > 0 /*&& (selectedBanks[c.pan]?.length || 0) > 0*/
   ).map(c => c.pan) : [];
 
   useEffect(() => {
@@ -211,7 +211,7 @@ const ShareWithBank = () => {
                       <TableHead className="w-[17.5%]">Customer</TableHead>
                       <TableHead className="w-[17.5%]">Business</TableHead>
                       <TableHead className="w-[17.5%]">Approved Documents</TableHead>
-                      <TableHead className="w-[22%] min-w-[120px] text-center">Share With</TableHead>
+                      {/* <TableHead className="w-[22%] min-w-[120px] text-center">Share With</TableHead> */}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -225,15 +225,15 @@ const ShareWithBank = () => {
                                   checked={selectedCustomers.includes(customer.pan)}
                                   onCheckedChange={() => handleToggleCustomer(customer.pan)}
                                   disabled={
-                                    (selectedDocs[customer.pan]?.length || 0) < 1 ||
-                                    (selectedBanks[customer.pan]?.length || 0) < 1
+                                    (selectedDocs[customer.pan]?.length || 0) < 1/* ||
+                                    (selectedBanks[customer.pan]?.length || 0) < 1*/
                                   }
                                 />
                               </span>
                             </TooltipTrigger>
                             <TooltipContent>
                               {((selectedDocs[customer.pan]?.length || 0) < 1 || (selectedBanks[customer.pan]?.length || 0) < 1)
-                                ? 'Select at least one document and one bank to enable selection.'
+                                ? 'Select at least one document.' //and one bank to enable selection
                                 : 'Select this customer'}
                             </TooltipContent>
                           </Tooltip>
@@ -251,7 +251,7 @@ const ShareWithBank = () => {
                         <TableCell className="px-4 py-2 w-[17.5%]">
                           {selectedDocs[customer.pan]?.length > 0 ? (
                             <div className="flex items-center gap-2 select-none" style={{ minHeight: 32 }}>
-                            <Check className="h-4 w-4 text-green-500" />
+                              <Check className="h-4 w-4 text-green-500" />
                               <span className="text-green-700 font-medium">{selectedDocs[customer.pan].length} selected</span>
                               <Button
                                 type="button"
@@ -336,7 +336,7 @@ const ShareWithBank = () => {
                             </DialogContent>
                           </Dialog>
                         </TableCell>
-                        <TableCell className="px-4 py-2 w-[22%] min-w-[120px]">
+                        {/* <TableCell className="px-4 py-2 w-[22%] min-w-[120px]">
                           <div className="flex items-center border rounded px-2 py-1 bg-gray-100 min-h-[40px] w-full justify-end">
                             <div className="flex flex-row flex-wrap gap-1 items-center">
                               {selectedBanks[customer.pan]?.length === 1 ? (
@@ -424,7 +424,7 @@ const ShareWithBank = () => {
                               </Tooltip>
                             </div>
                           </div>
-                        </TableCell>
+                        </TableCell> */}
                       </TableRow>
                     ))}
                   </TableBody>
