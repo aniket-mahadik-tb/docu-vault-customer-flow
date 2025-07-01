@@ -98,7 +98,7 @@ function getFileTypeColor(fileName: string) {
 const flattenDocuments = (documentsArr) => {
 
   if (!Array.isArray(documentsArr)) return [];
-  return documentsArr.flatMap((customer) =>
+  let rowdocument = documentsArr.flatMap((customer) =>
     (customer.documentsByCategory || []).flatMap((cat) =>
       (cat.documents || []).map((doc) => ({
         ...doc,
@@ -107,7 +107,35 @@ const flattenDocuments = (documentsArr) => {
       }))
     )
   );
+  // rowdocument = groupFilesForYear(rowdocument, [])
+  // console.log(rowdocument)
+  return rowdocument;
 };
+
+const groupFilesForYear = (document: any[], newArray: any[]) => {
+  if (newArray.length == 0 && document.length != 0) newArray.push(document.shift());
+  const currentObj = document.shift();
+  if (!currentObj) return newArray;
+  const index = newArray.findIndex((val) => checkEquality(val, currentObj));
+  if (index == -1) {
+    newArray.push(currentObj);
+    return groupFilesForYear(document, newArray)
+  }
+  newArray[index].files = [...newArray[index].files.map((val) => {
+    return { ...val, year: newArray[index].year }
+  }), ...currentObj.files.map((val) => {
+    return { ...val, year: currentObj.year }
+  })]
+  return groupFilesForYear(document, newArray)
+}
+
+
+const checkEquality = (obj1: any, obj2: any) => {
+  return (obj1.category === obj2.category &&
+    obj1.documentMasterId === obj2.documentMasterId &&
+    obj1.documentType === obj2.documentType &&
+    obj1.customerType === obj2.customerType)
+}
 
 // Utility to group documents by category
 const groupDocumentsByCategory = (documents: DocumentResponseType[]) => {
@@ -164,13 +192,8 @@ const CustomerDetail = () => {
       if (true) {
 
         if (tempCustomer) {
-          // console.log(tempCustomer.documents)
           setCustomer(tempCustomer);
-          console.log(tempCustomer.documents)
-
           const documents: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
-
-
           setAllDocuments(documents);
         } else {
           // If customer not found, redirect to customer list
@@ -220,10 +243,7 @@ const CustomerDetail = () => {
         description: "Failed to generate upload link. Please try again.",
         variant: "destructive",
       });
-
-
     }
-
   };
   const copyLinkToClipboard = () => {
     if (reuploadLink) {
@@ -275,7 +295,7 @@ const CustomerDetail = () => {
     ? Array.from(
       new Set(
         allDocuments.map((doc) =>
-          doc.customerType ? doc.customerType.toLowerCase() : "organization"
+          doc?.customerType ? doc.customerType.toLowerCase() : "organization"
         )
       )
     )
@@ -296,7 +316,7 @@ const CustomerDetail = () => {
   const docsForCurrentType = allDocuments
     ? allDocuments.filter(
       (doc) =>
-        (doc.customerType ? doc.customerType.toLowerCase() : "organization") ===
+        (doc?.customerType ? doc.customerType.toLowerCase() : "organization") ===
         currentCustomerType
     )
     : [];
@@ -480,9 +500,10 @@ const CustomerDetail = () => {
                                 {doc.year ? (
                                   <span
                                     className="ml-2 rounded px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-400"
-                                    title={`Year: ${doc.year}`}
+                                    title={`Year: ${file?.year}`}
                                   >
-                                    {doc.year}
+                                    {/*file?.year*/}
+                                    {doc?.year}
                                   </span>
                                 ) : null}
                               </TableCell>
