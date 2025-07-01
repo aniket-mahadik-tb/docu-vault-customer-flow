@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Plus, Trash2, Info, X, Upload } from "lucide-react";
 import { useCustomers } from "@/contexts/CustomerContext";
 import { toast } from "@/components/ui/use-toast";
+import { useDocumentUploadService } from "@/services/documentUploadService";
 
 interface DocumentTableProps {
   category: any;
@@ -58,6 +59,12 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
   temporarySections,
 }) => {
   const { sectionTemplates } = useCustomers();
+  const documentUploadService = useDocumentUploadService();
+
+  // Modal state
+  const [previewData, setPreviewData] = useState<any>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   React.useEffect(() => {
     if (category.category === "DETAILS OF THE COLLATERAL SECURITY") {
@@ -76,10 +83,6 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
       ...(sectionInstances[category.category] || []).map(s => s.section),
       ...sections.map(s => s.section)
     ]);
-
-    if (category.category === "DETAILS OF THE COLLATERAL SECURITY") {
-      console.log("All unique sections for category:", Array.from(allSections));
-    }
     return Array.from(allSections);
   };
 
@@ -90,10 +93,6 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
       const match = section?.match(/Section (\d+)/);
       return match ? parseInt(match[1]) : 0;
     }), 0);
-
-    if (category.category === "DETAILS OF THE COLLATERAL SECURITY") {
-      console.log("Highest section number:", highest);
-    }
     return highest;
   };
 
@@ -113,8 +112,149 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
     }));
   };
 
+  // Add this handler at the top level of the component
+  const handleViewFile = async (file: any) => {
+    setLoadingPreview(true);
+    try {
+      const response = await documentUploadService.getDocumentDetails(file.docId);
+      if (response && response.status === 200 && response.data) {
+        setPreviewData(response.data);
+        setShowPreview(true);
+      } else {
+        toast({ title: "Failed to preview document", description: response?.message || "Unknown error", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Failed to preview document", description: String(err), variant: "destructive" });
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
   return (
     <div key={categoryIndex}>
+      {/* Preview Modal */}
+      {showPreview && previewData && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(30, 41, 59, 0.65)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: 'fadeInOverlay 0.2s',
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: 18,
+            padding: '24px 24px 18px 24px',
+            width: '520px',
+            height: '520px',
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            position: 'relative',
+            boxShadow: '0 8px 32px rgba(30,41,59,0.18), 0 1.5px 8px rgba(30,41,59,0.10)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'fadeInModal 0.25s',
+            overflow: 'hidden',
+          }}>
+            <button
+              onClick={() => setShowPreview(false)}
+              style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                background: 'rgba(30,41,59,0.09)',
+                border: 'none',
+                borderRadius: '50%',
+                width: 36,
+                height: 36,
+                fontSize: 22,
+                color: '#334155',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background 0.18s',
+                boxShadow: '0 1.5px 6px rgba(30,41,59,0.08)',
+              }}
+              onMouseOver={e => (e.currentTarget.style.background = 'rgba(30,41,59,0.16)')}
+              onMouseOut={e => (e.currentTarget.style.background = 'rgba(30,41,59,0.09)')}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h2 style={{
+              marginBottom: 12,
+              textAlign: 'center',
+              fontWeight: 600,
+              fontSize: 18,
+              color: '#1e293b',
+              letterSpacing: 0.2,
+              fontFamily: 'Inter, sans-serif',
+              wordBreak: 'break-all',
+              maxWidth: '90%',
+            }}>{previewData.fileName}</h2>
+            <div style={{
+              width: '100%',
+              height: '100%',
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 12,
+              overflow: 'auto',
+              background: '#f8fafc',
+              boxShadow: '0 1.5px 8px rgba(30,41,59,0.06)',
+            }}>
+              {previewData.contentType && previewData.contentType.startsWith('image') ? (
+                <img
+                  src={`http://localhost:8080/api/v1${previewData.url}`}
+                  alt={previewData.fileName}
+                  style={{
+                    maxWidth: '95%',
+                    maxHeight: '95%',
+                    borderRadius: 10,
+                    objectFit: 'contain',
+                    background: '#fff',
+                  }}
+                />
+              ) : previewData.contentType && previewData.contentType === 'application/pdf' ? (
+                <iframe
+                  src={`http://localhost:8080/api/v1${previewData.url}`}
+                  title={previewData.fileName}
+                  style={{
+                    width: '95%',
+                    height: '95%',
+                    border: 'none',
+                    borderRadius: 10,
+                    background: '#fff',
+                  }}
+                  allowFullScreen
+                />
+              ) : (
+                <div style={{ padding: 18, color: '#64748b', fontSize: 15 }}>Preview not available for this file type.</div>
+              )}
+            </div>
+          </div>
+          <style>{`
+            @keyframes fadeInOverlay {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes fadeInModal {
+              from { opacity: 0; transform: translateY(40px) scale(0.98); }
+              to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+          `}</style>
+        </div>
+      )}
       {sections.map((section, instanceIdx) => {
         const sectionKey = CardKeyPrefix ? `${CardKeyPrefix}_${categoryIndex}` : categoryIndex;
         const currentSectionNumber = getSectionNumber(section);
@@ -127,7 +267,6 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
           currentSectionNumber === highestSectionNumber &&
           !temporarySections[category.category];
 
-       
         return (
           <div key={section._instanceId || instanceIdx} className="relative">
             <Card className="mb-6">
@@ -327,14 +466,17 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                                       {filesRef.map((file: any) => {
                                         let badge;
                                         switch ((file.docStatus || '').toUpperCase()) {
-                                          case 'SUBMITTED':
-                                            badge = <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
+                                          case 'APPROVED':
+                                            badge = <Badge variant="default" className="bg-green-100 text-green-800">Approved</Badge>;
                                             break;
-                                          case 'PENDING':
-                                            badge = <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+                                          case 'SUBMITTED':
+                                            badge = <Badge variant="secondary" className="bg-gray-200 text-gray-800">Submitted</Badge>;
                                             break;
                                           case 'REJECTED':
                                             badge = <Badge variant="destructive" className="bg-red-100 text-red-800">Rejected</Badge>;
+                                            break;
+                                          case 'PENDING':
+                                            badge = <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
                                             break;
                                           default:
                                             badge = <Badge variant="secondary" className="bg-gray-100 text-gray-800">{file.docStatus}</Badge>;
@@ -367,7 +509,7 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                                               size="sm"
                                               className="h-6 w-6 p-0 text-red-700 mr-1"
                                               aria-label="Delete file"
-                                              disabled
+                                              // disabled
                                             >
                                               <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -379,7 +521,7 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                                             size="sm"
                                             className="h-6 w-6 p-0 text-blue-800 mr-1"
                                             aria-label="View file"
-                                            disabled
+                                            onClick={() => handleViewFile(file)}
                                           >
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
                                               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
