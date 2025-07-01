@@ -52,11 +52,21 @@ const ShareWithBank = () => {
   const [selectedBanks, setSelectedBanks] = useState<Record<string, string[]>>({});
 
   const headerCheckboxRef = useRef<HTMLInputElement>(null);
+  const selectAllRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  // Compute eligible customers for selection (at least one doc and one bank)
+  const eligibleCustomerPans = customers ? customers.filter(c =>
+    (selectedDocs[c.pan]?.length || 0) > 0 && (selectedBanks[c.pan]?.length || 0) > 0
+  ).map(c => c.pan) : [];
+
   useEffect(() => {
     if (headerCheckboxRef.current) {
-      headerCheckboxRef.current.indeterminate = selectedCustomers.length > 0 && selectedCustomers.length < customers.length;
+      headerCheckboxRef.current.indeterminate =
+        eligibleCustomerPans.length > 0 &&
+        selectedCustomers.length > 0 &&
+        selectedCustomers.length < eligibleCustomerPans.length;
     }
-  }, [selectedCustomers, customers]);
+  }, [selectedCustomers, customers, eligibleCustomerPans]);
 
   useEffect(() => {
     (async () => {
@@ -64,6 +74,24 @@ const ShareWithBank = () => {
       setCustomers(customersList);
     })();
   }, [])
+
+  useEffect(() => {
+    if (!customers) return;
+    customers.forEach((customer) => {
+      const approvedDocs = [
+        { id: 'doc1', name: 'PAN Card.pdf' },
+        { id: 'doc2', name: 'Aadhaar Card.pdf' },
+        { id: 'doc3', name: 'Bank Statement.pdf' },
+      ];
+      const allSelected = selectedDocs[customer.pan]?.length === approvedDocs.length;
+      const noneSelected = !selectedDocs[customer.pan] || selectedDocs[customer.pan].length === 0;
+      const someSelected = !noneSelected && !allSelected;
+      const ref = selectAllRefs.current[customer.pan];
+      if (ref) {
+        ref.indeterminate = someSelected;
+      }
+    });
+  }, [customers, selectedDocs]);
 
   // Filter for customers that have at least one approved document
   const eligibleCustomers = customers
@@ -169,10 +197,10 @@ const ShareWithBank = () => {
                         <input
                           ref={headerCheckboxRef}
                           type="checkbox"
-                          checked={customers.length > 0 && selectedCustomers.length === customers.length}
+                          checked={eligibleCustomerPans.length > 0 && selectedCustomers.length === eligibleCustomerPans.length}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedCustomers(customers.map((c) => c.pan));
+                              setSelectedCustomers(eligibleCustomerPans);
                             } else {
                               setSelectedCustomers([]);
                             }
@@ -190,10 +218,25 @@ const ShareWithBank = () => {
                     {customers.map((customer) => (
                       <TableRow key={customer.pan} className="items-center">
                         <TableCell className="px-4 py-2 w-[4%]">
-                          <Checkbox
-                            checked={selectedCustomers.includes(customer.pan)}
-                            onCheckedChange={() => handleToggleCustomer(customer.pan)}
-                          />
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Checkbox
+                                  checked={selectedCustomers.includes(customer.pan)}
+                                  onCheckedChange={() => handleToggleCustomer(customer.pan)}
+                                  disabled={
+                                    (selectedDocs[customer.pan]?.length || 0) < 1 ||
+                                    (selectedBanks[customer.pan]?.length || 0) < 1
+                                  }
+                                />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {((selectedDocs[customer.pan]?.length || 0) < 1 || (selectedBanks[customer.pan]?.length || 0) < 1)
+                                ? 'Select at least one document and one bank to enable selection.'
+                                : 'Select this customer'}
+                            </TooltipContent>
+                          </Tooltip>
                         </TableCell>
                         <TableCell className="px-4 py-2 w-[17.5%]">
                           <div className="flex items-center gap-2">
@@ -245,18 +288,44 @@ const ShareWithBank = () => {
                                     { id: 'doc2', name: 'Aadhaar Card.pdf' },
                                     { id: 'doc3', name: 'Bank Statement.pdf' },
                                   ];
-                                  return approvedDocs.map(doc => (
-                                    <div key={doc.id} className="flex items-center gap-2 py-1">
-                                      <Checkbox
-                                        checked={selectedDocs[customer.pan]?.includes(doc.id) || false}
-                                        onCheckedChange={() => handleToggleDoc(customer.pan, doc.id)}
-                                        id={`doc-checkbox-${doc.id}`}
-                                      />
-                                      <label htmlFor={`doc-checkbox-${doc.id}`} className="cursor-pointer select-none">
-                                        {doc.name}
-                                      </label>
-                                    </div>
-                                  ));
+                                  const allSelected = selectedDocs[customer.pan]?.length === approvedDocs.length;
+                                  const noneSelected = !selectedDocs[customer.pan] || selectedDocs[customer.pan].length === 0;
+                                  const someSelected = !noneSelected && !allSelected;
+                                  return (
+                                    <>
+                                      <div className="flex items-center gap-2 py-1 border-b mb-2 pb-2">
+                                        {/* Use native input for select-all to support indeterminate */}
+                                        <input
+                                          ref={el => (selectAllRefs.current[customer.pan] = el)}
+                                          type="checkbox"
+                                          checked={allSelected}
+                                          onChange={() => {
+                                            setSelectedDocs((prev) => ({
+                                              ...prev,
+                                              [customer.pan]: allSelected ? [] : approvedDocs.map(doc => doc.id),
+                                            }));
+                                          }}
+                                          id={`doc-checkbox-select-all-${customer.pan}`}
+                                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                        />
+                                        <label htmlFor={`doc-checkbox-select-all-${customer.pan}`} className="cursor-pointer select-none font-medium">
+                                          {allSelected ? 'Uncheck All' : 'Check All'}
+                                        </label>
+                                      </div>
+                                      {approvedDocs.map(doc => (
+                                        <div key={doc.id} className="flex items-center gap-2 py-1">
+                                          <Checkbox
+                                            checked={selectedDocs[customer.pan]?.includes(doc.id) || false}
+                                            onCheckedChange={() => handleToggleDoc(customer.pan, doc.id)}
+                                            id={`doc-checkbox-${doc.id}`}
+                                          />
+                                          <label htmlFor={`doc-checkbox-${doc.id}`} className="cursor-pointer select-none">
+                                            {doc.name}
+                                          </label>
+                                        </div>
+                                      ))}
+                                    </>
+                                  );
                                 })()}
                               </div>
                               <DialogFooter>
@@ -270,27 +339,55 @@ const ShareWithBank = () => {
                         <TableCell className="px-4 py-2 w-[22%] min-w-[120px]">
                           <div className="flex items-center border rounded px-2 py-1 bg-gray-100 min-h-[40px] w-full justify-end">
                             <div className="flex flex-row flex-wrap gap-1 items-center">
-                              {selectedBanks[customer.pan]?.map(bank => (
-                                <span
-                                  key={bank}
-                                  className="inline-flex items-center h-5 px-1.5 rounded bg-white text-gray-700 text-[11px] font-medium border border-gray-300 mr-1"
-                                  style={{ minWidth: 0 }}
-                                >
-                                  <span>{bank}</span>
-                                  <button
-                                    type="button"
-                                    className="ml-0.5 p-0.5 rounded hover:bg-gray-300 transition"
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      handleToggleBank(customer.pan, bank);
-                                    }}
-                                    tabIndex={-1}
-                                    aria-label={`Remove ${bank}`}
+                              {selectedBanks[customer.pan]?.length === 1 ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge
+                                      key={selectedBanks[customer.pan][0]}
+                                      className=" h-7 min-w-[3.5rem] max-w-[11rem]  bg-white text-gray-700 border border-gray-300 flex items-center justify-center gap-2 px-1 rounded-md truncate"
+                                    >
+                                      <span className="truncate">{selectedBanks[customer.pan][0]}</span>
+                                      <button
+                                        type="button"
+                                        className=" p-1 rounded hover:bg-gray-300 transition"
+                                        onClick={e => {
+                                          e.stopPropagation();
+                                          handleToggleBank(customer.pan, selectedBanks[customer.pan][0]);
+                                        }}
+                                        tabIndex={-1}
+                                        aria-label={`Remove ${selectedBanks[customer.pan][0]}`}
+                                      >
+                                        <XIcon className="h-4 w-4 text-gray-500" />
+                                      </button>
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {selectedBanks[customer.pan][0]}
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                selectedBanks[customer.pan]?.map(bank => (
+                                  <span
+                                    key={bank}
+                                    className="inline-flex items-center h-5 px-1.5 rounded bg-white text-gray-700 text-[11px] font-medium border border-gray-300 mr-1"
+                                    style={{ minWidth: 0 }}
                                   >
-                                    <XIcon className="h-3 w-3 text-gray-500" />
-                                  </button>
-                                </span>
-                              ))}
+                                    <span>{bank}</span>
+                                    <button
+                                      type="button"
+                                      className="ml-0.5 p-0.5 rounded hover:bg-gray-300 transition"
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        handleToggleBank(customer.pan, bank);
+                                      }}
+                                      tabIndex={-1}
+                                      aria-label={`Remove ${bank}`}
+                                    >
+                                      <XIcon className="h-3 w-3 text-gray-500" />
+                                    </button>
+                                  </span>
+                                ))
+                              )}
                             </div>
                             <div className="flex-shrink-0 ml-2 border-l border-gray-300 pl-2">
                               <Tooltip>

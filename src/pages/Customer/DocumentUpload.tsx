@@ -21,13 +21,25 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import Header from "./DocumentUploadParts/Header";
+import Pagination from "./DocumentUploadParts/Pagination";
+import MainSection from "./DocumentUploadParts/MainSection";
+import PromoterSection from "./DocumentUploadParts/PromoterSection";
+import PromoterActions from "./DocumentUploadParts/PromoterActions";
+import {
+  isDocumentSubmitted,
+  getDocumentStatus,
+  getStatusBadgeInfo,
+  getApiFilesForDocument
+} from "./DocumentUploadParts/documentUploadHelpers";
+import { extractAllTemplates } from "@/lib/templateUtils";
 
 const DocumentUpload = () => {
   const navigate = useNavigate();
   const { getValueFromLocalStorage, setValueToLocalStorage } = useLocalStorage();
   const token = getValueFromLocalStorage("token");
   const { addDocument, removeDocument, submitFolder, getFolderDocuments, isFolderSubmitted } = useDocuments();
-  const { syncCustomerDocuments } = useCustomers();
+  const { syncCustomerDocuments, promoterTemplate, setPromoterTemplate, setSectionTemplates, sectionTemplates } = useCustomers();
   const documentUploadService = useDocumentUploadService();
 
   const [customerType, setCustomerType] = useState<'Individual' | 'Organization'>();
@@ -38,17 +50,24 @@ const DocumentUpload = () => {
   const [uploadingDocuments, setUploadingDocuments] = useState<Record<string, boolean>>({});
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, DocumentFile[]>>({});
   // Add state to track multiple section instances
-  const [sectionInstances, setSectionInstances] = useState<{ [key: string]: number }>({});
+  const [sectionInstances, setSectionInstances] = useState<{ [category: string]: any[] }>({});
   // Add state to track years for each document with isMultipleYear
   const [documentYears, setDocumentYears] = useState<{ [key: string]: number[] }>({});
   // Add state to track selected year for each document/yearIdx
   const [selectedYears, setSelectedYears] = useState<{ [key: string]: number }>({});
+  // Add state to track year row templates for multi-year documents
+  const [yearRowTemplates, setYearRowTemplates] = useState<{ [key: string]: { year: number | null; files: any[] }[] }>({});
   const currentYear = new Date().getFullYear();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0); // 0 = main documents, 1+ = promoter pages
 
   const [apiDocumentMasters, setApiDocumentMasters] = useState<any[]>([]); // <-- New state
+  const [maxPromoters, setMaxPromoters] = useState(0);
+
+  // New state for section management
+  const [beSections, setBeSections] = useState<{ [category: string]: string[] }>({}); // BE sections from API
+  const [temporarySections, setTemporarySections] = useState<{ [category: string]: { name: string; instance: any } | null }>({}); // Temporary sections in UI
 
   // Call document masters API on page render
   useEffect(() => {
@@ -56,6 +75,31 @@ const DocumentUpload = () => {
       try {
         const response = await documentUploadService.getDocumentMasters();
         setApiDocumentMasters(response.data); // <-- Store API data
+        setMaxPromoters(response.data.length - 1); // 1 org, rest promoters
+        
+        // Extract all templates using the new helper function
+        const { promoterTemplate: extractedPromoterTemplate, sectionTemplates: extractedSectionTemplates } = extractAllTemplates(response.data);
+        
+        // Store templates in context
+        setPromoterTemplate(extractedPromoterTemplate);
+        setSectionTemplates(extractedSectionTemplates);
+        
+        // Extract BE sections from API response
+        const newBeSections: { [category: string]: string[] } = {};
+        response.data.forEach((customerTypeObj: any) => {
+          if (customerTypeObj.documentsByCategory) {
+            customerTypeObj.documentsByCategory.forEach((cat: any) => {
+              if (cat.isMultipleSection && cat.section) {
+                if (!newBeSections[cat.category]) {
+                  newBeSections[cat.category] = [];
+                }
+                newBeSections[cat.category].push(cat.section);
+              }
+            });
+          }
+        });
+        setBeSections(newBeSections);
+        
         // response.data is an array
         const org = response.data.find(
           (item: any) => item.customerType?.toUpperCase() === "ORGANIZATION"
@@ -66,12 +110,30 @@ const DocumentUpload = () => {
 
         // Find all promoters (customerType starts with 'promoter', case-insensitive)
         const promoterEntries = response.data.filter(
-          (item: any) => typeof item.customerType === 'string' && item.customerType.toLowerCase().startsWith('promoter')
+          (item: any) =>
+            typeof item.customerType === 'string' &&
+            item.customerType.replace(/\s+/g, '').toLowerCase().startsWith('promoter')
+        );
+
+        // Only show real promoters in the UI (those with any file present)
+        const realPromoters = promoterEntries.filter((entry: any) => {
+          // If ANY file array in ANY document is non-empty, it's a real promoter
+          return entry.documentsByCategory.some((cat: any) =>
+            cat.documents.some((doc: any) => Array.isArray(doc.files) && doc.files.length > 0)
+          );
+        });
+        setPromoters(
+          realPromoters.map((entry: any, idx: number) => ({
+            id: Date.now() + idx,
+            categories: entry.documentsByCategory,
+            details: {},
+          }))
         );
 
         if (org) {
           setCustomerType("Organization");
           setValueToLocalStorage("customerType", "Organization");
+
           setOrgCategories(org.documentsByCategory);
           // If you want to use the first promoter's categories as the template for new promoters:
           setPromoterCategories(promoterEntries[0]?.documentsByCategory || []);
@@ -82,17 +144,7 @@ const DocumentUpload = () => {
           setPromoterCategories([]);
         }
 
-        // Initialize promoters state from API response
-        if (promoterEntries.length > 0) {
-          const initialPromoters = promoterEntries.map((entry: any, idx: number) => ({
-            id: Date.now() + idx, // or use a better unique id if available
-            categories: entry.documentsByCategory,
-            details: {}, // You can fill this if you have promoter details
-          }));
-          setPromoters(initialPromoters);
-        } else {
-          setPromoters([]);
-        }
+        
       } catch (error) {
         console.error("Error fetching document masters:", error);
       }
@@ -138,7 +190,7 @@ const DocumentUpload = () => {
     syncUploadedFiles();
   }, [token, orgCategories, promoterCategories, getFolderDocuments, promoters.length]);
 
-  const handleFileUpload = async (documentId: string, files: FileList, year?: number) => {
+  const handleFileUpload = async (documentId: string, files: FileList, year?: number, promoterLabel?: string, sectionName?: string) => {
     if (!token) return;
 
     try {
@@ -151,10 +203,13 @@ const DocumentUpload = () => {
 
       const metadata = {
         documentMasterId: originalDocumentId,
-        promoter: currentPage > 0 ? `promoter${currentPage}` : "",
+        promoter: promoterLabel || (currentPage > 0 ? `Promoter ${currentPage}` : ""),
         year: year || "",
-        section: ""
+        section: sectionName || ""
       };
+
+      console.log("metadata", metadata);
+     // return;
 
       const formData = new FormData();
       formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
@@ -185,6 +240,69 @@ const DocumentUpload = () => {
       try {
         const response = await documentUploadService.getDocumentMasters();
         setApiDocumentMasters(response.data);
+        setMaxPromoters(response.data.length - 1); // 1 org, rest promoters
+
+        // Update BE sections after successful upload
+        const newBeSections: { [category: string]: string[] } = {};
+        response.data.forEach((customerTypeObj: any) => {
+          if (customerTypeObj.documentsByCategory) {
+            customerTypeObj.documentsByCategory.forEach((cat: any) => {
+              if (cat.isMultipleSection && cat.section) {
+                if (!newBeSections[cat.category]) {
+                  newBeSections[cat.category] = [];
+                }
+                newBeSections[cat.category].push(cat.section);
+              }
+            });
+          }
+        });
+        setBeSections(newBeSections);
+
+        // Update orgCategories with latest data based on customer type
+        const org = response.data.find(
+          (item: any) => item.customerType?.toUpperCase() === "ORGANIZATION"
+        );
+        const individual = response.data.find(
+          (item: any) => item.customerType?.toUpperCase() === "INDIVIDUAL"
+        );
+
+        if (customerType === "Organization" && org) {
+          setOrgCategories(org.documentsByCategory);
+        } else if (customerType === "Individual" && individual) {
+          setOrgCategories(individual.documentsByCategory);
+        }
+        
+        // Clear temporary section and section instances if it was uploaded to
+        if (sectionName) {
+          // Find the category this section belongs to
+          const categoryForSection = Object.keys(temporarySections).find(
+            cat => temporarySections[cat]?.name === sectionName
+          );
+
+          if (categoryForSection) {
+            // Clear from temporarySections
+            setTemporarySections(prev => ({
+              ...prev,
+              [categoryForSection]: null
+            }));
+
+            // Clear from sectionInstances
+            setSectionInstances(prev => {
+              const updated = { ...prev };
+              if (updated[categoryForSection]) {
+                // Remove the section instance that matches this section name
+                updated[categoryForSection] = updated[categoryForSection].filter(
+                  (instance: any) => instance.section !== sectionName
+                );
+                // If no more instances, delete the category key
+                if (updated[categoryForSection].length === 0) {
+                  delete updated[categoryForSection];
+                }
+              }
+              return updated;
+            });
+          }
+        }
       } catch (err) {
         // Optionally handle error
         console.error("Error refreshing document masters after upload", err);
@@ -218,72 +336,19 @@ const DocumentUpload = () => {
       title: "File removed",
       description: "Document has been removed",
     });
-  };
 
-  const isDocumentSubmitted = (documentId: string): boolean => {
-    if (!token) return false;
-    const folderId = `documents_${documentId}`;
-    return isFolderSubmitted(token, folderId);
-  };
-
-  const getDocumentStatus = (documentId: string) => {
-    const isSubmitted = isDocumentSubmitted(documentId);
-    const hasFiles = uploadedFiles[documentId] && uploadedFiles[documentId].length > 0;
-    if (!hasFiles) {
-      return { status: 'pending', icon: <AlertCircle className="h-4 w-4 text-yellow-600" />, label: 'Pending' };
-    }
-    if (isSubmitted) {
-      return { status: 'submitted', icon: <CheckCircle className="h-4 w-4 text-green-600" />, label: 'Submitted' };
-    } else if (hasFiles) {
-      return { status: 'uploaded', icon: <FileText className="h-4 w-4 text-blue-600" />, label: 'Uploaded' };
-    } else {
-      return { status: 'pending', icon: <AlertCircle className="h-4 w-4 text-yellow-600" />, label: 'Pending' };
-    }
-  };
-
-  const getStatusBadge = (documentId: string) => {
-    const status = getDocumentStatus(documentId);
-    switch (status.status) {
-      case 'submitted':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
-      case 'uploaded':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Uploaded</Badge>;
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      default:
-        return <Badge variant="outline">Pending</Badge>;
-    }
   };
 
   // Add promoter handler
-  const handleAddPromoter = async () => {
-    try {
-      // Fetch promoter documents from specific promoter API
-      const response = await documentUploadService.getPromoterDocumentMasters();
-
-      if (response.data) {
-        const newPromoter = {
-          id: Date.now(),
-          categories: response.data.documentsByCategory
-        };
-        setPromoters((prev) => [...prev, newPromoter]);
-        // Navigate to the new promoter's documents page
-        setCurrentPage(promoters.length + 1);
-      } else {
-        toast({
-          title: "Error",
-          description: "Could not fetch promoter document requirements",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching promoter documents:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch promoter document requirements",
-        variant: "destructive",
-      });
-    }
+  const handleAddPromoter = () => {
+    if (promoters.length > maxPromoters) return;
+    const newPromoter = {
+      id: Date.now(),
+      categories: promoterTemplate ? JSON.parse(JSON.stringify(promoterTemplate.documentsByCategory)) : [],
+      details: {},
+    };
+    setPromoters((prev) => [...prev, newPromoter]);
+    setCurrentPage(promoters.length + 1);
   };
 
   // Remove promoter handler
@@ -317,41 +382,57 @@ const DocumentUpload = () => {
   // Get total pages (main page + promoter pages)
   const totalPages = promoters.length + 1;
 
-  // Helper to get files for a document from API response
-  const getApiFilesForDocument = (
-    documentMasterId: string,
-    category: string,
-    year?: number | string,
-    promoterIndex?: number
-  ) => {
-    let customerTypeObj;
-    if (promoterIndex !== undefined) {
-      customerTypeObj = apiDocumentMasters.find((d) =>
-        d.customerType?.toLowerCase() === `promoter${promoterIndex + 1}`
-      );
-    } else {
-      customerTypeObj = apiDocumentMasters.find((d) =>
-        d.customerType?.toUpperCase() === customerType?.toUpperCase()
-      );
+  // Add section handler using section templates
+  const handleAddSection = (categoryName: string) => {
+    const template = sectionTemplates[categoryName];
+
+    if (!template) {
+      console.warn('No template found for', categoryName);
+      return;
     }
-    if (!customerTypeObj) return [];
-    const categoryObj = customerTypeObj.documentsByCategory.find(
-      (cat: any) => cat.category === category
-    );
-    if (!categoryObj) return [];
-    let docObjs = categoryObj.documents.filter(
-      (doc: any) => doc.documentMasterId === documentMasterId
-    );
-    if (year !== undefined && year !== null) {
-      docObjs = docObjs.filter((doc: any) => String(doc.year) === String(year));
+
+    // Check if there's already a temporary section for this category
+    if (temporarySections[categoryName]) {
+      toast({
+        title: "Section already exists",
+        description: "First add files to this section before creating a new one",
+        variant: "destructive",
+      });
+      return;
     }
-    let files: any[] = [];
-    docObjs.forEach((doc: any) => {
-      if (doc.files && doc.files.length > 0) {
-        files = files.concat(doc.files);
-      }
+
+    // Calculate next section number
+    const existingSections = beSections[categoryName] || [];
+    const nextSectionNumber = existingSections.length + 1;
+    const sectionName = `Section ${nextSectionNumber}`;
+
+    // Deep clone and add a unique instance ID
+    const newSection = { 
+      ...JSON.parse(JSON.stringify(template)), 
+      section: sectionName // Add section name to the instance
+    };
+
+    // Add to section instances
+    setSectionInstances(prev => {
+      const updated = {
+        ...prev,
+        [categoryName]: [...(prev[categoryName] || []), newSection]
+      };
+      return updated;
     });
-    return files;
+
+    // Mark as temporary section
+    setTemporarySections(prev => {
+      const updated = {
+        ...prev,
+        [categoryName]: {
+          name: sectionName,
+          instance: newSection
+        }
+      };
+      return updated;
+    });
+
   };
 
   if (!customerType) {
@@ -372,746 +453,73 @@ const DocumentUpload = () => {
       <div className="py-6">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {currentPage === 0 ? "Document Upload" : `Promoter ${currentPage} Documents`}
-              </h1>
-              <p className="text-gray-600 mt-1">
-                {currentPage === 0
-                  ? "Please upload the required documents for your application"
-                  : "Please upload the required documents for this promoter"
-                }
-              </p>
-            </div>
-            <div className="flex gap-2 items-center">
-              {customerType === 'Organization' && (
-                <Button
-                  onClick={handleAddPromoter}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white border border-blue-700 shadow-lg flex items-center gap-2 text-base font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-none"
-                  variant="default"
-                  type="button"
-                  style={{ borderRadius: 0 }}
-                >
-                  <Plus className="h-5 w-5" />
-                  Add Promoter
-                </Button>
-              )}
-              {customerType === 'Organization' && currentPage > 0 && (
-                <Button
-                  onClick={() => handleRemovePromoter(currentPage - 1)}
-                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white border border-red-700 shadow-lg flex items-center gap-2 text-base font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-red-400 rounded-none"
-                  variant="destructive"
-                  type="button"
-                  style={{ borderRadius: 0 }}
-                >
-                  <Trash2 className="h-5 w-5" />
-                  Remove Promoter
-                </Button>
-              )}
-            </div>
+            <Header currentPage={currentPage} customerType={customerType} />
+            <PromoterActions
+              customerType={customerType}
+              currentPage={currentPage}
+              handleAddPromoter={handleAddPromoter}
+              handleRemovePromoter={handleRemovePromoter}
+             // disableAdd={promoters.length >= maxPromoters}
+            />
           </div>
 
           {/* Main Documents Page (Page 0) */}
           {currentPage === 0 && (
-            <>
-              {/* Always show the default table */}
-              {orgCategories.map((category, categoryIndex) => {
-                const isMultipleSection = category.isMultipleSection;
-                const instances = isMultipleSection ? (sectionInstances[categoryIndex] || 1) : 1;
-                return (
-                  <div key={categoryIndex}>
-                    {Array.from({ length: instances }).map((_, instanceIdx) => (
-                      <div key={instanceIdx} className="relative">
-                        <Card className="mb-6">
-                          {/* Cross icon for extra sections */}
-                          {isMultipleSection && instanceIdx > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSectionInstances(prev => {
-                                  const updated = { ...prev };
-                                  if (updated[categoryIndex] > 1) {
-                                    updated[categoryIndex] = updated[categoryIndex] - 1;
-                                  }
-                                  return updated;
-                                });
-                              }}
-                              className="absolute top-2 right-2 z-10 p-1 rounded-full hover:bg-red-100 text-red-500 border border-red-200 hover:border-red-300"
-                              aria-label="Remove section"
-                            >
-                              <X className="h-5 w-5" />
-                            </button>
-                          )}
-                          <CardHeader>
-                            <CardTitle className="text-lg font-semibold text-gray-800">
-                              {category.category} {isMultipleSection && instances > 1 ? `(${instanceIdx + 1})` : null}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="w-[40%]">Document Type</TableHead>
-                                  <TableHead className="w-[15%]">Status</TableHead>
-                                  <TableHead className="w-[20%]">Uploaded Files</TableHead>
-                                  <TableHead className="w-[15%] text-center">Mandatory</TableHead>
-                                  <TableHead className="w-[10%]">Action</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {category.documents.map((document: DocumentType) => {
-                                  const docKey = `${document.documentMasterId}_${instanceIdx}`;
-                                  const years = document.isMultipleYears
-                                    ? documentYears[docKey] || [currentYear]
-                                    : [undefined];
-                                  const isMultipleFiles = document.isMultipleFiles;
-                                  return years.map((year, yearIdx) => (
-                                    <TableRow key={docKey + "_" + yearIdx}>
-                                      <TableCell className="font-medium">
-                                        <div className="flex items-center gap-2" style={{ textAlign: 'start' }}>
-                                          {document.documentType}
-                                          {document.isMultipleYears && (
-                                            <>
-                                              {(() => {
-                                                const key = `${docKey}_${yearIdx}`;
-                                                if (selectedYears[key] === undefined) {
-                                                  setTimeout(() => {
-                                                    setSelectedYears(prev => ({
-                                                      ...prev,
-                                                      [key]: year
-                                                    }));
-                                                    setDocumentYears(prev => ({
-                                                      ...prev,
-                                                      [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? year : y)
-                                                    }));
-                                                  }, 0);
-                                                }
-                                                return (
-                                                  <select
-                                                    value={selectedYears[key] ?? year}
-                                                    onChange={e => {
-                                                      const newYear = parseInt(e.target.value, 10);
-                                                      setSelectedYears(prev => ({
-                                                        ...prev,
-                                                        [key]: newYear
-                                                      }));
-                                                      setDocumentYears(prev => ({
-                                                        ...prev,
-                                                        [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? newYear : y)
-                                                      }));
-                                                    }}
-                                                    className="border rounded px-2 py-1 text-sm ml-2"
-                                                  >
-                                                    {Array.from({ length: 6 }).map((_, i) => (
-                                                      <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
-                                                    ))}
-                                                  </select>
-                                                );
-                                              })()}
-                                            </>
-                                          )}
-                                        </div>
-                                      </TableCell>
-                                      <TableCell>
-                                        {/* Status column: show status for each file from API */}
-                                        {(() => {
-                                          const files = getApiFilesForDocument(
-                                            document.documentMasterId,
-                                            category.category,
-                                            document.isMultipleYears ? years[yearIdx] : undefined
-                                          );
-                                          if (files.length === 0) {
-                                            return <span className="text-gray-400 text-sm">No files</span>;
-                                          }
-                                          return (
-                                            <div className="space-y-1 flex flex-col">
-                                              {files.map((file) => {
-                                                let badge;
-                                                switch ((file.docStatus || '').toUpperCase()) {
-                                                  case 'SUBMITTED':
-                                                    badge = <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
-                                                    break;
-                                                  case 'PENDING':
-                                                    badge = <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-                                                    break;
-                                                  case 'REJECTED':
-                                                    badge = <Badge variant="destructive" className="bg-red-100 text-red-800">Rejected</Badge>;
-                                                    break;
-                                                  default:
-                                                    badge = <Badge variant="secondary" className="bg-gray-100 text-gray-800">{file.docStatus}</Badge>;
-                                                }
-                                                return (
-                                                  <div key={file.docId} className="flex items-center gap-2">
-                                                    {badge}
-                                                  </div>
-                                                );
-                                              })}
-                                            </div>
-                                          );
-                                        })()}
-                                      </TableCell>
-                                      <TableCell>
-                                        {/* Uploaded Files column: only show file names and plus icon */}
-                                        {(() => {
-                                          const files = getApiFilesForDocument(
-                                            document.documentMasterId,
-                                            category.category,
-                                            document.isMultipleYears ? years[yearIdx] : undefined
-                                          );
-                                          if (files.length === 0) {
-                                            return (
-                                              <span className="text-gray-400 text-sm">No files uploaded yet</span>
-                                            );
-                                          }
-                                          return (
-                                            <div className="space-y-1 flex flex-col">
-                                              {files.map((file, fileIndex) => (
-                                                <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
-                                                  {/* Trash icon before file name, hidden if status is APPROVED */}
-                                                  {String(file.docStatus).toUpperCase() !== 'APPROVED' ? (
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      className="h-6 w-6 p-0 text-red-700 mr-1"
-                                                      aria-label="Delete file"
-                                                      disabled
-                                                    >
-                                                      <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                  ) : (
-                                                    <span style={{ width: 24, display: 'inline-block' }}></span>
-                                                  )}
-                                                  {/* Eye icon for preview, always visible */}
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0 text-blue-800 mr-1"
-                                                    aria-label="View file"
-                                                    disabled
-                                                  >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
-                                                      <circle cx="12" cy="12" r="3" />
-                                                    </svg>
-                                                  </Button>
-                                                  <span className="truncate max-w-[120px]" title={file.docName}>
-                                                    {file.docName}
-                                                  </span>
-                                                  {/* Show plus icon for uploading more files */}
-                                                  {isMultipleFiles && fileIndex === files.length - 1 && (
-                                                    <>
-                                                      <input
-                                                        key={`file-${document.documentMasterId}-${docKey}-${yearIdx}-${selectedYears[`${docKey}_${yearIdx}`] ?? year}`}
-                                                        type="file"
-                                                        id={`file-${document.documentMasterId}-${docKey}-${yearIdx}`}
-                                                        multiple
-                                                        onChange={(e) => {
-                                                          const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
-                                                          e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear);
-                                                        }}
-                                                        className="hidden"
-                                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                                      />
-                                                      <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 w-6 p-0 text-blue-600 ml-2 rounded-full border border-blue-200 bg-blue-50"
-                                                        aria-label="Add more files"
-                                                        onClick={() => window.document.getElementById(`file-${document.documentMasterId}-${docKey}-${yearIdx}`)?.click()}
-                                                      >
-                                                        <Plus className="h-4 w-4" />
-                                                      </Button>
-                                                    </>
-                                                  )}
-                                                </div>
-                                              ))}
-                                            </div>
-                                          );
-                                        })()}
-                                      </TableCell>
-                                      <TableCell className="text-center">
-                                        {/* Mandatory badge and i icon for multiple files */}
-                                        <div className="flex items-center justify-center gap-2">
-                                          {document.isMandatory ? (
-                                            <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
-                                          ) : (
-                                            <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
-                                          )}
-                                          {/* i icon for multiple files, visible only if isMultipleFiles, else invisible for alignment */}
-                                          <TooltipProvider>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <span style={{ display: 'inline-flex', width: 20, justifyContent: 'center' }}>
-                                                  <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
-                                                </span>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <span>This document supports multiple files.</span>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        </div>
-                                      </TableCell>
-                                      <TableCell>
-                                        <div className="flex items-center gap-2 justify-center" style={{ minWidth: 80 }}>
-                                          <input
-                                            key={`file-${document.documentMasterId}-${docKey}-${yearIdx}-${selectedYears[`${docKey}_${yearIdx}`] ?? year}`}
-                                            type="file"
-                                            // id={`file-${document.documentMasterId}`}
-                                            id={`file-${document.documentMasterId}-${docKey}-${yearIdx}`} 
-                                            multiple
-                                            onChange={(e) => {
-                                              const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
-                                              e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear);
-                                            }}
-                                            className="hidden"
-                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                          />
-                                          {/* <label htmlFor={`file-${document.documentMasterId}`}> */}
-                                          <label htmlFor={`file-${document.documentMasterId}-${docKey}-${yearIdx}`}>
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              disabled={uploadingDocuments[document.documentMasterId]}
-                                              className="cursor-pointer min-w-[140px] flex items-center justify-center border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                                              asChild
-                                            >
-                                              <span>
-                                                {uploadingDocuments[document.documentMasterId] ? (
-                                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                                                ) : (
-                                                  <Upload className="h-4 w-4" />
-                                                )}
-                                                <span className="ml-1 block truncate">
-                                                  Upload Document
-                                                </span>
-                                              </span>
-                                            </Button>
-                                          </label>
-                                          {/* Always render the + button, but hide it if not needed for consistent spacing */}
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setDocumentYears(prev => ({
-                                              ...prev,
-                                              [docKey]: [...(prev[docKey] || [currentYear]), currentYear]
-                                            }))}
-                                            className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${document.isMultipleYears && yearIdx === years.length - 1 ? '' : 'invisible'}`}
-                                            aria-label="Add Year"
-                                          >
-                                            +
-                                          </Button>
-                                        </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  ));
-                                })}
-                              </TableBody>
-                            </Table>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    ))}
-                    {/* +Add button for multiple sections, outside and below the last card, left-aligned */}
-                    {isMultipleSection && (
-                      <div className="flex justify-start mb-6 -mt-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSectionInstances(prev => ({
-                            ...prev,
-                            [categoryIndex]: (prev[categoryIndex] || 1) + 1
-                          }))}
-                          className="flex items-center gap-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                        >
-                          <Plus className="h-4 w-4" /> Add Section
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </>
+            <MainSection
+              orgCategories={orgCategories}
+              sectionInstances={sectionInstances}
+              setSectionInstances={setSectionInstances}
+              documentYears={documentYears}
+              setDocumentYears={setDocumentYears}
+              selectedYears={selectedYears}
+              setSelectedYears={setSelectedYears}
+              yearRowTemplates={yearRowTemplates}
+              setYearRowTemplates={setYearRowTemplates}
+              currentYear={currentYear}
+              handleFileUpload={(documentId, files, year, sectionName) => handleFileUpload(documentId, files, year, undefined, sectionName)}
+              getApiFilesForDocument={(documentMasterId, category, year, promoterIndex, section) => 
+                getApiFilesForDocument(apiDocumentMasters, customerType || '', documentMasterId, category, year, promoterIndex, section)
+              }
+              uploadingDocuments={uploadingDocuments}
+              handleAddSection={handleAddSection}
+              beSections={beSections}
+              temporarySections={temporarySections}
+            />
           )}
 
           {/* Promoter Documents Page (Page 1+) */}
           {currentPage > 0 && promoters[currentPage - 1] && (
-            <>
-              {/* Promoter Documents */}
-              {promoters[currentPage - 1].categories?.map((category, categoryIndex) => {
-                const isMultipleSection = category.isMultipleSection;
-                const instances = isMultipleSection ? (sectionInstances[`promoter${currentPage - 1}_${categoryIndex}`] || 1) : 1;
-                return (
-                  <div key={categoryIndex}>
-                    {Array.from({ length: instances }).map((_, instanceIdx) => (
-                      <div key={instanceIdx} className="relative">
-                        <Card className="mb-6">
-                          {/* Cross icon for extra sections */}
-                          {isMultipleSection && instanceIdx > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSectionInstances(prev => {
-                                  const updated = { ...prev };
-                                  const key = `promoter${currentPage - 1}_${categoryIndex}`;
-                                  if (updated[key] > 1) {
-                                    updated[key] = updated[key] - 1;
-                                  }
-                                  return updated;
-                                });
-                              }}
-                              className="absolute top-2 right-2 z-10 p-1 rounded-full bg-red-100 text-red-500 border border-red-200 hover:border-red-300"
-                              aria-label="Remove section"
-                            >
-                              <X className="h-5 w-5" />
-                            </button>
-                          )}
-                          <CardHeader>
-                            <CardTitle className="text-lg font-semibold text-gray-800">
-                              {category.category} {isMultipleSection && instances > 1 ? `(${instanceIdx + 1})` : null}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="w-[40%]">Document Type</TableHead>
-                                  <TableHead className="w-[15%]">Status</TableHead>
-                                  <TableHead className="w-[20%]">Uploaded Files</TableHead>
-                                  <TableHead className="w-[15%] text-center">Mandatory</TableHead>
-                                  <TableHead className="w-[10%]">Action</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {category.documents.map((document: DocumentType) => {
-                                  const docKey = `${document.documentMasterId}_promoter${currentPage - 1}_${instanceIdx}`;
-                                  const years = document.isMultipleYears
-                                    ? documentYears[docKey] || [currentYear]
-                                    : [undefined];
-                                  const isMultipleFiles = document.isMultipleFiles ?? document.isMultipleFiles;
-                                  return years.map((year, yearIdx) => (
-                                    <TableRow key={docKey + "_" + yearIdx}>
-                                      <TableCell className="font-medium">
-                                        <div className="flex items-center gap-2" style={{ textAlign: 'start' }}>
-                                          {document.documentType}
-                                          {document.isMultipleYears && (
-                                            <>
-                                              {(() => {
-                                                const key = `${docKey}_${yearIdx}`;
-                                                if (selectedYears[key] === undefined) {
-                                                  setTimeout(() => {
-                                                    setSelectedYears(prev => ({
-                                                      ...prev,
-                                                      [key]: year
-                                                    }));
-                                                    setDocumentYears(prev => ({
-                                                      ...prev,
-                                                      [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? year : y)
-                                                    }));
-                                                  }, 0);
-                                                }
-                                                return (
-                                                  <select
-                                                    value={selectedYears[key] ?? year}
-                                                    onChange={e => {
-                                                      const newYear = parseInt(e.target.value, 10);
-                                                      setSelectedYears(prev => ({
-                                                        ...prev,
-                                                        [key]: newYear
-                                                      }));
-                                                      setDocumentYears(prev => ({
-                                                        ...prev,
-                                                        [docKey]: (prev[docKey] || [currentYear]).map((y, idx) => idx === yearIdx ? newYear : y)
-                                                      }));
-                                                    }}
-                                                    className="border rounded px-2 py-1 text-sm ml-2"
-                                                  >
-                                                    {Array.from({ length: 6 }).map((_, i) => (
-                                                      <option key={currentYear - i} value={currentYear - i}>{currentYear - i}</option>
-                                                    ))}
-                                                  </select>
-                                                );
-                                              })()}
-                                            </>
-                                          )}
-                                        </div>
-                                      </TableCell>
-                                      <TableCell>
-                                        {/* Status column: show status for each file from API (promoter) */}
-                                        {(() => {
-                                          const files = getApiFilesForDocument(
-                                            document.documentMasterId,
-                                            category.category,
-                                            document.isMultipleYears ? years[yearIdx] : undefined,
-                                            currentPage - 1
-                                          );
-                                          if (files.length === 0) {
-                                            return <span className="text-gray-400 text-sm">No files</span>;
-                                          }
-                                          return (
-                                            <div className="space-y-1 flex flex-col">
-                                              {files.map((file) => {
-                                                let badge;
-                                                switch ((file.docStatus || '').toUpperCase()) {
-                                                  case 'SUBMITTED':
-                                                    badge = <Badge variant="default" className="bg-green-100 text-green-800">Submitted</Badge>;
-                                                    break;
-                                                  case 'PENDING':
-                                                    badge = <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-                                                    break;
-                                                  case 'REJECTED':
-                                                    badge = <Badge variant="destructive" className="bg-red-100 text-red-800">Rejected</Badge>;
-                                                    break;
-                                                  default:
-                                                    badge = <Badge variant="secondary" className="bg-gray-100 text-gray-800">{file.docStatus}</Badge>;
-                                                }
-                                                return (
-                                                  <div key={file.docId} className="flex items-center gap-2">
-                                                    {badge}
-                                                  </div>
-                                                );
-                                              })}
-                                            </div>
-                                          );
-                                        })()}
-                                      </TableCell>
-                                      <TableCell>
-                                        {/* Uploaded Files column: only show file names and plus icon (promoter) */}
-                                        {(() => {
-                                          const files = getApiFilesForDocument(
-                                            document.documentMasterId,
-                                            category.category,
-                                            document.isMultipleYears ? years[yearIdx] : undefined,
-                                            currentPage - 1
-                                          );
-                                          if (files.length === 0) {
-                                            return (
-                                              <span className="text-gray-400 text-sm">No files uploaded yet</span>
-                                            );
-                                          }
-                                          return (
-                                            <div className="space-y-1 flex flex-col">
-                                              {files.map((file, fileIndex) => (
-                                                <div key={file.docId} className="flex items-center text-sm" style={{ textAlign: 'start' }}>
-                                                  {/* Trash icon before file name, hidden if status is APPROVED (promoter) */}
-                                                  {String(file.docStatus).toUpperCase() !== 'APPROVED' ? (
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      className="h-6 w-6 p-0 text-red-700 mr-1"
-                                                      aria-label="Delete file"
-                                                      disabled
-                                                    >
-                                                      <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                  ) : (
-                                                    <span style={{ width: 24, display: 'inline-block' }}></span>
-                                                  )}
-                                                  {/* Eye icon for preview, always visible (promoter) */}
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0 text-blue-800 mr-1"
-                                                    aria-label="View file"
-                                                    disabled
-                                                  >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
-                                                      <circle cx="12" cy="12" r="3" />
-                                                    </svg>
-                                                  </Button>
-                                                  <span className="truncate max-w-[120px]" title={file.docName}>
-                                                    {file.docName}
-                                                  </span>
-                                                  {/* Show plus icon for uploading more files */}
-                                                  {isMultipleFiles && fileIndex === files.length - 1 && (
-                                                    <>
-                                                      <input
-                                                        key={`file-${document.documentMasterId}-${docKey}-${yearIdx}-${selectedYears[`${docKey}_${yearIdx}`] ?? year}`}
-                                                        type="file"
-                                                        id={`file-${document.documentMasterId}-${docKey}-${yearIdx}`}
-                                                        multiple
-                                                        onChange={(e) => {
-                                                          const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
-
-                                                          e.target.files && handleFileUpload(document.documentMasterId, e.target.files, selectedYear);
-                                                        }}
-                                                        className="hidden"
-                                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                                      />
-                                                      <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 w-6 p-0 text-blue-600 ml-2 rounded-full border border-blue-200 bg-blue-50"
-                                                        aria-label="Add more files"
-                                                        onClick={() => window.document.getElementById(`file-${document.documentMasterId}-${docKey}-${yearIdx}`)?.click()}
-                                                      >
-                                                        <Plus className="h-4 w-4" />
-                                                      </Button>
-                                                    </>
-                                                  )}
-                                                </div>
-                                              ))}
-                                            </div>
-                                          );
-                                        })()}
-                                      </TableCell>
-                                      <TableCell className="text-center">
-                                        {/* Mandatory badge and i icon for multiple files (promoter) */}
-                                        <div className="flex items-center justify-center gap-2">
-                                          {document.isMandatory ? (
-                                            <Badge variant="destructive" className="bg-red-100 text-red-800">Required</Badge>
-                                          ) : (
-                                            <Badge variant="outline" className="bg-gray-100 text-gray-800">Optional</Badge>
-                                          )}
-                                          {/* i icon for multiple files, visible only if isMultipleFiles, else invisible for alignment */}
-                                          <TooltipProvider>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <span style={{ display: 'inline-flex', width: 20, justifyContent: 'center' }}>
-                                                  <Info className={`h-5 w-5 ${isMultipleFiles ? 'text-blue-500 visible' : 'invisible'}`} />
-                                                </span>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <span>This document supports multiple files.</span>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        </div>
-                                      </TableCell>
-                                      <TableCell>
-                                        <div className="flex items-center gap-2 justify-center" style={{ minWidth: 80 }}>
-                                          <input
-                                            key={`file-${docKey}-${yearIdx}-${selectedYears[`${docKey}_${yearIdx}`] ?? year}`}
-                                            type="file"
-                                            id={`file-${docKey}`}
-                                            multiple
-                                            onChange={(e) => {
-                                              const selectedYear = document.isMultipleYears ? selectedYears[`${docKey}_${yearIdx}`] : undefined;
-                                              e.target.files && handleFileUpload(docKey, e.target.files, selectedYear);
-                                            }}
-                                            className="hidden"
-                                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                          />
-                                          <label htmlFor={`file-${docKey}`}>
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              disabled={uploadingDocuments[docKey]}
-                                              className="cursor-pointer min-w-[140px] flex items-center justify-center border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                                              asChild
-                                            >
-                                              <span>
-                                                {uploadingDocuments[docKey] ? (
-                                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                                                ) : (
-                                                  <Upload className="h-4 w-4" />
-                                                )}
-                                                <span className="ml-1 block truncate">
-                                                  Upload Document
-                                                </span>
-                                              </span>
-                                            </Button>
-                                          </label>
-                                          {/* Always render the + button, but hide it if not needed for consistent spacing (promoter) */}
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => {
-                                              // Find the first available year not already selected
-                                              const selectedYears = (documentYears[docKey] || [currentYear]);
-                                              const availableYear = Array.from({ length: 6 })
-                                                .map((_, i) => currentYear - i)
-                                                .find(y => !selectedYears.includes(y));
-                                              setDocumentYears(prev => ({
-                                                ...prev,
-                                                [docKey]: [...selectedYears, availableYear !== undefined ? availableYear : currentYear]
-                                              }));
-                                            }}
-                                            className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${document.isMultipleYears && yearIdx === years.length - 1 ? '' : 'invisible'}`}
-                                            aria-label="Add Year"
-                                          >
-                                            +
-                                          </Button>
-                                        </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  ));
-                                })}
-                              </TableBody>
-                            </Table>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    ))}
-                    {/* +Add button for multiple sections, outside and below the last card, left-aligned */}
-                    {isMultipleSection && (
-                      <div className="flex justify-start mb-6 -mt-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSectionInstances(prev => ({
-                            ...prev,
-                            [`promoter${currentPage - 1}_${categoryIndex}`]: (prev[`promoter${currentPage - 1}_${categoryIndex}`] || 1) + 1
-                          }))}
-                          className="flex items-center gap-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                        >
-                          <Plus className="h-4 w-4" /> Add Section
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </>
+            <PromoterSection
+              promoter={promoters[currentPage - 1]}
+              categories={promoters[currentPage - 1].categories}
+              sectionInstances={sectionInstances}
+              setSectionInstances={setSectionInstances}
+              documentYears={documentYears}
+              setDocumentYears={setDocumentYears}
+              selectedYears={selectedYears}
+              setSelectedYears={setSelectedYears}
+              yearRowTemplates={yearRowTemplates}
+              setYearRowTemplates={setYearRowTemplates}
+              currentYear={currentYear}
+              handleFileUpload={(documentId, files, year, sectionName) => handleFileUpload(documentId, files, year, `Promoter ${currentPage}`, sectionName)}
+              getApiFilesForDocument={(documentMasterId, category, year, promoterIndex, section) => 
+                getApiFilesForDocument(apiDocumentMasters, `Promoter ${currentPage}`, documentMasterId, category, year, promoterIndex, section)
+              }
+              uploadingDocuments={uploadingDocuments}
+              currentPage={currentPage}
+              handleAddSection={handleAddSection}
+              beSections={beSections}
+              temporarySections={temporarySections}
+            />
           )}
         </div>
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>Page {currentPage + 1} of {totalPages}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToPreviousPage}
-                disabled={currentPage === 0}
-                className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }).map((_, index) => (
-                  <Button
-                    key={index}
-                    variant={currentPage === index ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => goToPage(index)}
-                    className={`w-8 h-8 p-0 ${currentPage === index
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                      }`}
-                  >
-                    {index + 1}
-                  </Button>
-                ))}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages - 1}
-                className="border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-              >
-                Next
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          goToPreviousPage={goToPreviousPage}
+          goToNextPage={goToNextPage}
+          goToPage={goToPage}
+        />
       </div>
     </MainLayout>
   );

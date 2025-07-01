@@ -119,7 +119,7 @@ const PromotersUploadDocuments = () => {
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           {document.documentType}
-                          {document.isMultiple && (
+                          {document.isMultipleFiles && (
                             <TooltipProvider>
                               <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>
@@ -152,10 +152,10 @@ const PromotersUploadDocuments = () => {
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
-                                <span className="truncate max-w-[120px]" title={file.name} style={{ marginRight: document.isMultiple ? '0.5rem' : 0 }}>
+                                <span className="truncate max-w-[120px]" title={file.name} style={{ marginRight: document.isMultipleFiles ? '0.5rem' : 0 }}>
                                   {file.name}
                                 </span>
-                                {document.isMultiple && fileIndex === uploadedFiles[document.id].length - 1 && (
+                                {document.isMultipleFiles && fileIndex === uploadedFiles[document.id].length - 1 && (
                                   <>
                                     <input
                                       type="file"
@@ -179,7 +179,7 @@ const PromotersUploadDocuments = () => {
                               </div>
                             ))}
                           </div>
-                        ) : document.isMultiple ? (
+                        ) : document.isMultipleFiles ? (
                           <span className="text-gray-400 text-sm">No files uploaded (multiple files required)</span>
                         ) : (
                           <span className="text-gray-400 text-sm">No files uploaded</span>
