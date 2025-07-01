@@ -13,7 +13,7 @@ export interface CustomerType {
 
 
 export interface DocumentStatusType {
-    total: number;
+    totalReqDoc: number;
     pending: number;
     submitted: number;
     approved: number;
@@ -31,7 +31,8 @@ export interface GetDocumentByPanCardResponseType {
 
 export interface DocumentsByCategoryType {
     category: String,
-    documents: DocumentResponseType[]
+    documents: DocumentResponseType[],
+    section: string
 }
 
 export interface DocumentResponseType {
@@ -42,6 +43,7 @@ export interface DocumentResponseType {
     files: FileResponseType[],
     status: String
     category?: String
+    year?: String
     customerType?: string
 }
 
@@ -49,5 +51,6 @@ export interface DocumentResponseType {
 export interface FileResponseType {
     docId: String,
     docName: String,
-    docStatus: String
+    docStatus: String,
+    year?: string,
 }

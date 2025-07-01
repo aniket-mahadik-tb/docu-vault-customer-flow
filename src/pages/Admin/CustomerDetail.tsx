@@ -145,10 +145,7 @@ const CustomerDetail = () => {
     effcts();
   }, [])
 
-  // useEffect(() => {
-  //   console.log(allDocuments)
-  // }, [allDocuments])
-
+  
   const effcts = async function fetchCustomer() {
     try {
       if (true) {
@@ -156,7 +153,7 @@ const CustomerDetail = () => {
         if (tempCustomer) {
           setCustomer(tempCustomer);
           const documents: DocumentResponseType[] = flattenDocuments(tempCustomer.documents);
-          console.log(documents)
+       
           setAllDocuments(documents);
         } else {
           // If customer not found, redirect to customer list
@@ -502,29 +499,20 @@ const CustomerDetail = () => {
                             {doc.documentType}
                             {doc.files && doc.files.length > 1 && (
                               <>
-                                <span className={`ml-2 rounded px-2 py-0.5 text-xs font-semibold ${badgeColors[docIdx % badgeColors.length]}`}>
+                                <span className={`ml-2 rounded px-2 py-0.5 text-xs font-semibold badge-nowrap ${badgeColors[docIdx % badgeColors.length]}`}>
                                   {doc.files.length} {doc.files.length === 1 ? 'file' : 'files'}
                                 </span>
                                 <span className="ml-2 text-gray-400">#{idx + 1}</span>
-                                <span
-                                  className="ml-1 cursor-pointer inline-flex items-center text-xs bg-pink-100 rounded-full p-0.5"
-                                  title="Year: 2022"
-                                >
-                                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="inline-block align-middle">
-                                    <circle cx="5" cy="5" r="4.5" fill="#fce7f3" />
-                                    <text x="5" y="8" textAnchor="middle" fontSize="7" fill="#ec4899" fontWeight="bold">i</text>
-                                  </svg>
-                                </span>
-                                {doc.customerType && String(doc.customerType).toLowerCase().includes('promoter') && (
+                                {doc.year ? (
                                   <span
-                                    className="ml-1 cursor-pointer inline-flex items-center text-xs bg-pink-100 rounded-full p-0.5"
-                                    title="Promoter document"
+                                    className="ml-2 rounded px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-400"
+                                    title={`Year: ${doc.year}`}
                                   >
-                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="inline-block align-middle">
-                                      <circle cx="5" cy="5" r="4.5" fill="#fce7f3" />
-                                      <text x="5" y="8" textAnchor="middle" fontSize="7" fill="#ec4899" fontWeight="bold">p</text>
-                                    </svg>
+                                    {doc.year}
                                   </span>
+                                ) : null}
+                                {doc.customerType && String(doc.customerType).toLowerCase().includes('promoter') && (
+                                  null
                                 )}
                               </>
                             )}
@@ -537,7 +525,7 @@ const CustomerDetail = () => {
                                   <span>PROMOTER</span>
                                   {(() => {
                                     // Extract number from customerType (e.g., 'promoter1' -> 1)
-                                    const match = String(doc.customerType).match(/promoter(\d+)/i);
+                                    const match = String(doc.customerType).match(/promoter\s*(\d+)/i);
                                     return match ? (
                                       <span className="text-gray-400 text-xs">#{match[1]}</span>
                                     ) : null;

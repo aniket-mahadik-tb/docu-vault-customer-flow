@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import MainLayout from "@/layouts/MainLayout";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2, UserPlus, CheckCircle, X, Check, Clock, AlertCircle, ChevronDown, Filter } from "lucide-react";
+import { Eye, EyeOff, Trash2, UserPlus, CheckCircle, Check, Clock, AlertCircle, ChevronDown, Filter, X as CloseIcon, XCircle, FileText, Circle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Customer, useCustomers } from "@/contexts/CustomerContext";
 import {
@@ -33,6 +33,11 @@ import { ShimmerThumbnail } from "react-shimmer-effects";
 import { CustomerType } from "@/utils/types";
 import { useTempCustomer } from "@/utils/TempContext";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import Modal from '@mui/material/Modal';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import { Box, Typography } from '@mui/material';
+import { Badge } from "@/components/ui/badge";
 
 const CustomerList = () => {
   // const { customers, deleteCustomer } = useCustomers();
@@ -47,11 +52,13 @@ const CustomerList = () => {
   const { setTempCustomer } = useTempCustomer();
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [statusModalData, setStatusModalData] = useState(null);
 
   const statusOptions = [
     { value: "ALL", label: "All", icon: <Check className="h-4 w-4 text-gray-400" /> },
     { value: "SUBMITTED", label: "Submitted", icon: <CheckCircle className="h-4 w-4 text-green-600" /> },
-    { value: "REJECTED", label: "Rejected", icon: <X className="h-4 w-4 text-red-600" /> },
+    { value: "REJECTED", label: "Rejected", icon: <Eye className="h-4 w-4 text-red-600" /> },
     { value: "APPROVED", label: "Approved", icon: <Check className="h-4 w-4 text-blue-600" /> },
     { value: "PENDING", label: "Pending", icon: <Clock className="h-4 w-4 text-yellow-600" /> },
   ];
@@ -78,6 +85,8 @@ const CustomerList = () => {
     // setViewDialogOpen(true);
     // setSelectedCustomer(customer);
     const response = await customerService.getCustomerDocuments(customer.pan);
+    console.log(response)
+
     customer.documents = response;
     // customer.clientType = response.customerType;
     setTempCustomer(customer);
@@ -126,6 +135,17 @@ const CustomerList = () => {
       });
     }
   }
+
+  const getStatusSummary = (status) => {
+    if (!status) return ["No Status"];
+    if (status.processCompleted > 0) return ["Completed"];
+    const parts = [];
+    if (status.pending > 0) parts.push(`${status.pending} Pending`);
+    if (status.submitted > 0) parts.push(`${status.submitted} Submitted`);
+    if (status.approved > 0) parts.push(`${status.approved} Approved`);
+    if (status.rejected > 0) parts.push(`${status.rejected} Rejected`);
+    return parts.length ? parts : ["No Status"];
+  };
 
   return (
     <MainLayout showSidebar={true}>
@@ -207,7 +227,7 @@ const CustomerList = () => {
                       <TableHead className="text-center">Phone</TableHead>
                       <TableHead className="text-center">PAN Card</TableHead>
                       <TableHead className="text-center">Customer Type</TableHead>
-                      <TableHead className="text-center">Documents</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
                       <TableHead className="text-center">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -221,16 +241,47 @@ const CustomerList = () => {
                           <TableCell className="text-center">{customer.phone}</TableCell>
                           <TableCell className="text-center">{customer.pan}</TableCell>
                           <TableCell className="text-center">{customer.clientType}</TableCell>
-                          <TableCell className="text-center">
-                            {true ? (
-                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                                Submitted ({customer.documents?.documentsByCategory[0].documents.length})
-                              </span>
-                            ) : (
-                              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
-                                Pending
-                              </span>
-                            )}
+                          <TableCell className="text-center align-middle">
+                            <div className="flex justify-center items-center">
+                              {customer.documentStatus?.processCompleted === customer.documentStatus.totalReqDoc ? (
+                                <Badge
+                                  variant="default"
+                                  className="bg-green-100 text-green-800 px-3 py-1 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                  onClick={() => {
+                                    if (statusModalOpen && statusModalData && statusModalData.pan === customer.pan) {
+                                      setStatusModalOpen(false);
+                                    } else {
+                                      setStatusModalData(customer);
+                                      setStatusModalOpen(true);
+                                    }
+                                  }}
+                                >
+                                  Completed
+                                  {statusModalOpen && statusModalData && statusModalData.pan === customer.pan ? (
+                                    <EyeOff className="h-4 w-4 text-green-800 hover:text-green-900 ml-1" />
+                                  ) : (
+                                    <Eye className="h-4 w-4 text-green-800 hover:text-green-900 ml-1" />
+                                  )}
+                                </Badge>
+                              ) : statusModalOpen && statusModalData && statusModalData.pan === customer.pan ? (
+                                <EyeOff
+                                  style={{ cursor: 'pointer' }}
+                                  className="h-5 w-5 text-indigo-600 hover:text-indigo-800"
+                                  onClick={() => {
+                                    setStatusModalOpen(false);
+                                  }}
+                                />
+                              ) : (
+                                <Eye
+                                  style={{ cursor: 'pointer' }}
+                                  className="h-5 w-5 text-indigo-600 hover:text-indigo-800"
+                                  onClick={() => {
+                                    setStatusModalData(customer);
+                                    setStatusModalOpen(true);
+                                  }}
+                                />
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-center">
                             <div className="flex gap-2 justify-center">
@@ -317,7 +368,7 @@ const CustomerList = () => {
                   <p className="text-sm text-muted-foreground">Documents Status</p>
                   <p className="font-medium">
                     {true
-                      ? `Submitted (${selectedCustomer.documents?.documentsByCategory[0].documents.length} documents)`
+                      ? `Submitted (${selectedCustomer.documentStatus.submitted} documents)`
                       : "No documents submitted"}
                   </p>
                 </div>
@@ -351,6 +402,79 @@ const CustomerList = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Modal
+          open={statusModalOpen}
+          onClose={() => setStatusModalOpen(false)}
+          aria-labelledby="status-summary-title"
+          aria-describedby="status-summary-description"
+        >
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: 320,
+              bgcolor: '#f9fafb',
+              borderRadius: 3,
+              boxShadow: 24,
+              p: 0,
+              outline: 'none',
+              minWidth: 0
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, borderBottom: '1px solid #e5e7eb', bgcolor: 'white', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
+              <Typography id="status-summary-title" variant="subtitle1" component="h2" fontWeight={600}>
+                Document Status
+              </Typography>
+              <CloseIcon
+                style={{ cursor: 'pointer' }}
+                className="h-5 w-5 text-gray-500 hover:text-gray-700"
+                onClick={() => setStatusModalOpen(false)}
+              />
+            </Box>
+            {statusModalData && (
+              <List sx={{ p: 2 }}>
+                <ListItem sx={{ py: 1, display: 'flex', alignItems: 'center' }}>
+                  <FileText size={18} className="text-blue-500 mr-2" />
+                  <span style={{ flex: 1 }}>Total Required</span>
+                  <Typography sx={{ fontWeight: 600, color: 'primary.main' }}>
+                    {statusModalData.documentStatus?.totalReqDoc}
+                  </Typography>
+                </ListItem>
+                <ListItem sx={{ py: 1, display: 'flex', alignItems: 'center' }}>
+                  <Clock size={18} className="text-yellow-500 mr-2" />
+                  <span style={{ flex: 1 }}>Pending</span>
+                  <Typography sx={{ fontWeight: 600, color: 'warning.main' }}>
+                    {statusModalData.documentStatus?.pending}
+                  </Typography>
+                </ListItem>
+                <ListItem sx={{ py: 1, display: 'flex', alignItems: 'center' }}>
+                  <Circle size={18} className="text-sky-500 mr-2" />
+                  <span style={{ flex: 1 }}>Submitted</span>
+                  <Typography sx={{ fontWeight: 600, color: 'info.main' }}>
+                    {statusModalData.documentStatus?.submitted}
+                  </Typography>
+                </ListItem>
+                <ListItem sx={{ py: 1, display: 'flex', alignItems: 'center' }}>
+                  <CheckCircle size={18} className="text-green-500 mr-2" />
+                  <span style={{ flex: 1 }}>Approved</span>
+                  <Typography sx={{ fontWeight: 600, color: 'success.main' }}>
+                    {statusModalData.documentStatus?.approved}
+                  </Typography>
+                </ListItem>
+                <ListItem sx={{ py: 1, display: 'flex', alignItems: 'center' }}>
+                  <XCircle size={18} className="text-red-500 mr-2" />
+                  <span style={{ flex: 1 }}>Rejected</span>
+                  <Typography sx={{ fontWeight: 600, color: 'error.main' }}>
+                    {statusModalData.documentStatus?.rejected}
+                  </Typography>
+                </ListItem>
+              </List>
+            )}
+          </Box>
+        </Modal>
       </div>
     </MainLayout >
   );

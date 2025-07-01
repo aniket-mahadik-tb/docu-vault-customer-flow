@@ -143,10 +143,13 @@ const DocumentUpload = () => {
           setOrgCategories(individual.documentsByCategory);
           setPromoterCategories([]);
         }
+
+        
       } catch (error) {
         console.error("Error fetching document masters:", error);
       }
     };
+
     fetchDocumentMasters();
   }, []);
 
@@ -333,6 +336,7 @@ const DocumentUpload = () => {
       title: "File removed",
       description: "Document has been removed",
     });
+
   };
 
   // Add promoter handler
@@ -458,6 +462,7 @@ const DocumentUpload = () => {
              // disableAdd={promoters.length >= maxPromoters}
             />
           </div>
+
           {/* Main Documents Page (Page 0) */}
           {currentPage === 0 && (
             <MainSection
@@ -481,6 +486,7 @@ const DocumentUpload = () => {
               temporarySections={temporarySections}
             />
           )}
+
           {/* Promoter Documents Page (Page 1+) */}
           {currentPage > 0 && promoters[currentPage - 1] && (
             <PromoterSection

@@ -196,7 +196,7 @@ export function useCustomerService() {
     try {
       type ExtendedGenericResponse = GenericApiResponse<null> & { timestamp: String }
       const response = await api.put<ExtendedGenericResponse>(`documents/${documentId}/status`, { note: remarks, status: status });
-      console.log(response)
+   
       return response;
     } catch (error: any) {
       console.error("Failed to update document status");
@@ -207,7 +207,6 @@ export function useCustomerService() {
   service.getCustomerDocuments = async (panCard: string) => {
     try {
       const response = await api.get<GenericApiResponse<GetDocumentByPanCardResponseType>>(`/documents/client?pan=${panCard}`);
-      // console.log(response)
       return response.data
     } catch (error: any) {
       console.error("Failed to fetch customer documents");

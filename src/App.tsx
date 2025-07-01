@@ -28,7 +28,8 @@ import PromotersUploadDocuments from "./pages/PromotersUploadDocuments";
 import AdminEntry from "./pages/Admin/Login";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import CustomerList from "./pages/Admin/CustomerList";
-import CustomerDetail from "./pages/Admin/CustomerDetail";
+// import CustomerDetail from "./pages/Admin/CustomerDetail";
+import CustomerDetail from "./pages/Admin/CustomerDetailsCard";
 import ReviewDocument from "./pages/Admin/ReviewDocument";
 import ReviewDocuments from "./pages/Admin/ReviewDocuments";
 import NewCustomer from "./pages/Admin/NewCustomer";
@@ -49,6 +50,8 @@ import { TempCustomerContextProvider } from "./utils/TempContext";
 // import NewAdmin from "./pages/Admin/NewAdmin";
 
 const queryClient = new QueryClient();
+
+console.warn = () => {};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -89,6 +92,7 @@ const App = () => (
                         <Route path="/admin/new-admin" element={<NewAdmin />} />
                         <Route path="/admin/bank-users" element={<BankUsersList />} />
                         <Route path="/admin/new-bank-user" element={<NewBankUser />} />
+                        
 
                         {/* Bank routes */}
                         <Route path="/bank" element={<BankEntry />} />
