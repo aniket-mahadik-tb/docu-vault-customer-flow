@@ -237,7 +237,8 @@ const DocumentUpload = () => {
       try {
         const response = await documentUploadService.getDocumentMasters();
         setApiDocumentMasters(response.data);
-        
+        setMaxPromoters(response.data.length - 1); // 1 org, rest promoters
+
         // Update BE sections after successful upload
         const newBeSections: { [category: string]: string[] } = {};
         response.data.forEach((customerTypeObj: any) => {
@@ -336,7 +337,7 @@ const DocumentUpload = () => {
 
   // Add promoter handler
   const handleAddPromoter = () => {
-    if (promoters.length >= maxPromoters) return;
+    if (promoters.length > maxPromoters) return;
     const newPromoter = {
       id: Date.now(),
       categories: promoterTemplate ? JSON.parse(JSON.stringify(promoterTemplate.documentsByCategory)) : [],
@@ -454,7 +455,7 @@ const DocumentUpload = () => {
               currentPage={currentPage}
               handleAddPromoter={handleAddPromoter}
               handleRemovePromoter={handleRemovePromoter}
-              disableAdd={promoters.length >= maxPromoters}
+             // disableAdd={promoters.length >= maxPromoters}
             />
           </div>
           {/* Main Documents Page (Page 0) */}
