@@ -100,5 +100,29 @@ export function useDocumentUploadService() {
     }
   };
 
+  // Fetches a document preview by docId
+  service.getDocumentPreview = async (docId: string): Promise<any> => {
+    try {
+      const response = await api.get(`/documents/preview/${docId}`, {
+        responseType: 'blob', // or 'arraybuffer' if needed
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("Failed to fetch document preview:", error);
+      throw error;
+    }
+  };
+
+  // Fetches document details (metadata and preview URL) by docId
+  service.getDocumentDetails = async (docId: string): Promise<any> => {
+    try {
+      const response = await api.get(`/documents/${docId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Failed to fetch document details:", error);
+      throw error;
+    }
+  };
+
   return service;
 } 

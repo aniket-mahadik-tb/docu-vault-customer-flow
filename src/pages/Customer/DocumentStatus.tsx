@@ -169,7 +169,14 @@ const DocumentStatus = () => {
                           return doc.files.map((file: any, idx: number) => (
                             <TableRow key={doc.id + '-' + file.docId}>
                               {idx === 0 && (
-                                <TableCell className="font-medium pl-6 text-left" rowSpan={doc.files.length}>{doc.documentType}</TableCell>
+                                <TableCell className="font-medium pl-6 text-left" rowSpan={doc.files.length}>
+                                  {doc.documentType}
+                                  {doc.year ? (
+                                    <select disabled style={{ marginLeft: 8, padding: '2px 8px', borderRadius: 4, background: '#f3f4f6', color: '#6b7280', fontSize: 13, border: '1px solid #d1d5db', outline: 'none', cursor: 'not-allowed', minWidth: 60 }}>
+                                      <option value={doc.year}>{doc.year}</option>
+                                    </select>
+                                  ) : null}
+                                </TableCell>
                               )}
                               {idx === 0 && (
                                 <TableCell className="px-4 text-center" rowSpan={doc.files.length}>{doc.category}</TableCell>
