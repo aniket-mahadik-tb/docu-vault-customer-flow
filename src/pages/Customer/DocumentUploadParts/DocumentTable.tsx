@@ -424,11 +424,26 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                                     id={`file-${masterDocument.documentMasterId}-${docKey}-${yearIdx}`}
                                     multiple
                                     onChange={(e) => {
-                                    
                                       const selectedYear = masterDocument.isMultipleYears ? effectiveYear : undefined;
-                                      
                                       if (masterDocument.isMultipleYears && !selectedYear) {
                                         toast({ title: "Select year", description: "Please choose a year before uploading", variant: "destructive" });
+                                        e.target.value = "";
+                                        return;
+                                      }
+                                      // Restrict upload if isMultipleFiles is false and already a file exists
+                                      const existingFiles = getApiFilesForDocument(
+                                        masterDocument.documentMasterId,
+                                        section.category,
+                                        masterDocument.isMultipleYears ? selectedYear : undefined,
+                                        isPromoter ? currentPage - 1 : undefined,
+                                        section
+                                      );
+                                      if (!masterDocument.isMultipleFiles && existingFiles.length > 0) {
+                                        toast({
+                                          title: "Only one file can be uploaded to this field.",
+                                          description: "Please delete the existing file to re-upload.",
+                                          variant: "destructive",
+                                        });
                                         e.target.value = "";
                                         return;
                                       }
@@ -557,6 +572,23 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                                       const selectedYear = selectedYears[yearKey] ?? row.year;
                                       if (!selectedYear) {
                                         toast({ title: "Select year", description: "Please choose a year before uploading", variant: "destructive" });
+                                        e.target.value = "";
+                                        return;
+                                      }
+                                      // Restrict upload if isMultipleFiles is false and already a file exists
+                                      const existingFiles = getApiFilesForDocument(
+                                        masterDocument.documentMasterId,
+                                        section.category,
+                                        masterDocument.isMultipleYears ? selectedYear : undefined,
+                                        isPromoter ? currentPage - 1 : undefined,
+                                        section
+                                      );
+                                      if (!masterDocument.isMultipleFiles && existingFiles.length > 0) {
+                                        toast({
+                                          title: "Only one file can be uploaded to this field.",
+                                          description: "Please delete the existing file to re-upload.",
+                                          variant: "destructive",
+                                        });
                                         e.target.value = "";
                                         return;
                                       }
