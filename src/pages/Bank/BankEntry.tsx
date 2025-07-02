@@ -96,8 +96,8 @@ const BankEntry = () => {
 
       // Set the user as authenticated
       setUserId(panValue);
-      setRole("Bank");
-      setValueToLocalStorage("role", "Bank");
+      setRole("BANK");
+      setValueToLocalStorage("role", "BANK");
       
       toast({
         title: "Verification Successful",

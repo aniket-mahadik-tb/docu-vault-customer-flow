@@ -34,12 +34,12 @@ const Index = () => {
       description: "Review and process document submissions",
       icon: <FileText className="h-12 w-12 text-accent" />,
       path: "/bank",
-      role: "Bank" as const,
+      role: "BANK" as const,
       color: "bg-accent/5 hover:bg-accent/10 border-accent/20",
     },
   ];
 
-  const handlePortalSelect = (path: string, role: "Customer" | "SUPER_ADMIN" | "Bank") => {
+  const handlePortalSelect = (path: string, role: "Customer" | "SUPER_ADMIN" | "BANK") => {
     // setRole(role);
     if (role === "Customer") {
       setValueToLocalStorage("role", role);
