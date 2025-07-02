@@ -40,12 +40,12 @@ const Index = () => {
   ];
 
   const handlePortalSelect = (path: string, role: "Customer" | "SUPER_ADMIN" | "BANK") => {
-    // setRole(role);
-    if (role === "Customer") {
-      setValueToLocalStorage("role", role);
+    const roles=getValueFromLocalStorage("role");
+    if (roles === "Customer") {
+      // setValueToLocalStorage("role", role);
     } else if (role === "SUPER_ADMIN") {
       //change here as per the api 
-      setValueToLocalStorage("role", "SUPER_ADMIN");
+      // setValueToLocalStorage("role", "SUPER_ADMIN");
     }
     navigate(path);
   };
