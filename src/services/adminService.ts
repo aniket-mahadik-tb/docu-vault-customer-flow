@@ -2,6 +2,7 @@ import { z } from "zod";
 import axios from "axios";
 import { basePath } from "@/utils/globalConstants";
 import api from "@/instances/axios";
+import { GenericApiResponse } from "./customerService";
 
 
 // Define the admin schema for validation
@@ -43,6 +44,13 @@ const mockAdmins: Admin[] = [
   },
 ];
 
+interface AdminLoginResponse {
+  accessToken: string,
+  message: string,
+  role: "SUPER_ADMIN" | "INTERNAL_USER" | "BANK",
+  refreshToken: string
+}
+
 // Simulate API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -54,22 +62,20 @@ const mockApiCall = async <T>(data: T, status = 200, delayMs = 300): Promise<{ d
 
 export interface AdminService {
   getAllAdmins: () => Promise<{ data: Admin[]; status: number }>;
-  getAdminByUserNameAndPassword: (params: { username: String, password: String }) => Promise<true>;
+  getAdminByUserNameAndPassword: (params: { email: String, password: String }) => Promise<true>;
   getAdminById: (id: string) => Promise<{ data: Admin; status: number }>;
   getAdminByUserId: (userId: string) => Promise<{ data: Admin; status: number }>;
   addAdmin: (adminData: Omit<Admin, "id" | "createdAt" | "lastLogin">) => Promise<{ data: Admin; status: number }>;
   updateAdmin: (id: string, adminData: Partial<Admin>) => Promise<{ data: Admin; status: number }>;
   deleteAdmin: (id: string) => Promise<{ data: null; status: number }>;
   validateAdmin: (userId: string, password: string) => Promise<{ data: { isValid: boolean; admin?: Admin }; status: number }>;
+  handleTokenExpired: (refreshToken: string) => Promise<boolean>;
 }
 
 export function useAdminService(): AdminService {
   const service: AdminService = {
     getAllAdmins: async () => {
       try {
-        // In real API:
-        // const response = await fetch(`${API_BASE_URL}/admins`);
-        // return await response.json();
         return mockApiCall(mockAdmins);
       } catch (error: any) {
         console.error("Failed to fetch admins");
@@ -77,15 +83,16 @@ export function useAdminService(): AdminService {
       }
     },
 
-    getAdminByUserNameAndPassword: async (admin: { username: String, password: String }) => {
+    getAdminByUserNameAndPassword: async (admin: { email: String, password: String }) => {
       try {
-        const res = await api.post<{ token: string }>(`auth/login`, admin);
+        const res = await api.post<GenericApiResponse<AdminLoginResponse>>(`auth/login`, admin);
 
         if (res.status !== 200) {
           throw new Error("Invalid credentials");
         }
-
-        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("token", res.data.data.accessToken);
+        localStorage.setItem("refreshToken", res.data.data.refreshToken);
+        localStorage.setItem("role", res.data.data.role);
         return true;
       }
       catch (error: any) {
@@ -94,6 +101,25 @@ export function useAdminService(): AdminService {
         throw error;
       }
     },
+
+    handleTokenExpired: async (refreshToken: string) => {
+      try {
+        const res = await api.post<GenericApiResponse<AdminLoginResponse>>("/auth/refresh-token", { refreshToken: refreshToken });
+        if (res.status !== 200) {
+          throw new Error("Invalid credentials");
+        }
+        localStorage.setItem("token", res.data.data.accessToken);
+        localStorage.setItem("refreshToken", res.data.data.refreshToken);
+        localStorage.setItem("role", res.data.data.role);
+        return true;
+      } catch (error: any) {
+        console.error("Failed to fetch admin by username and password");
+        console.error(error);
+        throw error;
+      }
+      return true;
+    },
+
 
     getAdminById: async (id: string) => {
       try {

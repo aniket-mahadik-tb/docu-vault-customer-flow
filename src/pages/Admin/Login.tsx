@@ -20,7 +20,7 @@ const Login = () => {
   const adminService = useAdminService();
   const userService = useUserService();
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
   });
   // const { setValueToLocalStorage } = useLocalStorage();
@@ -30,7 +30,6 @@ const Login = () => {
   // }, [])
   useEffect(() => {
     if (userId && role === "Admin") {
-
       navigate("/admin/dashboard");
       return;
     }
@@ -64,13 +63,13 @@ const Login = () => {
         })
         return
       }
-      setValueToLocalStorage("role", "SuperAdmin");
+      // setValueToLocalStorage("role", "SuperAdmin");
       setIsSubmitting(true);
 
       // Simulate API call delay
       setTimeout(() => {
         setUserId("admin123"); // Simulated user ID
-        setRole("Admin");
+        setRole("SUPER_ADMIN");
 
         navigate("/admin/dashboard");
         setIsSubmitting(false);
@@ -143,10 +142,10 @@ const Login = () => {
                     <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       name="userId"
-                      type="text"
+                      type="email"
                       placeholder="Enter your user ID"
-                      value={formData.username}
-                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="pl-10 h-11 bg-gray-50/50 focus:bg-white transition-colors"
                       required
                     />

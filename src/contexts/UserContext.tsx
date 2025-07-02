@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
-export type UserRole = "Customer" | "Admin" | "Bank" | "SuperAdmin" | null;
+export type UserRole = "Customer" | "Admin" | "Bank" | "SuperAdmin" | null | "SUPER_ADMIN";
 
 export interface UserContextType {
   role: UserRole;

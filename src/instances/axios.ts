@@ -1,6 +1,8 @@
 // src/instance/axios.ts
+import { toast } from "@/hooks/use-toast";
 import { basePath } from "@/utils/globalConstants";
 import axios from "axios";
+
 
 // ✅ Create Axios instance
 const api = axios.create({
@@ -25,13 +27,51 @@ api.interceptors.request.use(
 // ✅ Response Interceptor
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      console.warn("Unauthorized! You can redirect to login here.");
-      // Optional: clear token, redirect, etc.
-    }
-    return Promise.reject(error);
+  async (error) => {
+    // const originalRequest = error.config;
+
+    // if (error.response?.status === 403 && !originalRequest._retry) {
+    //   originalRequest._retry = true; // prevent infinite retry loops
+    //   const success = await handleTokenExpired();
+    //   if (success) {
+    //     const token = localStorage.getItem("token");
+    //     if (token) {
+    //       originalRequest.headers.Authorization = `Bearer ${token}`;
+    //     }
+    //     return api(originalRequest); // ✅ Retry the failed request
+    //   }
+    // }
+
+    // return Promise.reject(error);
+    console.warn("failed to send request");
   }
 );
 
- export default api;
+// const handleTokenExpired = async () => {
+//   try {
+//     const role = localStorage.getItem("role");
+//     const refreshToken = localStorage.getItem("refreshToken");
+//     if (!refreshToken || role === "BANK" || role === "Customer") {
+//       console.warn("Unauthorized! You can redirect to login here.");
+//       return false;
+//     }
+//     const res = await api.post<any>("/auth/refresh-token", { refreshToken: refreshToken });
+//     if (res.status !== 200) {
+//       throw new Error("Invalid credentials");
+//     }
+//     localStorage.setItem("token", res.data.data.accessToken);
+//     localStorage.setItem("refreshToken", res.data.data.refreshToken);
+//     localStorage.setItem("role", res.data.data.role);
+//     return true;
+//   }
+//   catch (error: any) {
+//     console.error(error)
+//     toast({
+//       title: "Storage Error",
+//       description: "Failed to handle login",
+//       variant: "destructive",
+//     });
+//   }
+// }
+
+export default api;
