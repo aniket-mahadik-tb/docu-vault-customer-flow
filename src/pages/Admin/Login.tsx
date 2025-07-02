@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { useUser } from "@/contexts/UserContext";
+import { UserRole, useUser } from "@/contexts/UserContext";
 import MainLayout from "@/layouts/MainLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { setUserId, setRole, userId, role } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { setValueToLocalStorage } = useLocalStorage();
+  const { setValueToLocalStorage, getValueFromLocalStorage } = useLocalStorage();
   const adminService = useAdminService();
   const userService = useUserService();
   const [formData, setFormData] = useState({
@@ -29,7 +29,7 @@ const Login = () => {
   //   localStorage.removeItem("role");
   // }, [])
   useEffect(() => {
-    if (userId && role === "Admin") {
+    if (userId && (role === "SUPER_ADMIN" || role === "INTERNAL_USER")) {
       navigate("/admin/dashboard");
       return;
     }
@@ -48,6 +48,9 @@ const Login = () => {
   //     return false;
   //   }
   // };
+  function isUserRole(value: string): value is UserRole {
+    return ["ADMIN", "BANK", "SUPER_ADMIN", "INTERNAL_USER", "Customer"].includes(value); // Adjust as per your roles
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,8 +72,10 @@ const Login = () => {
       // Simulate API call delay
       setTimeout(() => {
         setUserId("admin123"); // Simulated user ID
-        setRole("SUPER_ADMIN");
-
+        const userRoleStr = getValueFromLocalStorage("role");
+        if (userRoleStr && isUserRole(userRoleStr)) {
+          setRole(userRoleStr as UserRole);
+        }
         navigate("/admin/dashboard");
         setIsSubmitting(false);
       }, 500);
