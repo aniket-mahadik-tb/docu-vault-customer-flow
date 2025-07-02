@@ -4,7 +4,7 @@ import MainLayout from "@/layouts/MainLayout";
 import { useCustomers, CustomerDocument, Customer } from "@/contexts/CustomerContext";
 import { useDocuments } from "@/contexts/DocumentContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send, File, RefreshCw, Link, Copy, FileText, Folder, Eye } from "lucide-react";
+import { ArrowLeft, Send, File, RefreshCw, Link, Copy, FileText, Folder, Eye, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import {
   Card,
@@ -170,6 +170,9 @@ const CustomerDetail = () => {
   }
 
   const [customer, setCustomer] = useState<CustomerType | null>(null);
+  const [note, setNote] = useState<string>("");
+  const [isEditingNote, setIsEditingNote] = useState<boolean>(false);
+  const [isNoteOpen, setIsNoteOpen] = useState(false);
   const { tempCustomer, setTempCustomer } = useTempCustomer();
   const [allDocuments, setAllDocuments] = useState<DocumentResponseType[] | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -361,62 +364,154 @@ const CustomerDetail = () => {
           </div>
         </div>
 
-        {/* Customer Info Card */}
-        <Card className="mb-8 shadow-sm border-0 bg-white max-w-full w-full mx-auto">
-          <CardContent className="flex flex-row flex-wrap items-center gap-x-4 gap-y-2 py-2 px-3 min-h-0 text-sm w-full">
-            {customer ? (
-              <>
-                <div className="flex flex-col min-w-[90px]">
-                  <span className="text-[11px] text-gray-400 font-medium">PAN</span>
-                  <span className="font-semibold text-gray-900">{customer.pan}</span>
+        {/* Admin Note Section (now also Customer Info) */}
+        <Card className="mb-8 shadow-sm border-0 bg-white max-w-full w-full mx-auto pb-2 ps-2">
+          <CardHeader
+            className="cursor-pointer select-none py-1 px-2"
+          >
+            <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-1 min-h-0 text-sm w-full">
+              {customer ? (
+                <>
+                  <div className="flex flex-col min-w-[90px]">
+                    <span className="text-[11px] text-gray-400 font-medium">PAN</span>
+                    <span className="font-semibold text-gray-900">{customer.pan}</span>
+                  </div>
+                  <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
+                  <div className="flex flex-col min-w-[90px]">
+                    <span className="text-[11px] text-gray-400 font-medium">Name</span>
+                    <span className="font-semibold text-gray-900">{customer.name}</span>
+                  </div>
+                  <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
+                  <div className="flex flex-col min-w-[120px]">
+                    <span className="text-[11px] text-gray-400 font-medium">Email</span>
+                    <span className="font-semibold text-gray-900">{customer.email}</span>
+                  </div>
+                  <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
+                  <div className="flex flex-col min-w-[90px]">
+                    <span className="text-[11px] text-gray-400 font-medium">Phone</span>
+                    <span className="font-semibold text-gray-900">{customer.phone}</span>
+                  </div>
+                  <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
+                  <div className="flex flex-col min-w-[70px]">
+                    <span className="text-[11px] text-gray-400 font-medium">Type</span>
+                    <span className="font-semibold text-gray-900">{customer.clientType}</span>
+                  </div>
+                  <span className="ms-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
+                  <div className="flex flex-col min-w-[70px]">
+                    <span className="text-[11px] text-gray-400 font-medium">Note</span>
+                    <span className="font-semibold text-gray-900"> <button
+                      type="button"
+                      className="flex items-center px-1 py-1 rounded border border-gray-200 shadow-sm min-w-0 w-[64px] group"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsNoteOpen((open) => !open);
+                      }}
+                      tabIndex={0}
+                      aria-label="Toggle Admin Note"
+                    >
+                      {isNoteOpen ? (
+                        <>
+                          <span className="flex items-center justify-center" style={{width: '70%'}}>
+                            <FileText className="h-5 w-5 text-gray-500" />
+                          </span>
+                          <span className="mx-1 h-5 border-l border-gray-300" />
+                          <span className="flex items-center justify-center transition-colors duration-150 cursor-pointer rounded group-hover:bg-gray-100" style={{width: '30%'}}>
+                            <ChevronUp className="h-4 w-4 text-gray-500" />
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="flex items-center justify-center" style={{width: '70%'}}>
+                            <FileText className="h-5 w-5 text-gray-500" />
+                          </span>
+                          <span className="mx-1 h-5 border-l border-gray-300" />
+                          <span className="flex items-center justify-center transition-colors duration-150 cursor-pointer rounded group-hover:bg-gray-100" style={{width: '30%'}}>
+                            <ChevronDown className="h-4 w-4 text-gray-500" />
+                          </span>
+                        </>
+                      )}
+                    </button></span>
+                  </div>
+                </>
+              ) : (
+                // Loading skeleton for customer info
+                <>
+                  <div className="flex flex-col min-w-[90px]">
+                    <span className="text-[11px] text-gray-400 font-medium">Customer ID</span>
+                    <span className="font-medium mt-1"><ShimmerTitle line={1} variant="secondary" /></span>
+                  </div>
+                  <div className="flex flex-col min-w-[90px]">
+                    <span className="text-[11px] text-gray-400 font-medium">Name</span>
+                    <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
+                  </div>
+                  <div className="flex flex-col min-w-[120px]">
+                    <span className="text-[11px] text-gray-400 font-medium">Email</span>
+                    <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
+                  </div>
+                  <div className="flex flex-col min-w-[90px]">
+                    <span className="text-[11px] text-gray-400 font-medium">Phone</span>
+                    <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
+                  </div>
+                  <div className="flex flex-col min-w-[70px]">
+                    <span className="text-[11px] text-gray-400 font-medium">Type</span>
+                    <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardHeader>
+          {isNoteOpen && (
+            <CardContent>
+              {isEditingNote ? (
+                <div className="flex flex-col gap-2">
+                  <textarea
+                    className="border rounded p-2 w-full min-h-[80px]"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setIsEditingNote(false);
+                        // Here, you would also call an API to save the note
+                        // e.g. await saveNoteForCustomer(customer.id, note)
+                      }}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsEditingNote(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-                <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
-                <div className="flex flex-col min-w-[90px]">
-                  <span className="text-[11px] text-gray-400 font-medium">Name</span>
-                  <span className="font-semibold text-gray-900">{customer.name}</span>
+              ) : (
+                <div className="flex justify-between items-center">
+                  <div>
+                    {note ? (
+                      <span className="whitespace-pre-line">{note}</span>
+                    ) : (
+                      <span className="text-gray-400">No note added yet.</span>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditingNote(true);
+                    }}
+                  >
+                    {note ? "Edit Note" : "Add Note"}
+                  </Button>
                 </div>
-                <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
-                <div className="flex flex-col min-w-[120px]">
-                  <span className="text-[11px] text-gray-400 font-medium">Email</span>
-                  <span className="font-semibold text-gray-900">{customer.email}</span>
-                </div>
-                <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
-                <div className="flex flex-col min-w-[90px]">
-                  <span className="text-[11px] text-gray-400 font-medium">Phone</span>
-                  <span className="font-semibold text-gray-900">{customer.phone}</span>
-                </div>
-                <span className="mx-2 h-6 border-l border-gray-200 hidden sm:inline-block" />
-                <div className="flex flex-col min-w-[70px]">
-                  <span className="text-[11px] text-gray-400 font-medium">Type</span>
-                  <span className="font-semibold text-gray-900">{customer.clientType}</span>
-                </div>
-              </>
-            ) : (
-              // Loading skeleton for customer info
-              <>
-                <div className="flex flex-col min-w-[90px]">
-                  <span className="text-[11px] text-gray-400 font-medium">Customer ID</span>
-                  <span className="font-medium mt-1"><ShimmerTitle line={1} variant="secondary" /></span>
-                </div>
-                <div className="flex flex-col min-w-[90px]">
-                  <span className="text-[11px] text-gray-400 font-medium">Name</span>
-                  <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
-                </div>
-                <div className="flex flex-col min-w-[120px]">
-                  <span className="text-[11px] text-gray-400 font-medium">Email</span>
-                  <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
-                </div>
-                <div className="flex flex-col min-w-[90px]">
-                  <span className="text-[11px] text-gray-400 font-medium">Phone</span>
-                  <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
-                </div>
-                <div className="flex flex-col min-w-[70px]">
-                  <span className="text-[11px] text-gray-400 font-medium">Type</span>
-                  <span className="font-medium mt-1"><ShimmerTitle variant="secondary" line={1} /></span>
-                </div>
-              </>
-            )}
-          </CardContent>
+              )}
+            </CardContent>
+          )}
         </Card>
 
         {/* Documents Table or No Documents Message */}

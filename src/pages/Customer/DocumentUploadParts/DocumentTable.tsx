@@ -1,13 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Trash2, Info, X, Upload } from "lucide-react";
+import { Plus, Trash2, Info, X, Upload, ZoomIn, RotateCcw, ZoomOut } from "lucide-react";
 import { useCustomers } from "@/contexts/CustomerContext";
 import { toast } from "@/components/ui/use-toast";
 import { useDocumentUploadService } from "@/services/documentUploadService";
+import { useDocumentService } from "@/services/documentService";
+import { fileTypeFromBlob } from "file-type";
+import {
+  TransformWrapper,
+  TransformComponent,
+  useControls,
+} from "react-zoom-pan-pinch";
+import * as pdfjs from "pdfjs-dist";
+const pdfWorkerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+import { Skeleton } from "@mui/material";
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import { zoomPlugin } from "@react-pdf-viewer/zoom";
+
 
 interface DocumentTableProps {
   category: any;
@@ -60,11 +74,89 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
 }) => {
   const { sectionTemplates } = useCustomers();
   const documentUploadService = useDocumentUploadService();
-
+  const documentService = useDocumentService();
+  const [documentBlobUrl, setDocumentBlobUrl] = useState<string | null>(null);
+  const [documentBlobType, setDocumentBlobType] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   // Modal state
   const [previewData, setPreviewData] = useState<any>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
+
+  const [zoom, setZoom] = useState(0.5);
+  const zoomPluginInstance = zoomPlugin();
+
+
+  useEffect(() => {
+    // Only apply zoom for PDFs
+    if (
+      (documentBlobType === "application/pdf")
+      && typeof zoomPluginInstance.zoomTo === 'function'
+    ) {
+      zoomPluginInstance.zoomTo(zoom);
+    }
+  }, [zoom, documentBlobType]);
+
+
+  const handleZoom = async (action: "IN" | "OUT") => {
+    if (action === "IN") {
+      if (zoom < 1) {await setZoom(prev => prev + 0.1);}
+    } else {
+      if (zoom > 0.5) await setZoom(prev => prev - 0.1)
+    }
+  }
+
+  const Controls = () => {
+    const { zoomIn, zoomOut, resetTransform } = useControls();
+    return (
+      <div className="flex items-center gap-2 mt-4">
+        <div className="inline-flex rounded-md shadow-sm border border-gray-200 bg-white/80 backdrop-blur-md overflow-hidden" role="group">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { zoomOut(); handleZoom("OUT"); }}
+            title="Zoom Out"
+            aria-label="Zoom Out"
+            className="rounded-none border-0 transition-transform duration-150 hover:scale-105 hover:bg-gray-100"
+          >
+            <ZoomOut className="h-4 w-4 drop-shadow" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="rounded-none border-0 bg-white text-gray-700 cursor-default select-none"
+            style={{ pointerEvents: "none" }}
+            tabIndex={-1}
+            aria-label="Current Zoom Percentage"
+            title="Current Zoom Percentage"
+          >
+            {Math.round(zoom * 100)}%
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { zoomIn(); handleZoom("IN"); }}
+            title="Zoom In"
+            aria-label="Zoom In"
+            className="rounded-none border-0 transition-transform duration-150 hover:scale-105 hover:bg-gray-100"
+          >
+            <ZoomIn className="h-4 w-4 drop-shadow" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { resetTransform(); setZoom(0.5); }}
+            title="Reset Zoom"
+            aria-label="Reset Zoom"
+            className="rounded-none border-0 transition-transform duration-150 hover:scale-105 hover:bg-gray-100"
+          >
+            <RotateCcw className="h-4 w-4 drop-shadow" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
   React.useEffect(() => {
     if (category.category === "DETAILS OF THE COLLATERAL SECURITY") {
@@ -112,13 +204,78 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
     }));
   };
 
+  const renderPreview = () => {
+
+
+    if (error) {
+      return <p className="text-sm text-red-500 mt-2">{error}</p>;
+    }
+    if (documentBlobUrl) {
+      // 1. If type is image/*
+      if (documentBlobType && documentBlobType.startsWith("image/")) {
+        return (
+
+          <TransformWrapper
+            initialScale={1}
+            wheel={{ disabled: true }}          // disables zoom via mouse wheel / touchpad
+            pinch={{ disabled: true }}         // disables pinch-to-zoom gesture (touchscreens/touchpad)
+            doubleClick={{ disabled: true }}   // disables double-click to zoom
+            panning={{ disabled: false }}
+          >
+            {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
+              <>
+
+                <TransformComponent>
+                  <img src={documentBlobUrl} alt={"file"} />
+                </TransformComponent>
+                <Controls />
+              </>
+            )}
+          </TransformWrapper>
+
+        );
+      }
+      // 2. If type is PDF
+      if (documentBlobType === "application/pdf") {
+        return (
+          <div style={{ width: '95%', height: '365px' }}>
+            <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js`}>
+              <Viewer fileUrl={documentBlobUrl} plugins={[zoomPluginInstance]} />
+            </Worker>
+          </div>
+        );
+      }
+      // 4. As a last resort, try to render as image
+      return (
+        <div>
+          <p>Preview not supported. <a href={documentBlobUrl} download="document" >Click here to download</a></p>
+        </div>
+      );
+    }
+    return <p>No preview available.</p>;
+  };
+
   // Add this handler at the top level of the component
   const handleViewFile = async (file: any) => {
     setLoadingPreview(true);
     try {
-      const response = await documentUploadService.getDocumentDetails(file.docId);
+      const response = await documentService.getDocumentByDocumentID(file.docId);
       if (response && response.status === 200 && response.data) {
         setPreviewData(response.data);
+        try {
+          const fileBlob = await documentService.getFile(response.data.url); // fileBlob is a Blob
+          if (documentBlobUrl) {
+            URL.revokeObjectURL(documentBlobUrl);
+          }
+          const type = await fileTypeFromBlob(fileBlob);
+          const url = URL.createObjectURL(fileBlob);
+          setDocumentBlobUrl(url);
+          setDocumentBlobType(type?.mime);
+        } catch (err) {
+          setError("Failed to load document preview.");
+        } finally {
+          setLoadingPreview(false);
+        }
         setShowPreview(true);
       } else {
         toast({ title: "Failed to preview document", description: response?.message || "Unknown error", variant: "destructive" });
@@ -129,6 +286,7 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
       setLoadingPreview(false);
     }
   };
+
 
   return (
     <div key={categoryIndex}>
@@ -201,47 +359,54 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
               wordBreak: 'break-all',
               maxWidth: '90%',
             }}>{previewData.fileName}</h2>
-            <div style={{
-              width: '100%',
-              height: '100%',
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 12,
-              overflow: 'auto',
-              background: '#f8fafc',
-              boxShadow: '0 1.5px 8px rgba(30,41,59,0.06)',
-            }}>
-              {previewData.contentType && previewData.contentType.startsWith('image') ? (
-                <img
-                  src={`http://localhost:8080/api/v1${previewData.url}`}
-                  alt={previewData.fileName}
-                  style={{
-                    maxWidth: '95%',
-                    maxHeight: '95%',
-                    borderRadius: 10,
-                    objectFit: 'contain',
-                    background: '#fff',
-                  }}
-                />
-              ) : previewData.contentType && previewData.contentType === 'application/pdf' ? (
-                <iframe
-                  src={`http://localhost:8080/api/v1${previewData.url}`}
-                  title={previewData.fileName}
-                  style={{
-                    width: '95%',
-                    height: '95%',
-                    border: 'none',
-                    borderRadius: 10,
-                    background: '#fff',
-                  }}
-                  allowFullScreen
-                />
-              ) : (
-                <div style={{ padding: 18, color: '#64748b', fontSize: 15 }}>Preview not available for this file type.</div>
-              )}
-            </div>
+            <>
+              {renderPreview()}
+              {documentBlobType === "application/pdf" &&
+                (<div className="inline-flex rounded-md shadow-sm mt-1 border border-gray-200 bg-white/80 backdrop-blur-md overflow-hidden" role="group">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setZoom(z => Math.max(z - 0.1, 0.2))}
+                    title="Zoom Out"
+                    aria-label="Zoom Out"
+                    className="rounded-none border-0 transition-transform duration-150 hover:scale-105 hover:bg-gray-100"
+                  >
+                    <ZoomOut className="h-4 w-4 drop-shadow" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    className="rounded-none border-0 bg-white text-gray-700 cursor-default select-none"
+                    style={{ pointerEvents: "none" }}
+                    tabIndex={-1}
+                    aria-label="Current Zoom Percentage"
+                    title="Current Zoom Percentage"
+                  >
+                    {Math.round(zoom * 100)}%
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setZoom(z => Math.min(z + 0.1, 3))}
+                    title="Zoom In"
+                    aria-label="Zoom In"
+                    className="rounded-none border-0 transition-transform duration-150 hover:scale-105 hover:bg-gray-100"
+                  >
+                    <ZoomIn className="h-4 w-4 drop-shadow" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setZoom(0.5)}
+                    title="Reset Zoom"
+                    aria-label="Reset Zoom"
+                    className="rounded-none border-0 transition-transform duration-150 hover:scale-105 hover:bg-gray-100"
+                  >
+                    <RotateCcw className="h-4 w-4 drop-shadow" />
+                  </Button>
+                </div>)}
+            </>
           </div>
           <style>{`
             @keyframes fadeInOverlay {
@@ -311,7 +476,7 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                     {(() => {
                       // Group documents by documentMasterId
                       const documentGroups: { [key: string]: any[] } = {};
-                      
+
                       // Group all documents by documentMasterId
                       section.documents.forEach((doc: any, index: number) => {
                         if (!documentGroups[doc.documentMasterId]) {
@@ -319,17 +484,17 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                         }
                         documentGroups[doc.documentMasterId].push({ ...doc, _originalIndex: index });
                       });
-                      
+
                       // Now render each document group as a single document with multiple rows
                       return Object.keys(documentGroups).map((documentMasterId) => {
                         const documentsInGroup = documentGroups[documentMasterId];
                         // Use the first document for document properties (they should all be the same except year/files)
                         const masterDocument = documentsInGroup[0];
-                        
+
                         const docKey = isPromoter
                           ? `${masterDocument.documentMasterId}_promoter${currentPage - 1}_${section.section}_${instanceIdx}`
                           : `${masterDocument.documentMasterId}_${section.section}_${instanceIdx}`;
-                          
+
                         const sectionName = section.section;
                         const isMultipleFiles = masterDocument.isMultipleFiles;
 
@@ -340,10 +505,10 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                           const apiYears = documentsInGroup
                             .map(doc => doc.year ? parseInt(doc.year, 10) : undefined)
                             .filter(y => y !== undefined);
-                          
+
                           // Also include any local years from state
                           const localYears = documentYears[docKey] || [];
-                          
+
                           // Combine and deduplicate
                           years = [...new Set([...apiYears, ...localYears])] as number[];
                           if (years.length === 0) years = [];
@@ -364,7 +529,7 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
 
                         // Sort years in descending order
                         const sortedYears = [...years].sort((a, b) => (b || 0) - (a || 0));
-                        
+
                         // Find which rows have disabled dropdowns (files uploaded)
                         const disabledRowIndices = sortedYears.map((year, idx) => {
                           const files = getApiFilesForDocument(
@@ -376,9 +541,9 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                           );
                           return files.length > 0 ? idx : -1;
                         }).filter(idx => idx !== -1);
-                        
+
                         const lastDisabledRowIndex = disabledRowIndices.length > 0 ? Math.max(...disabledRowIndices) : -1;
-                        
+
                         // Render API years
                         const apiRows = sortedYears.map((year: any, yearIdx: number) => {
                           const yearKey = `${docKey}_${yearIdx}`;
@@ -509,7 +674,7 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                                               size="sm"
                                               className="h-6 w-6 p-0 text-red-700 mr-1"
                                               aria-label="Delete file"
-                                              // disabled
+                                            // disabled
                                             >
                                               <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -621,12 +786,11 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                                       e.preventDefault();
                                       handleAddMultipleYearRowbtn(docKey, masterDocument);
                                     }}
-                                    className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${
-                                      masterDocument.isMultipleYears &&
+                                    className={`border-gray-300 hover:border-gray-400 hover:bg-gray-50 ${masterDocument.isMultipleYears &&
                                       yearIdx === lastDisabledRowIndex &&
                                       lastDisabledRowIndex !== -1 &&
                                       effectiveYear ? '' : 'invisible'
-                                    }`}
+                                      }`}
                                     aria-label="Add Year"
                                   >
                                     +
@@ -636,7 +800,7 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                             </TableRow>
                           );
                         });
-                        
+
                         // Template rows for additional years
                         let templateRows: any[] = [];
                         templateRows = (yearRowTemplates[docKey] || []).map((row: any, templateIdx: number) => {
@@ -901,7 +1065,7 @@ const DocumentTable: React.FC<DocumentTableProps> = React.memo(({
                             </TableRow>
                           ];
                         }
-                        
+
                         return [
                           ...apiRows,
                           ...templateRows

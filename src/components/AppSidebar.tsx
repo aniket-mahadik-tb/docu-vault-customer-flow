@@ -65,11 +65,11 @@ const AppSidebar = () => {
 
     if (roleFromStorage === "Customer") {
       setLinks(CustomerLinks);
-    } else if (roleFromStorage === "Admin") {
+    } else if (roleFromStorage === "INTERNAL_USER") {
       setLinks(AdminLinks);
-    } else if (roleFromStorage === "SuperAdmin") {
+    } else if (roleFromStorage === "SUPER_ADMIN") {
       setLinks(SuperAdminLinks);
-    } else if (roleFromStorage === "Bank") {
+    } else if (roleFromStorage === "BANK") {
       setLinks(BankLinks);
     } else {
       setLinks([]);
@@ -86,11 +86,11 @@ const AppSidebar = () => {
 
   const getLinksByRole = (role: string) => {
     switch (role) {
-      case "Admin":
+      case "INTERNAL_USER":
         return AdminLinks;
-      case "SuperAdmin":
+      case "SUPER_ADMIN":
         return SuperAdminLinks;
-      case "Bank":
+      case "BANK":
         return BankLinks;
       case "Customer": {
         return CustomerLinks;

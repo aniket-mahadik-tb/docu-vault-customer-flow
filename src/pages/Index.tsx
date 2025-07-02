@@ -26,7 +26,7 @@ const Index = () => {
       description: "Manage users and document submissions",
       icon: <Users className="h-12 w-12 text-secondary" />,
       path: "/admin",
-      role: "Admin" as const,
+      role: "SUPER_ADMIN" as const,
       color: "bg-secondary/5 hover:bg-secondary/10 border-secondary/20",
     },
     {
@@ -39,13 +39,13 @@ const Index = () => {
     },
   ];
 
-  const handlePortalSelect = (path: string, role: "Customer" | "Admin" | "Bank") => {
+  const handlePortalSelect = (path: string, role: "Customer" | "SUPER_ADMIN" | "Bank") => {
     // setRole(role);
     if (role === "Customer") {
       setValueToLocalStorage("role", role);
-    } else if (role === "Admin") {
+    } else if (role === "SUPER_ADMIN") {
       //change here as per the api 
-      setValueToLocalStorage("role", "SuperAdmin");
+      setValueToLocalStorage("role", "SUPER_ADMIN");
     }
     navigate(path);
   };

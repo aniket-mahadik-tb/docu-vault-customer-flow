@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import MainLayout from "@/layouts/MainLayout";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, Trash2, UserPlus, CheckCircle, Check, Clock, AlertCircle, ChevronDown, Filter, X as CloseIcon, XCircle, FileText, Circle } from "lucide-react";
+import { Eye, EyeOff, Trash2, UserPlus, CheckCircle, Check, Clock, AlertCircle, ChevronDown, Filter, X as CloseIcon, XCircle, FileText, Circle, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Customer, useCustomers } from "@/contexts/CustomerContext";
 import {
@@ -38,6 +38,7 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import { Box, Typography } from '@mui/material';
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 const CustomerList = () => {
   // const { customers, deleteCustomer } = useCustomers();
@@ -425,9 +426,23 @@ const CustomerList = () => {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, borderBottom: '1px solid #e5e7eb', bgcolor: 'white', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
-              <Typography id="status-summary-title" variant="subtitle1" component="h2" fontWeight={600}>
-                Document Status
-              </Typography>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Typography id="status-summary-title" variant="subtitle1" component="h2" fontWeight={600}>
+                  Document Status
+                </Typography>
+                {statusModalData && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                        <Info className="h-4 w-4 text-blue-500 ml-1" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center" className="max-w-xs whitespace-pre-line text-sm">
+                      Mandatory: {statusModalData.documentStatus?.totalReqDoc}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
               <CloseIcon
                 style={{ cursor: 'pointer' }}
                 className="h-5 w-5 text-gray-500 hover:text-gray-700"
@@ -436,13 +451,6 @@ const CustomerList = () => {
             </Box>
             {statusModalData && (
               <List sx={{ p: 2 }}>
-                <ListItem sx={{ py: 1, display: 'flex', alignItems: 'center' }}>
-                  <FileText size={18} className="text-blue-500 mr-2" />
-                  <span style={{ flex: 1 }}>Total Required</span>
-                  <Typography sx={{ fontWeight: 600, color: 'primary.main' }}>
-                    {statusModalData.documentStatus?.totalReqDoc}
-                  </Typography>
-                </ListItem>
                 <ListItem sx={{ py: 1, display: 'flex', alignItems: 'center' }}>
                   <Clock size={18} className="text-yellow-500 mr-2" />
                   <span style={{ flex: 1 }}>Pending</span>
